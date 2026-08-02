@@ -196,7 +196,7 @@
     </div>
     <div class="scrolly" style="max-height:420px; border-top:1px solid var(--line);">
       <table style="min-width:640px;">
-        <thead><tr><th>月份</th><th>類別</th><th>項目說明</th><th style="text-align:right;">金額</th><th>日期</th><th>備註</th></tr></thead>
+        <thead><tr><th>月份</th><th>類別</th><th>項目說明</th><th style="text-align:right;">實際支出</th><th>日期</th><th>備註</th></tr></thead>
         <tbody id="kz-tbody"></tbody>
         <tfoot id="kz-tfoot"></tfoot>
       </table>
@@ -248,13 +248,13 @@ function kzRender() {
   });
   var html = rows.map(function(r) {
     return '<tr><td>' + r.month + '</td><td>' + kzBadge(r) + '</td><td>' + r.desc + '</td>' +
-      '<td style="text-align:right;">' + r.amt.toLocaleString() + '</td>' +
+      '<td style="text-align:right;">' + r.actual.toLocaleString() + '</td>' +
       '<td style="white-space:nowrap; color:var(--text-2);">' + r.date + '</td>' +
       '<td style="color:var(--text-2);">' + r.note + '</td></tr>';
   }).join('');
   document.getElementById('kz-tbody').innerHTML = html;
   document.getElementById('kz-count').textContent = rows.length;
-  var total = rows.reduce(function(s, r) { return s + r.amt; }, 0);
+  var total = rows.reduce(function(s, r) { return s + r.actual; }, 0);
   document.getElementById('kz-tfoot').innerHTML =
     '<tr><td colspan="3">合計（' + rows.length + ' 筆）</td>' +
     '<td style="text-align:right;">' + Math.round(total).toLocaleString() + '</td>' +
@@ -323,7 +323,7 @@ function kzRenderSummary() {
   var margin = revenue ? (net / revenue * 100) : 0;
   var ledgerMonths = months.map(function(m) { return KZ_MONTH_TO_LEDGER[m]; });
   var capex = LEDGER.filter(function(r) { return r.cat === '資本支出' && ledgerMonths.indexOf(r.month) !== -1; })
-    .reduce(function(s, r) { return s + r.amt; }, 0);
+    .reduce(function(s, r) { return s + r.actual; }, 0);
 
   document.getElementById('kz-range-note').textContent = '顯示範圍：' + label + (months.indexOf('八月') !== -1 ? '（8月資料未滿月）' : '');
   document.getElementById('kz-kpi-revenue').textContent = kzMoney(revenue);
