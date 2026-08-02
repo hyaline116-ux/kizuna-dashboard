@@ -41,15 +41,17 @@
     background: var(--bg); color: var(--text);
     border-radius: 16px; padding: 2rem clamp(1.25rem, 4vw, 2.5rem);
     font-variant-numeric: tabular-nums lining-nums;
+    color-scheme: dark;
   }
   @media (prefers-color-scheme: light) {
     .kz { --bg: var(--paper-50); --card: var(--paper-100); --card-2: #e7d9b8;
-      --line: var(--line-light); --text: var(--text-light); --text-2: var(--text-light-2); --text-3: var(--text-light-3); }
+      --line: var(--line-light); --text: var(--text-light); --text-2: var(--text-light-2); --text-3: var(--text-light-3);
+      color-scheme: light; }
   }
   .kz[data-theme="dark"] { --bg: var(--ink-950); --card: var(--ink-900); --card-2: var(--ink-800);
-    --line: var(--line-dark); --text: var(--text-dark); --text-2: var(--text-dark-2); --text-3: var(--text-dark-3); }
+    --line: var(--line-dark); --text: var(--text-dark); --text-2: var(--text-dark-2); --text-3: var(--text-dark-3); color-scheme: dark; }
   .kz[data-theme="light"] { --bg: var(--paper-50); --card: var(--paper-100); --card-2: #e7d9b8;
-    --line: var(--line-light); --text: var(--text-light); --text-2: var(--text-light-2); --text-3: var(--text-light-3); }
+    --line: var(--line-light); --text: var(--text-light); --text-2: var(--text-light-2); --text-3: var(--text-light-3); color-scheme: light; }
   .kz * { box-sizing: border-box; }
   .kz .serif { font-family: "Noto Serif TC", "Songti TC", "PMingLiU", serif; }
   .kz .grid2 { display: grid; grid-template-columns: 1.15fr 1fr; gap: 1.25rem; }
@@ -141,8 +143,7 @@
 
   <div class="card">
     <p class="lbl" style="margin-bottom:1.1rem;" id="kz-donut-title">支出結構佔比</p>
-    <div id="kz-donut-row" style="display:flex; flex-wrap:wrap; gap:1.75rem; justify-content:flex-start;"></div>
-    <div id="kz-donut-legend" style="display:flex; flex-wrap:wrap; gap:10px 16px; margin-top:1.25rem; padding-top:.9rem; border-top:1px solid var(--line); font-size:12px; color:var(--text-2);"></div>
+    <div id="kz-donut-row" style="display:flex; flex-direction:column; gap:1.5rem;"></div>
   </div>
 
   <hr class="rule" />
@@ -445,16 +446,17 @@ function kzRenderMatrix(months, label) {
 }
 function kzRenderDonuts(months, label) {
   document.getElementById('kz-donut-title').textContent = '支出結構佔比（月度）';
-  var size = months.length > 4 ? 92 : 112;
-  document.getElementById('kz-donut-row').innerHTML = months.map(function(m) {
+  var size = 108;
+  document.getElementById('kz-donut-row').innerHTML = months.map(function(m, idx) {
     var groupVals = KZ_DONUT_GROUPS.map(function(g) {
       var v = g.cats.reduce(function(s, c) { return s + (kzSum(c, [m]) || 0); }, 0);
       return { label: g.label, color: g.color, value: v };
     });
     var total = groupVals.reduce(function(s, g) { return s + g.value; }, 0);
-    var circle;
+    var circle, listHtml;
     if (!total) {
-      circle = '<div style="width:' + size + 'px; height:' + size + 'px; border-radius:50%; background:var(--card-2); display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--text-3); text-align:center; padding:8px; box-sizing:border-box;">資料不足</div>';
+      circle = '<div style="width:' + size + 'px; height:' + size + 'px; border-radius:50%; background:var(--card-2); display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--text-3); text-align:center; padding:8px; box-sizing:border-box; flex-shrink:0;">資料不足</div>';
+      listHtml = '<p style="margin:0; font-size:12.5px; color:var(--text-3);">本月尚無足夠資料</p>';
     } else {
       var deg = 0;
       var stops = groupVals.map(function(g) {
@@ -463,14 +465,21 @@ function kzRenderDonuts(months, label) {
         deg = d1;
         return g.color + ' ' + d0.toFixed(2) + 'deg ' + d1.toFixed(2) + 'deg';
       });
-      circle = '<div style="width:' + size + 'px; height:' + size + 'px; border-radius:50%; background:conic-gradient(' + stops.join(', ') + ');' +
+      circle = '<div style="width:' + size + 'px; height:' + size + 'px; border-radius:50%; flex-shrink:0; background:conic-gradient(' + stops.join(', ') + ');' +
         '-webkit-mask: radial-gradient(farthest-side, transparent 56%, #000 57%); mask: radial-gradient(farthest-side, transparent 56%, #000 57%);"></div>';
+      listHtml = groupVals.filter(function(g) { return g.value > 0; })
+        .sort(function(a, b) { return b.value - a.value; })
+        .map(function(g) {
+          var pct = (g.value / total * 100).toFixed(1);
+          return '<div style="display:flex; justify-content:space-between; gap:8px;"><span><span style="display:inline-block; width:8px; height:8px; border-radius:2px; background:' + g.color + '; margin-right:6px;"></span>' + g.label + '</span><span style="color:var(--text-2);">' + pct + '%</span></div>';
+        }).join('');
     }
-    return '<div style="display:flex; flex-direction:column; align-items:center; gap:8px;">' + circle +
-      '<p style="margin:0; font-size:12.5px; color:var(--text-2);">' + m + '</p></div>';
-  }).join('');
-  document.getElementById('kz-donut-legend').innerHTML = KZ_DONUT_GROUPS.map(function(g) {
-    return '<span><span style="display:inline-block; width:8px; height:8px; border-radius:2px; background:' + g.color + '; margin-right:6px;"></span>' + g.label + '</span>';
+    var rule = idx > 0 ? 'border-top:1px solid var(--line); padding-top:1.5rem;' : '';
+    return '<div style="' + rule + '">' +
+      '<p style="margin:0 0 .9rem; font-size:13px; font-weight:500; color:var(--text);">' + m + '</p>' +
+      '<div style="display:flex; gap:1.25rem; align-items:center;">' + circle +
+      '<div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:6px; font-size:12.5px;">' + listHtml + '</div>' +
+      '</div></div>';
   }).join('');
 }
 kzPopulateRangeSelects();
