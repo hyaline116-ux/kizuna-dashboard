@@ -66,6 +66,7 @@
   .kz th { text-align: left; font-weight: 500; color: var(--text-3); font-size: 11px; letter-spacing: .03em; padding: 6px 8px; position: sticky; top: 0; background: var(--card); border-bottom: 1px solid var(--line); white-space: nowrap; }
   .kz td { padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; color: var(--text); }
   .kz table td:first-child, .kz table th:first-child { position: sticky; left: 0; background: var(--card); z-index: 1; }
+  .kz tfoot td { font-weight: 500; border-bottom: none; border-top: 1px solid var(--line); position: sticky; bottom: 0; background: var(--card); }
   .kz .scrollx { overflow-x: auto; }
   .kz .scrolly { overflow-y: auto; overflow-x: auto; }
   .kz .badge { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 999px; white-space: nowrap; }
@@ -197,6 +198,7 @@
       <table style="min-width:640px;">
         <thead><tr><th>月份</th><th>類別</th><th>項目說明</th><th style="text-align:right;">金額</th><th>日期</th><th>備註</th></tr></thead>
         <tbody id="kz-tbody"></tbody>
+        <tfoot id="kz-tfoot"></tfoot>
       </table>
     </div>
   </div>
@@ -252,6 +254,11 @@ function kzRender() {
   }).join('');
   document.getElementById('kz-tbody').innerHTML = html;
   document.getElementById('kz-count').textContent = rows.length;
+  var total = rows.reduce(function(s, r) { return s + r.amt; }, 0);
+  document.getElementById('kz-tfoot').innerHTML =
+    '<tr><td colspan="3">合計（' + rows.length + ' 筆）</td>' +
+    '<td style="text-align:right;">' + Math.round(total).toLocaleString() + '</td>' +
+    '<td></td><td></td></tr>';
 }
 document.getElementById('kz-search').addEventListener('input', kzRender);
 document.getElementById('kz-month').addEventListener('change', kzRender);
