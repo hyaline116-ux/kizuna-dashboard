@@ -366,11 +366,8 @@ function kzRenderSummary() {
     return { cat: cat, value: kzSum(cat, months) || 0, tag: KZ_MATRIX_MAP[cat] ? undefined : undefined };
   }).filter(function(i) { return i.value > 0; }).sort(function(a, b) { return b.value - a.value; });
   var fcSet = ['人事成本','勞保','勞退','健保','房租','電費','水費','會計記帳費','憑證統整費','電信費','廚餘清運','垃圾清運','環境消毒','中興保全','室內花藝'];
-  var top = items.slice(0, 10);
-  var rest = items.slice(10);
-  var restSum = rest.reduce(function(s, i) { return s + i.value; }, 0);
-  var maxItem = top.length ? top[0].value : 1;
-  var rankHtml = top.map(function(i) {
+  var maxItem = items.length ? items[0].value : 1;
+  var rankHtml = items.map(function(i) {
     var color = fcSet.indexOf(i.cat) !== -1 ? 'var(--fc)' : 'var(--vc)';
     var pct = (i.value / maxItem * 100).toFixed(1);
     return '<div style="display:grid; grid-template-columns:82px 1fr 92px; align-items:center; gap:10px; font-size:12.5px;">' +
@@ -378,13 +375,6 @@ function kzRenderSummary() {
       '<div style="background:var(--card-2); border-radius:4px; height:14px;"><div style="width:' + pct + '%; height:100%; background:' + color + '; border-radius:4px;"></div></div>' +
       '<span style="text-align:right;">' + Math.round(i.value).toLocaleString() + '</span></div>';
   }).join('');
-  if (rest.length) {
-    var pct2 = (restSum / maxItem * 100).toFixed(1);
-    rankHtml += '<div style="display:grid; grid-template-columns:82px 1fr 92px; align-items:center; gap:10px; font-size:12.5px;">' +
-      '<span style="color:var(--text-2);">其餘 ' + rest.length + ' 項</span>' +
-      '<div style="background:var(--card-2); border-radius:4px; height:14px;"><div style="width:' + pct2 + '%; height:100%; background:var(--fc);"></div></div>' +
-      '<span style="text-align:right;">' + Math.round(restSum).toLocaleString() + '</span></div>';
-  }
   document.getElementById('kz-rank').innerHTML = rankHtml;
 
   kzRenderMatrix(months, label);
