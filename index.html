@@ -75,51 +75,48 @@
     絆Kizuna 鋤燒．燒肉 營運財務儀表板：2026 年四月至七月累計實收約 1,031 萬元、支出約 872 萬元、淨利約 159 萬元，淨利率 15.4%，並提供月度損益明細、支出結構佔比與 391 筆帳務逐筆明細查詢。
   </h2>
 
-  <div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:8px; margin-bottom:1.75rem;">
+  <div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:8px; margin-bottom:1.25rem;">
     <div>
       <p class="serif" style="font-size:22px; margin:0; letter-spacing:.02em;">絆 Kizuna <span style="color:var(--text-3); font-size:15px; font-weight:400;">鋤燒．燒肉</span></p>
       <p class="lbl" style="margin-top:4px;">營運財務總覽</p>
     </div>
-    <div style="text-align:right;">
-      <p style="margin:0; font-size:14px; color:var(--text-2);">2026 年 4 月–7 月累計</p>
-      <p style="margin:0; font-size:12px; color:var(--text-3);">8 月資料尚未滿月，未計入累計統計</p>
+    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+      <select class="q" id="kz-from"></select>
+      <span style="color:var(--text-3); font-size:13px;">–</span>
+      <select class="q" id="kz-to"></select>
     </div>
   </div>
+  <p id="kz-range-note" style="margin:0 0 1.25rem; font-size:12px; color:var(--text-3); text-align:right;"></p>
 
   <div class="kpis">
     <div class="tile">
-      <p class="lbl">累計實收</p>
-      <p class="num">NT$10,313,326</p>
+      <p class="lbl">實收</p>
+      <p class="num" id="kz-kpi-revenue">—</p>
     </div>
     <div class="tile">
-      <p class="lbl">累計實際支出</p>
-      <p class="num">NT$8,722,305</p>
+      <p class="lbl">實際支出</p>
+      <p class="num" id="kz-kpi-expense">—</p>
     </div>
     <div class="tile">
-      <p class="lbl">累計淨利（未稅）</p>
-      <p class="num" style="color:var(--green);">NT$1,591,021</p>
+      <p class="lbl">淨利（未稅）</p>
+      <p class="num" id="kz-kpi-net" style="color:var(--green);">—</p>
     </div>
     <div class="tile">
       <p class="lbl">淨利率</p>
-      <p class="num">15.4%</p>
+      <p class="num" id="kz-kpi-margin">—</p>
     </div>
     <div class="tile">
-      <p class="lbl">資本支出累計</p>
-      <p class="num" style="color:var(--cap);">NT$13,474,580</p>
+      <p class="lbl">資本支出</p>
+      <p class="num" id="kz-kpi-capex" style="color:var(--cap);">—</p>
     </div>
   </div>
 
   <div class="tile" style="margin-top:12px;">
     <div style="display:flex; justify-content:space-between; align-items:baseline;">
       <p class="lbl" style="margin:0;">成本結構：固定 vs 變動（營運支出）</p>
-      <p style="margin:0; font-size:12.5px; color:var(--text-2);">
-        <span style="color:var(--fc);">● 固定成本 41.6%</span>&nbsp;&nbsp;<span style="color:var(--vc);">● 變動成本 58.4%</span>
-      </p>
+      <p style="margin:0; font-size:12.5px; color:var(--text-2);" id="kz-meter-legend"></p>
     </div>
-    <div style="display:flex; height:10px; border-radius:5px; overflow:hidden; margin-top:10px; background:var(--card-2);">
-      <div style="width:41.6%; background:var(--fc);"></div>
-      <div style="width:58.4%; background:var(--vc);"></div>
-    </div>
+    <div style="display:flex; height:10px; border-radius:5px; overflow:hidden; margin-top:10px; background:var(--card-2);" id="kz-meter-bar"></div>
   </div>
 
   <hr class="rule" />
@@ -127,40 +124,7 @@
   <div class="grid2">
     <div class="card">
       <p class="lbl" style="margin-bottom:1.1rem;">月度趨勢：實收 vs 支出</p>
-      <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:14px; height:170px;">
-        <div style="display:flex; flex-direction:column; align-items:center; gap:6px; flex:1; height:100%; justify-content:flex-end;">
-          <div style="display:flex; align-items:flex-end; gap:4px; height:100%;">
-            <div title="實收" style="width:16px; height:60.6%; background:var(--gold); border-radius:3px 3px 0 0;"></div>
-            <div title="支出" style="width:16px; height:75.8%; background:var(--card-2); border:1px solid var(--line); border-radius:3px 3px 0 0;"></div>
-          </div>
-          <p style="margin:0; font-size:12px; color:var(--text-2);">4月</p>
-          <p style="margin:0; font-size:11px; color:var(--red);">−47萬</p>
-        </div>
-        <div style="display:flex; flex-direction:column; align-items:center; gap:6px; flex:1; height:100%; justify-content:flex-end;">
-          <div style="display:flex; align-items:flex-end; gap:4px; height:100%;">
-            <div style="width:16px; height:100%; background:var(--gold); border-radius:3px 3px 0 0;"></div>
-            <div style="width:16px; height:71.9%; background:var(--card-2); border:1px solid var(--line); border-radius:3px 3px 0 0;"></div>
-          </div>
-          <p style="margin:0; font-size:12px; color:var(--text-2);">5月</p>
-          <p style="margin:0; font-size:11px; color:var(--green);">+87萬</p>
-        </div>
-        <div style="display:flex; flex-direction:column; align-items:center; gap:6px; flex:1; height:100%; justify-content:flex-end;">
-          <div style="display:flex; align-items:flex-end; gap:4px; height:100%;">
-            <div style="width:16px; height:91.2%; background:var(--gold); border-radius:3px 3px 0 0;"></div>
-            <div style="width:16px; height:71.1%; background:var(--card-2); border:1px solid var(--line); border-radius:3px 3px 0 0;"></div>
-          </div>
-          <p style="margin:0; font-size:12px; color:var(--text-2);">6月</p>
-          <p style="margin:0; font-size:11px; color:var(--green);">+62萬</p>
-        </div>
-        <div style="display:flex; flex-direction:column; align-items:center; gap:6px; flex:1; height:100%; justify-content:flex-end;">
-          <div style="display:flex; align-items:flex-end; gap:4px; height:100%;">
-            <div style="width:16px; height:81.7%; background:var(--gold); border-radius:3px 3px 0 0;"></div>
-            <div style="width:16px; height:63.3%; background:var(--card-2); border:1px solid var(--line); border-radius:3px 3px 0 0;"></div>
-          </div>
-          <p style="margin:0; font-size:12px; color:var(--text-2);">7月</p>
-          <p style="margin:0; font-size:11px; color:var(--green);">+57萬</p>
-        </div>
-      </div>
+      <div id="kz-trend" style="display:flex; align-items:flex-end; justify-content:space-between; gap:14px; height:170px;"></div>
       <div style="display:flex; gap:16px; margin-top:1.1rem; padding-top:.9rem; border-top:1px solid var(--line); font-size:12px; color:var(--text-2);">
         <span><span style="display:inline-block; width:9px; height:9px; border-radius:2px; background:var(--gold); margin-right:5px;"></span>實收</span>
         <span><span style="display:inline-block; width:9px; height:9px; border-radius:2px; background:var(--card-2); border:1px solid var(--line); margin-right:5px;"></span>實際支出</span>
@@ -170,28 +134,11 @@
     <div class="card">
       <p class="lbl" style="margin-bottom:1.1rem;">支出結構佔比</p>
       <div style="display:flex; gap:1.25rem; align-items:center;">
-        <div style="width:132px; height:132px; border-radius:50%; flex-shrink:0;
-          background: conic-gradient(
-            var(--vc) 0deg 184.73deg,
-            var(--fc) 184.73deg 305.36deg,
-            var(--vc-3) 305.36deg 322.26deg,
-            var(--fc-2) 322.26deg 335.47deg,
-            var(--fc-3) 335.47deg 347.54deg,
-            var(--vc-2) 347.54deg 356.24deg,
-            var(--fc-4) 356.24deg 360deg
-          );
+        <div id="kz-donut" style="width:132px; height:132px; border-radius:50%; flex-shrink:0;
           -webkit-mask: radial-gradient(farthest-side, transparent 58%, #000 59%);
           mask: radial-gradient(farthest-side, transparent 58%, #000 59%);">
         </div>
-        <div style="display:flex; flex-direction:column; gap:7px; font-size:12.5px; flex:1; min-width:0;">
-          <div style="display:flex; justify-content:space-between;"><span><span style="display:inline-block; width:8px; height:8px; border-radius:2px; background:var(--vc); margin-right:6px;"></span>食材成本</span><span style="color:var(--text-2);">51.3%</span></div>
-          <div style="display:flex; justify-content:space-between;"><span><span style="display:inline-block; width:8px; height:8px; border-radius:2px; background:var(--fc); margin-right:6px;"></span>人事關聯</span><span style="color:var(--text-2);">33.5%</span></div>
-          <div style="display:flex; justify-content:space-between;"><span><span style="display:inline-block; width:8px; height:8px; border-radius:2px; background:var(--vc-3); margin-right:6px;"></span>雜項支出</span><span style="color:var(--text-2);">4.7%</span></div>
-          <div style="display:flex; justify-content:space-between;"><span><span style="display:inline-block; width:8px; height:8px; border-radius:2px; background:var(--fc-2); margin-right:6px;"></span>房租</span><span style="color:var(--text-2);">3.7%</span></div>
-          <div style="display:flex; justify-content:space-between;"><span><span style="display:inline-block; width:8px; height:8px; border-radius:2px; background:var(--fc-3); margin-right:6px;"></span>水電</span><span style="color:var(--text-2);">3.3%</span></div>
-          <div style="display:flex; justify-content:space-between;"><span><span style="display:inline-block; width:8px; height:8px; border-radius:2px; background:var(--vc-2); margin-right:6px;"></span>耗材成本</span><span style="color:var(--text-2);">2.4%</span></div>
-          <div style="display:flex; justify-content:space-between;"><span><span style="display:inline-block; width:8px; height:8px; border-radius:2px; background:var(--fc-4); margin-right:6px;"></span>其他固定</span><span style="color:var(--text-2);">1.0%</span></div>
-        </div>
+        <div id="kz-donut-legend" style="display:flex; flex-direction:column; gap:7px; font-size:12.5px; flex:1; min-width:0;"></div>
       </div>
     </div>
   </div>
@@ -204,35 +151,35 @@
     <table style="min-width:520px;">
       <thead><tr><th>科目</th><th style="text-align:right;">4月</th><th style="text-align:right;">5月</th><th style="text-align:right;">6月</th><th style="text-align:right;">7月</th><th style="text-align:right;">8月（進行中）</th></tr></thead>
       <tbody>
-<tr><td style="font-weight:500;">實收</td><td style="text-align:right;">1,873,550</td><td style="text-align:right;">3,093,057</td><td style="text-align:right;">2,820,436</td><td style="text-align:right;">2,526,283</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
-<tr><td style="font-weight:500;">實際支出</td><td style="text-align:right;">2,343,256</td><td style="text-align:right;">2,223,097</td><td style="text-align:right;">2,198,455</td><td style="text-align:right;">1,957,498</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
-<tr><td style="font-weight:500;">淨額(未稅)</td><td style="text-align:right;">-469,706</td><td style="text-align:right;">869,960</td><td style="text-align:right;">621,981</td><td style="text-align:right;">568,785</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
+<tr><td style="font-weight:500;">實收</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--green) 22%, transparent) 60.6%, transparent 60.6%); padding-right:8px;">1,873,550</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--green) 22%, transparent) 100.0%, transparent 100.0%); padding-right:8px;">3,093,057</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--green) 22%, transparent) 91.2%, transparent 91.2%); padding-right:8px;">2,820,436</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--green) 22%, transparent) 81.7%, transparent 81.7%); padding-right:8px;">2,526,283</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
+<tr><td style="font-weight:500;">實際支出</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 100.0%, transparent 100.0%); padding-right:8px;">2,343,256</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 94.9%, transparent 94.9%); padding-right:8px;">2,223,097</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 93.8%, transparent 93.8%); padding-right:8px;">2,198,455</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 83.5%, transparent 83.5%); padding-right:8px;">1,957,498</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
+<tr><td style="font-weight:500;">淨額(未稅)</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--red) 22%, transparent) 54.0%, transparent 54.0%); padding-right:8px;">-469,706</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--green) 22%, transparent) 100.0%, transparent 100.0%); padding-right:8px;">869,960</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--green) 22%, transparent) 71.5%, transparent 71.5%); padding-right:8px;">621,981</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--green) 22%, transparent) 65.4%, transparent 65.4%); padding-right:8px;">568,785</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
 <tr><td colspan="6" style="padding-top:10px; padding-bottom:2px; font-size:11px; color:var(--text-3); border-top:1px solid var(--line);">固定成本 FC</td></tr>
-<tr><td style="font-weight:500;">固定成本 合計</td><td style="text-align:right;">836,766</td><td style="text-align:right;">1,046,161</td><td style="text-align:right;">975,881</td><td style="text-align:right;">767,384</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
-<tr><td style="padding-left:1.6em;">人事成本</td><td style="text-align:right;">611,910</td><td style="text-align:right;">708,448</td><td style="text-align:right;">661,188</td><td style="text-align:right;">675,354</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
-<tr><td style="padding-left:1.6em;">勞保</td><td style="text-align:right;">0</td><td style="text-align:right;">69,258</td><td style="text-align:right;">54,146</td><td style="text-align:right; color:var(--text-3);">—</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
-<tr><td style="padding-left:1.6em;">勞退</td><td style="text-align:right;">0</td><td style="text-align:right;">31,121</td><td style="text-align:right;">25,064</td><td style="text-align:right; color:var(--text-3);">—</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
-<tr><td style="padding-left:1.6em;">健保</td><td style="text-align:right;">24,976</td><td style="text-align:right;">32,520</td><td style="text-align:right;">28,748</td><td style="text-align:right; color:var(--text-3);">—</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
-<tr><td style="padding-left:1.6em;">房租</td><td style="text-align:right;">80,000</td><td style="text-align:right;">80,000</td><td style="text-align:right;">80,000</td><td style="text-align:right;">80,000</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
-<tr><td style="padding-left:1.6em;">電費</td><td style="text-align:right;">97,266</td><td style="text-align:right;">91,502</td><td style="text-align:right;">91,501</td><td style="text-align:right; color:var(--text-3);">—</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
-<tr><td style="padding-left:1.6em;">水費</td><td style="text-align:right;">3,684</td><td style="text-align:right;">4,211</td><td style="text-align:right;">4,211</td><td style="text-align:right; color:var(--text-3);">—</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
-<tr><td style="padding-left:1.6em;">會計記帳費</td><td style="text-align:right;">0</td><td style="text-align:right;">2,208</td><td style="text-align:right;">2,207</td><td style="text-align:right; color:var(--text-3);">—</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
-<tr><td style="padding-left:1.6em;">憑證統整費</td><td style="text-align:right;">0</td><td style="text-align:right;">6,000</td><td style="text-align:right;">6,000</td><td style="text-align:right; color:var(--text-3);">—</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
-<tr><td style="padding-left:1.6em;">電信費</td><td style="text-align:right;">0</td><td style="text-align:right;">0</td><td style="text-align:right;">1,295</td><td style="text-align:right; color:var(--text-3);">—</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
-<tr><td style="padding-left:1.6em;">廚餘清運</td><td style="text-align:right;">1,515</td><td style="text-align:right;">3,015</td><td style="text-align:right;">3,000</td><td style="text-align:right;">3,000</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
-<tr><td style="padding-left:1.6em;">垃圾清運</td><td style="text-align:right;">6,630</td><td style="text-align:right;">8,863</td><td style="text-align:right;">11,506</td><td style="text-align:right; color:var(--text-3);">—</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
-<tr><td style="padding-left:1.6em;">環境消毒</td><td style="text-align:right;">3,000</td><td style="text-align:right;">3,000</td><td style="text-align:right;">3,000</td><td style="text-align:right; color:var(--text-3);">—</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
-<tr><td style="padding-left:1.6em;">中興保全</td><td style="text-align:right;">7,785</td><td style="text-align:right;">0</td><td style="text-align:right;">0</td><td style="text-align:right;">6,015</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
-<tr><td style="padding-left:1.6em;">室內花藝</td><td style="text-align:right;">0</td><td style="text-align:right;">6,015</td><td style="text-align:right;">4,015</td><td style="text-align:right;">3,015</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
+<tr><td style="font-weight:500;">固定成本 合計</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 80.0%, transparent 80.0%); padding-right:8px;">836,766</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 100.0%, transparent 100.0%); padding-right:8px;">1,046,161</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 93.3%, transparent 93.3%); padding-right:8px;">975,881</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 73.4%, transparent 73.4%); padding-right:8px;">767,384</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
+<tr><td style="padding-left:1.6em;">人事成本</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 86.4%, transparent 86.4%); padding-right:8px;">611,910</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 100.0%, transparent 100.0%); padding-right:8px;">708,448</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 93.3%, transparent 93.3%); padding-right:8px;">661,188</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 95.3%, transparent 95.3%); padding-right:8px;">675,354</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
+<tr><td style="padding-left:1.6em;">勞保</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 0.0%, transparent 0.0%); padding-right:8px;">0</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 100.0%, transparent 100.0%); padding-right:8px;">69,258</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 78.2%, transparent 78.2%); padding-right:8px;">54,146</td><td style="text-align:right; color:var(--text-3);">—</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
+<tr><td style="padding-left:1.6em;">勞退</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 0.0%, transparent 0.0%); padding-right:8px;">0</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 100.0%, transparent 100.0%); padding-right:8px;">31,121</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 80.5%, transparent 80.5%); padding-right:8px;">25,064</td><td style="text-align:right; color:var(--text-3);">—</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
+<tr><td style="padding-left:1.6em;">健保</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 76.8%, transparent 76.8%); padding-right:8px;">24,976</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 100.0%, transparent 100.0%); padding-right:8px;">32,520</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 88.4%, transparent 88.4%); padding-right:8px;">28,748</td><td style="text-align:right; color:var(--text-3);">—</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
+<tr><td style="padding-left:1.6em;">房租</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 100.0%, transparent 100.0%); padding-right:8px;">80,000</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 100.0%, transparent 100.0%); padding-right:8px;">80,000</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 100.0%, transparent 100.0%); padding-right:8px;">80,000</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 100.0%, transparent 100.0%); padding-right:8px;">80,000</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
+<tr><td style="padding-left:1.6em;">電費</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 100.0%, transparent 100.0%); padding-right:8px;">97,266</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 94.1%, transparent 94.1%); padding-right:8px;">91,502</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 94.1%, transparent 94.1%); padding-right:8px;">91,501</td><td style="text-align:right; color:var(--text-3);">—</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
+<tr><td style="padding-left:1.6em;">水費</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 87.5%, transparent 87.5%); padding-right:8px;">3,684</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 100.0%, transparent 100.0%); padding-right:8px;">4,211</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 100.0%, transparent 100.0%); padding-right:8px;">4,211</td><td style="text-align:right; color:var(--text-3);">—</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
+<tr><td style="padding-left:1.6em;">會計記帳費</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 0.0%, transparent 0.0%); padding-right:8px;">0</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 100.0%, transparent 100.0%); padding-right:8px;">2,208</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 100.0%, transparent 100.0%); padding-right:8px;">2,207</td><td style="text-align:right; color:var(--text-3);">—</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
+<tr><td style="padding-left:1.6em;">憑證統整費</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 0.0%, transparent 0.0%); padding-right:8px;">0</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 100.0%, transparent 100.0%); padding-right:8px;">6,000</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 100.0%, transparent 100.0%); padding-right:8px;">6,000</td><td style="text-align:right; color:var(--text-3);">—</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
+<tr><td style="padding-left:1.6em;">電信費</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 0.0%, transparent 0.0%); padding-right:8px;">0</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 0.0%, transparent 0.0%); padding-right:8px;">0</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 100.0%, transparent 100.0%); padding-right:8px;">1,295</td><td style="text-align:right; color:var(--text-3);">—</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
+<tr><td style="padding-left:1.6em;">廚餘清運</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 50.2%, transparent 50.2%); padding-right:8px;">1,515</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 100.0%, transparent 100.0%); padding-right:8px;">3,015</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 99.5%, transparent 99.5%); padding-right:8px;">3,000</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 99.5%, transparent 99.5%); padding-right:8px;">3,000</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
+<tr><td style="padding-left:1.6em;">垃圾清運</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 57.6%, transparent 57.6%); padding-right:8px;">6,630</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 77.0%, transparent 77.0%); padding-right:8px;">8,863</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 100.0%, transparent 100.0%); padding-right:8px;">11,506</td><td style="text-align:right; color:var(--text-3);">—</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
+<tr><td style="padding-left:1.6em;">環境消毒</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 100.0%, transparent 100.0%); padding-right:8px;">3,000</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 100.0%, transparent 100.0%); padding-right:8px;">3,000</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 100.0%, transparent 100.0%); padding-right:8px;">3,000</td><td style="text-align:right; color:var(--text-3);">—</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
+<tr><td style="padding-left:1.6em;">中興保全</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 100.0%, transparent 100.0%); padding-right:8px;">7,785</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 0.0%, transparent 0.0%); padding-right:8px;">0</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 0.0%, transparent 0.0%); padding-right:8px;">0</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 77.3%, transparent 77.3%); padding-right:8px;">6,015</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
+<tr><td style="padding-left:1.6em;">室內花藝</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 0.0%, transparent 0.0%); padding-right:8px;">0</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 100.0%, transparent 100.0%); padding-right:8px;">6,015</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 66.7%, transparent 66.7%); padding-right:8px;">4,015</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--fc) 22%, transparent) 50.1%, transparent 50.1%); padding-right:8px;">3,015</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
 <tr><td colspan="6" style="padding-top:10px; padding-bottom:2px; font-size:11px; color:var(--text-3); border-top:1px solid var(--line);">變動成本 VC</td></tr>
-<tr><td style="font-weight:500;">變動成本 合計</td><td style="text-align:right;">1,506,490</td><td style="text-align:right;">1,176,936</td><td style="text-align:right;">1,222,574</td><td style="text-align:right;">1,190,114</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
-<tr><td style="padding-left:1.6em;">食材成本</td><td style="text-align:right;">1,167,436</td><td style="text-align:right;">1,081,281</td><td style="text-align:right;">1,134,688</td><td style="text-align:right;">1,092,419</td><td style="text-align:right; color:var(--text-3);">46,398</td></tr>
-<tr><td style="padding-left:1.6em;">耗材成本</td><td style="text-align:right;">79,871</td><td style="text-align:right;">53,562</td><td style="text-align:right;">45,005</td><td style="text-align:right;">32,470</td><td style="text-align:right; color:var(--text-3);">1,965</td></tr>
-<tr><td style="padding-left:1.6em;">雜項支出</td><td style="text-align:right;">259,183</td><td style="text-align:right;">42,093</td><td style="text-align:right;">42,881</td><td style="text-align:right;">65,225</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
+<tr><td style="font-weight:500;">變動成本 合計</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--vc) 22%, transparent) 100.0%, transparent 100.0%); padding-right:8px;">1,506,490</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--vc) 22%, transparent) 78.1%, transparent 78.1%); padding-right:8px;">1,176,936</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--vc) 22%, transparent) 81.2%, transparent 81.2%); padding-right:8px;">1,222,574</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--vc) 22%, transparent) 79.0%, transparent 79.0%); padding-right:8px;">1,190,114</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
+<tr><td style="padding-left:1.6em;">食材成本</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--vc) 22%, transparent) 100.0%, transparent 100.0%); padding-right:8px;">1,167,436</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--vc) 22%, transparent) 92.6%, transparent 92.6%); padding-right:8px;">1,081,281</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--vc) 22%, transparent) 97.2%, transparent 97.2%); padding-right:8px;">1,134,688</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--vc) 22%, transparent) 93.6%, transparent 93.6%); padding-right:8px;">1,092,419</td><td style="text-align:right; color:var(--text-3);">46,398</td></tr>
+<tr><td style="padding-left:1.6em;">耗材成本</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--vc) 22%, transparent) 100.0%, transparent 100.0%); padding-right:8px;">79,871</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--vc) 22%, transparent) 67.1%, transparent 67.1%); padding-right:8px;">53,562</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--vc) 22%, transparent) 56.3%, transparent 56.3%); padding-right:8px;">45,005</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--vc) 22%, transparent) 40.7%, transparent 40.7%); padding-right:8px;">32,470</td><td style="text-align:right; color:var(--text-3);">1,965</td></tr>
+<tr><td style="padding-left:1.6em;">雜項支出</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--vc) 22%, transparent) 100.0%, transparent 100.0%); padding-right:8px;">259,183</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--vc) 22%, transparent) 16.2%, transparent 16.2%); padding-right:8px;">42,093</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--vc) 22%, transparent) 16.5%, transparent 16.5%); padding-right:8px;">42,881</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--vc) 22%, transparent) 25.2%, transparent 25.2%); padding-right:8px;">65,225</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
 <tr><td colspan="6" style="padding-top:10px; padding-bottom:2px; font-size:11px; color:var(--text-3); border-top:1px solid var(--line);">庫存與稅務準備（非當期支出）</td></tr>
-<tr><td style="padding-left:1.6em;">食材庫存</td><td style="text-align:right;">0</td><td style="text-align:right;">229,022</td><td style="text-align:right;">303,054</td><td style="text-align:right; color:var(--text-3);">—</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
-<tr><td style="padding-left:1.6em;">耗材庫存</td><td style="text-align:right;">0</td><td style="text-align:right;">0</td><td style="text-align:right;">32,271</td><td style="text-align:right; color:var(--text-3);">—</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
-<tr><td style="padding-left:1.6em;">營業稅預留</td><td style="text-align:right;">89,217</td><td style="text-align:right;">147,288</td><td style="text-align:right;">134,306</td><td style="text-align:right; color:var(--text-3);">—</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
+<tr><td style="padding-left:1.6em;">食材庫存</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--cap) 22%, transparent) 0.0%, transparent 0.0%); padding-right:8px;">0</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--cap) 22%, transparent) 75.6%, transparent 75.6%); padding-right:8px;">229,022</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--cap) 22%, transparent) 100.0%, transparent 100.0%); padding-right:8px;">303,054</td><td style="text-align:right; color:var(--text-3);">—</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
+<tr><td style="padding-left:1.6em;">耗材庫存</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--cap) 22%, transparent) 0.0%, transparent 0.0%); padding-right:8px;">0</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--cap) 22%, transparent) 0.0%, transparent 0.0%); padding-right:8px;">0</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--cap) 22%, transparent) 100.0%, transparent 100.0%); padding-right:8px;">32,271</td><td style="text-align:right; color:var(--text-3);">—</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
+<tr><td style="padding-left:1.6em;">營業稅預留</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--cap) 22%, transparent) 60.6%, transparent 60.6%); padding-right:8px;">89,217</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--cap) 22%, transparent) 100.0%, transparent 100.0%); padding-right:8px;">147,288</td><td style="text-align:right; background: linear-gradient(to right, color-mix(in srgb, var(--cap) 22%, transparent) 91.2%, transparent 91.2%); padding-right:8px;">134,306</td><td style="text-align:right; color:var(--text-3);">—</td><td style="text-align:right; color:var(--text-3);">—</td></tr>
       </tbody>
     </table>
     </div>
@@ -242,63 +189,10 @@
 
   <div class="card">
     <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:1.1rem;">
-      <p class="lbl" style="margin:0;">費用項目排行（四–七月累計）</p>
+      <p class="lbl" style="margin:0;" id="kz-rank-title">費用項目排行</p>
       <p style="margin:0; font-size:12px; color:var(--text-2);"><span style="color:var(--fc);">● 固定</span>&nbsp;&nbsp;<span style="color:var(--vc);">● 變動</span></p>
     </div>
-    <div style="display:flex; flex-direction:column; gap:9px;">
-
-      <div style="display:grid; grid-template-columns:82px 1fr 92px; align-items:center; gap:10px; font-size:12.5px;">
-        <span style="color:var(--text-2);">食材成本</span>
-        <div style="background:var(--card-2); border-radius:4px; height:14px;"><div style="width:100.0%; height:100%; background:var(--vc); border-radius:4px;"></div></div>
-        <span style="text-align:right;">4,475,824</span>
-      </div>
-      <div style="display:grid; grid-template-columns:82px 1fr 92px; align-items:center; gap:10px; font-size:12.5px;">
-        <span style="color:var(--text-2);">人事成本</span>
-        <div style="background:var(--card-2); border-radius:4px; height:14px;"><div style="width:59.4%; height:100%; background:var(--fc); border-radius:4px;"></div></div>
-        <span style="text-align:right;">2,656,900</span>
-      </div>
-      <div style="display:grid; grid-template-columns:82px 1fr 92px; align-items:center; gap:10px; font-size:12.5px;">
-        <span style="color:var(--text-2);">雜項支出</span>
-        <div style="background:var(--card-2); border-radius:4px; height:14px;"><div style="width:9.1%; height:100%; background:var(--vc); border-radius:4px;"></div></div>
-        <span style="text-align:right;">409,382</span>
-      </div>
-      <div style="display:grid; grid-template-columns:82px 1fr 92px; align-items:center; gap:10px; font-size:12.5px;">
-        <span style="color:var(--text-2);">房租</span>
-        <div style="background:var(--card-2); border-radius:4px; height:14px;"><div style="width:7.1%; height:100%; background:var(--fc); border-radius:4px;"></div></div>
-        <span style="text-align:right;">320,000</span>
-      </div>
-      <div style="display:grid; grid-template-columns:82px 1fr 92px; align-items:center; gap:10px; font-size:12.5px;">
-        <span style="color:var(--text-2);">電費</span>
-        <div style="background:var(--card-2); border-radius:4px; height:14px;"><div style="width:6.3%; height:100%; background:var(--fc); border-radius:4px;"></div></div>
-        <span style="text-align:right;">280,269</span>
-      </div>
-      <div style="display:grid; grid-template-columns:82px 1fr 92px; align-items:center; gap:10px; font-size:12.5px;">
-        <span style="color:var(--text-2);">耗材成本</span>
-        <div style="background:var(--card-2); border-radius:4px; height:14px;"><div style="width:4.7%; height:100%; background:var(--vc); border-radius:4px;"></div></div>
-        <span style="text-align:right;">210,908</span>
-      </div>
-      <div style="display:grid; grid-template-columns:82px 1fr 92px; align-items:center; gap:10px; font-size:12.5px;">
-        <span style="color:var(--text-2);">勞保</span>
-        <div style="background:var(--card-2); border-radius:4px; height:14px;"><div style="width:2.8%; height:100%; background:var(--fc); border-radius:4px;"></div></div>
-        <span style="text-align:right;">123,404</span>
-      </div>
-      <div style="display:grid; grid-template-columns:82px 1fr 92px; align-items:center; gap:10px; font-size:12.5px;">
-        <span style="color:var(--text-2);">健保</span>
-        <div style="background:var(--card-2); border-radius:4px; height:14px;"><div style="width:1.9%; height:100%; background:var(--fc); border-radius:4px;"></div></div>
-        <span style="text-align:right;">86,244</span>
-      </div>
-      <div style="display:grid; grid-template-columns:82px 1fr 92px; align-items:center; gap:10px; font-size:12.5px;">
-        <span style="color:var(--text-2);">勞退</span>
-        <div style="background:var(--card-2); border-radius:4px; height:14px;"><div style="width:1.3%; height:100%; background:var(--fc); border-radius:4px;"></div></div>
-        <span style="text-align:right;">56,185</span>
-      </div>
-      <div style="display:grid; grid-template-columns:82px 1fr 92px; align-items:center; gap:10px; font-size:12.5px;">
-        <span style="color:var(--text-2);">其餘 8 項</span>
-        <div style="background:var(--card-2); border-radius:4px; height:14px;"><div style="width:1.7%; height:100%; background:var(--fc); border-radius:4px;"></div></div>
-        <span style="text-align:right;">90,674</span>
-      </div>
-
-    </div>
+    <div id="kz-rank" style="display:flex; flex-direction:column; gap:9px;"></div>
   </div>
 
   <hr class="rule" />
@@ -377,6 +271,158 @@ document.getElementById('kz-month').addEventListener('change', kzRender);
 document.getElementById('kz-cat').addEventListener('change', kzRender);
 document.getElementById('kz-total').textContent = LEDGER.length;
 kzRender();
+</script>
+
+<script>
+var MATRIX = [{"cat":"實收","四月":1873550,"五月":3093057,"六月":2820436,"七月":2526283,"八月":null},{"cat":"淨額(未稅)","四月":-469706,"五月":869960,"六月":621981,"七月":568785,"八月":null},{"cat":"實際支出","四月":2343256,"五月":2223097,"六月":2198455,"七月":1957498,"八月":null},{"cat":"固定成本FC","四月":836766,"五月":1046161,"六月":975881,"七月":767384,"八月":null},{"cat":"人事成本","四月":611910,"五月":708448,"六月":661188,"七月":675354,"八月":null},{"cat":"勞保","四月":0,"五月":69258,"六月":54146,"七月":null,"八月":null},{"cat":"勞退","四月":0,"五月":31121,"六月":25064,"七月":null,"八月":null},{"cat":"健保","四月":24976,"五月":32520,"六月":28748,"七月":null,"八月":null},{"cat":"房租","四月":80000,"五月":80000,"六月":80000,"七月":80000,"八月":null},{"cat":"電費","四月":97266,"五月":91502,"六月":91501,"七月":null,"八月":null},{"cat":"水費","四月":3684,"五月":4211,"六月":4211,"七月":null,"八月":null},{"cat":"會計記帳費","四月":0,"五月":2208,"六月":2207,"七月":null,"八月":null},{"cat":"憑證統整費","四月":0,"五月":6000,"六月":6000,"七月":null,"八月":null},{"cat":"電信費","四月":0,"五月":0,"六月":1295,"七月":null,"八月":null},{"cat":"廚餘清運","四月":1515,"五月":3015,"六月":3000,"七月":3000,"八月":null},{"cat":"垃圾清運","四月":6630,"五月":8863,"六月":11506,"七月":null,"八月":null},{"cat":"環境消毒","四月":3000,"五月":3000,"六月":3000,"七月":null,"八月":null},{"cat":"中興保全","四月":7785,"五月":0,"六月":0,"七月":6015,"八月":null},{"cat":"室內花藝","四月":0,"五月":6015,"六月":4015,"七月":3015,"八月":null},{"cat":"變動成本VC","四月":1506490,"五月":1176936,"六月":1222574,"七月":1190114,"八月":null},{"cat":"食材成本","四月":1167436,"五月":1081281,"六月":1134688,"七月":1092419,"八月":46398},{"cat":"耗材成本","四月":79871,"五月":53562,"六月":45005,"七月":32470,"八月":1965},{"cat":"雜項支出","四月":259183,"五月":42093,"六月":42881,"七月":65225,"八月":null},{"cat":"食材庫存","四月":0,"五月":229022,"六月":303054,"七月":null,"八月":null},{"cat":"耗材庫存","四月":0,"五月":0,"六月":32271,"七月":null,"八月":null},{"cat":"營業稅預留","四月":89217,"五月":147288,"六月":134306,"七月":null,"八月":null}];
+var KZ_MONTHS = ['四月','五月','六月','七月','八月'];
+var KZ_MONTH_TO_LEDGER = { '四月':'4月','五月':'5月','六月':'6月','七月':'7月','八月':'8月' };
+var KZ_MATRIX_MAP = {};
+MATRIX.forEach(function(r) { KZ_MATRIX_MAP[r.cat] = r; });
+var KZ_DONUT_GROUPS = [
+  { label: '食材成本', color: 'var(--vc)', cats: ['食材成本'] },
+  { label: '人事關聯', color: 'var(--fc)', cats: ['人事成本','勞保','勞退','健保'] },
+  { label: '雜項支出', color: 'var(--vc-3)', cats: ['雜項支出'] },
+  { label: '房租', color: 'var(--fc-2)', cats: ['房租'] },
+  { label: '水電', color: 'var(--fc-3)', cats: ['電費','水費'] },
+  { label: '耗材成本', color: 'var(--vc-2)', cats: ['耗材成本'] },
+  { label: '其他固定', color: 'var(--fc-4)', cats: ['會計記帳費','憑證統整費','電信費','廚餘清運','垃圾清運','環境消毒','中興保全','室內花藝'] }
+];
+var KZ_RANK_ITEMS = ['食材成本','人事成本','雜項支出','房租','電費','耗材成本','勞保','健保','勞退','垃圾清運','中興保全','室內花藝','水費','憑證統整費','廚餘清運','環境消毒','會計記帳費','電信費'];
+
+function kzMoney(v) {
+  var sign = v < 0 ? '−' : '';
+  return sign + 'NT$' + Math.abs(Math.round(v)).toLocaleString();
+}
+function kzSum(cat, months) {
+  var row = KZ_MATRIX_MAP[cat];
+  var total = 0, any = false;
+  months.forEach(function(m) {
+    var v = row[m];
+    if (v !== null && v !== undefined) { total += v; any = true; }
+  });
+  return any ? total : null;
+}
+function kzPopulateRangeSelects() {
+  var from = document.getElementById('kz-from');
+  var to = document.getElementById('kz-to');
+  KZ_MONTHS.forEach(function(m, i) {
+    from.appendChild(new Option(m, i));
+    to.appendChild(new Option(m, i));
+  });
+  from.value = 0;
+  to.value = 3;
+}
+function kzCurrentMonths() {
+  var fromI = parseInt(document.getElementById('kz-from').value, 10);
+  var toI = parseInt(document.getElementById('kz-to').value, 10);
+  if (fromI > toI) { var t = fromI; fromI = toI; toI = t; }
+  return KZ_MONTHS.slice(fromI, toI + 1);
+}
+function kzRenderSummary() {
+  var months = kzCurrentMonths();
+  var label = months.length === 1 ? months[0] : (months[0] + '–' + months[months.length - 1]);
+
+  var revenue = kzSum('實收', months) || 0;
+  var expense = kzSum('實際支出', months) || 0;
+  var net = kzSum('淨額(未稅)', months) || 0;
+  var margin = revenue ? (net / revenue * 100) : 0;
+  var ledgerMonths = months.map(function(m) { return KZ_MONTH_TO_LEDGER[m]; });
+  var capex = LEDGER.filter(function(r) { return r.cat === '資本支出' && ledgerMonths.indexOf(r.month) !== -1; })
+    .reduce(function(s, r) { return s + r.amt; }, 0);
+
+  document.getElementById('kz-range-note').textContent = '顯示範圍：' + label + (months.indexOf('八月') !== -1 ? '（8月資料未滿月）' : '');
+  document.getElementById('kz-kpi-revenue').textContent = kzMoney(revenue);
+  document.getElementById('kz-kpi-expense').textContent = kzMoney(expense);
+  document.getElementById('kz-kpi-net').textContent = kzMoney(net);
+  document.getElementById('kz-kpi-net').style.color = net >= 0 ? 'var(--green)' : 'var(--red)';
+  document.getElementById('kz-kpi-margin').textContent = margin.toFixed(1) + '%';
+  document.getElementById('kz-kpi-capex').textContent = kzMoney(capex);
+  document.getElementById('kz-rank-title').textContent = '費用項目排行（' + label + '累計）';
+
+  var fc = kzSum('固定成本FC', months) || 0;
+  var vc = kzSum('變動成本VC', months) || 0;
+  var fcvc = fc + vc;
+  var fcPct = fcvc ? (fc / fcvc * 100) : 0;
+  var vcPct = 100 - fcPct;
+  document.getElementById('kz-meter-legend').innerHTML =
+    '<span style="color:var(--fc);">● 固定成本 ' + fcPct.toFixed(1) + '%</span>&nbsp;&nbsp;<span style="color:var(--vc);">● 變動成本 ' + vcPct.toFixed(1) + '%</span>';
+  document.getElementById('kz-meter-bar').innerHTML =
+    '<div style="width:' + fcPct + '%; background:var(--fc);"></div><div style="width:' + vcPct + '%; background:var(--vc);"></div>';
+
+  var trendVals = months.map(function(m) {
+    return { m: m, rev: KZ_MATRIX_MAP['實收'][m], exp: KZ_MATRIX_MAP['實際支出'][m], net: KZ_MATRIX_MAP['淨額(未稅)'][m] };
+  });
+  var maxV = Math.max.apply(null, trendVals.map(function(t) { return Math.max(t.rev || 0, t.exp || 0); }).concat([1]));
+  document.getElementById('kz-trend').innerHTML = trendVals.map(function(t) {
+    if (t.rev === null) {
+      return '<div style="display:flex; flex-direction:column; align-items:center; gap:6px; flex:1; height:100%; justify-content:flex-end;">' +
+        '<p style="margin:0; font-size:11px; color:var(--text-3);">進行中</p>' +
+        '<p style="margin:0; font-size:12px; color:var(--text-2);">' + t.m + '</p></div>';
+    }
+    var revH = (t.rev / maxV * 100).toFixed(1);
+    var expH = (t.exp / maxV * 100).toFixed(1);
+    var netTxt = (t.net >= 0 ? '+' : '−') + Math.round(Math.abs(t.net) / 10000) + '萬';
+    var netCol = t.net >= 0 ? 'var(--green)' : 'var(--red)';
+    return '<div style="display:flex; flex-direction:column; align-items:center; gap:6px; flex:1; height:100%; justify-content:flex-end;">' +
+      '<div style="display:flex; align-items:flex-end; gap:4px; height:100%;">' +
+      '<div style="width:16px; height:' + revH + '%; background:var(--gold); border-radius:3px 3px 0 0;"></div>' +
+      '<div style="width:16px; height:' + expH + '%; background:var(--card-2); border:1px solid var(--line); border-radius:3px 3px 0 0;"></div>' +
+      '</div>' +
+      '<p style="margin:0; font-size:12px; color:var(--text-2);">' + t.m + '</p>' +
+      '<p style="margin:0; font-size:11px; color:' + netCol + ';">' + netTxt + '</p></div>';
+  }).join('');
+
+  var groupSums = KZ_DONUT_GROUPS.map(function(g) {
+    var sum = g.cats.reduce(function(s, c) { return s + (kzSum(c, months) || 0); }, 0);
+    return { label: g.label, color: g.color, value: sum };
+  });
+  var donutTotal = groupSums.reduce(function(s, g) { return s + g.value; }, 0) || 1;
+  var deg = 0;
+  var stops = groupSums.map(function(g) {
+    var pct = g.value / donutTotal * 100;
+    var d0 = deg, d1 = deg + pct / 100 * 360;
+    deg = d1;
+    return g.color + ' ' + d0.toFixed(2) + 'deg ' + d1.toFixed(2) + 'deg';
+  });
+  document.getElementById('kz-donut').style.background = 'conic-gradient(' + stops.join(', ') + ')';
+  document.getElementById('kz-donut-legend').innerHTML = groupSums
+    .slice()
+    .sort(function(a, b) { return b.value - a.value; })
+    .map(function(g) {
+      var pct = (g.value / donutTotal * 100).toFixed(1);
+      return '<div style="display:flex; justify-content:space-between;"><span><span style="display:inline-block; width:8px; height:8px; border-radius:2px; background:' + g.color + '; margin-right:6px;"></span>' + g.label + '</span><span style="color:var(--text-2);">' + pct + '%</span></div>';
+    }).join('');
+
+  var items = KZ_RANK_ITEMS.map(function(cat) {
+    return { cat: cat, value: kzSum(cat, months) || 0, tag: KZ_MATRIX_MAP[cat] ? undefined : undefined };
+  }).filter(function(i) { return i.value > 0; }).sort(function(a, b) { return b.value - a.value; });
+  var fcSet = ['人事成本','勞保','勞退','健保','房租','電費','水費','會計記帳費','憑證統整費','電信費','廚餘清運','垃圾清運','環境消毒','中興保全','室內花藝'];
+  var top = items.slice(0, 10);
+  var rest = items.slice(10);
+  var restSum = rest.reduce(function(s, i) { return s + i.value; }, 0);
+  var maxItem = top.length ? top[0].value : 1;
+  var rankHtml = top.map(function(i) {
+    var color = fcSet.indexOf(i.cat) !== -1 ? 'var(--fc)' : 'var(--vc)';
+    var pct = (i.value / maxItem * 100).toFixed(1);
+    return '<div style="display:grid; grid-template-columns:82px 1fr 92px; align-items:center; gap:10px; font-size:12.5px;">' +
+      '<span style="color:var(--text-2);">' + i.cat + '</span>' +
+      '<div style="background:var(--card-2); border-radius:4px; height:14px;"><div style="width:' + pct + '%; height:100%; background:' + color + '; border-radius:4px;"></div></div>' +
+      '<span style="text-align:right;">' + Math.round(i.value).toLocaleString() + '</span></div>';
+  }).join('');
+  if (rest.length) {
+    var pct2 = (restSum / maxItem * 100).toFixed(1);
+    rankHtml += '<div style="display:grid; grid-template-columns:82px 1fr 92px; align-items:center; gap:10px; font-size:12.5px;">' +
+      '<span style="color:var(--text-2);">其餘 ' + rest.length + ' 項</span>' +
+      '<div style="background:var(--card-2); border-radius:4px; height:14px;"><div style="width:' + pct2 + '%; height:100%; background:var(--fc);"></div></div>' +
+      '<span style="text-align:right;">' + Math.round(restSum).toLocaleString() + '</span></div>';
+  }
+  document.getElementById('kz-rank').innerHTML = rankHtml;
+}
+kzPopulateRangeSelects();
+document.getElementById('kz-from').addEventListener('change', kzRenderSummary);
+document.getElementById('kz-to').addEventListener('change', kzRenderSummary);
+kzRenderSummary();
 </script>
 
 <script>
