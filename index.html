@@ -102,6 +102,19 @@
   </div>
 
   <div id="kz-view-dash">
+  <div class="tile" style="margin-bottom:12px;">
+    <div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:8px;">
+      <p class="lbl" style="margin:0;">資金水位（即時，不受上方月份篩選影響）</p>
+    </div>
+    <p class="num" id="kz-cash-level" style="margin-top:4px;">—</p>
+    <div style="display:flex; gap:20px; flex-wrap:wrap; margin-top:10px; padding-top:10px; border-top:1px solid var(--line); font-size:12px; color:var(--text-2);">
+      <span>總資本(含息) <b id="kz-cash-capital" style="color:var(--text); font-weight:500;">—</b></span>
+      <span>應付款預算 <b id="kz-cash-payable" style="color:var(--text); font-weight:500;">—</b></span>
+      <span>已支出總額 <b id="kz-cash-spent" style="color:var(--text); font-weight:500;">—</b></span>
+      <span>帳簿實際餘額 <b id="kz-cash-balance" style="color:var(--text); font-weight:500;">—</b></span>
+    </div>
+  </div>
+
   <div class="kpis">
     <div class="tile">
       <p class="lbl">實收</p>
@@ -207,8 +220,25 @@
     </div>
   </div>
 
+  <hr class="rule" />
+
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:8px; margin-bottom:.5rem;">
+      <p class="lbl" style="margin:0;">進行中預算編列（共 <span id="kz-budget-count">0</span> 項）</p>
+      <p style="margin:0; font-size:12px; color:var(--text-2);">合計 <span id="kz-budget-total">—</span></p>
+    </div>
+    <p style="margin:0 0 1rem; font-size:12px; color:var(--text-3);">這些是已編列但尚未實際支出的預算，不計入上方帳務明細與實際支出總額</p>
+    <div class="scrollx">
+    <table style="min-width:480px;">
+      <thead><tr><th>項目</th><th>進度</th><th style="text-align:right;">預算金額</th></tr></thead>
+      <tbody id="kz-budget-tbody"></tbody>
+      <tfoot id="kz-budget-tfoot"></tfoot>
+    </table>
+    </div>
+  </div>
+
   <p style="margin:1.5rem 0 0; font-size:11.5px; color:var(--text-3);">
-    資料來源：絆Kizuna 運營財務_資金管理.xlsx／運營實況分頁（月度損益）＋逐筆帳務紀錄
+    資料來源：絆Kizuna 運營財務_資金管理.xlsx／運營實況分頁（月度損益）＋逐筆帳務紀錄＋進行中預算編列
   </p>
   </div>
 
@@ -522,6 +552,25 @@ document.getElementById('kz-to').addEventListener('change', kzRenderSummary);
 document.getElementById('kz-mode-single').addEventListener('click', function() { kzSetMode('single'); });
 document.getElementById('kz-mode-range').addEventListener('click', function() { kzSetMode('range'); });
 kzRenderSummary();
+
+var CASH = {"total_capital":14527841,"payable_budget":1652936,"cash_level":2481118,"total_spent":21320588,"book_balance":4134054};
+var BUDGET = [{"item":"收銀開櫃 找零備用","budget":10000,"progress":"收營開櫃保管"},{"item":"收銀掌櫃 換錢備用 (未支出)","budget":10000,"progress":"收營掌櫃保管"},{"item":"現金支出預備 (請款備用) 管理員：Tim","budget":120680,"progress":"現金支出預留"},{"item":"8月食材現金支出 預撥款 管理員：保鈞","budget":20844,"progress":"食材支出預撥"},{"item":"8月雜項現金支出 預撥款 管理員：庭維","budget":10885,"progress":"雜項支出預撥"},{"item":"品牌形象：主餐小卡,QR評論卡,飲品杯墊  輸出","budget":25000,"progress":"進行中"},{"item":"小包廂客座空間 風管修正","budget":6000,"progress":"已完工"},{"item":"固定成本：4月營業稅務預留","budget":89217,"progress":"預估值"},{"item":"固定成本：5月營業稅務預留","budget":147288,"progress":"預估值"},{"item":"固定成本：6月營業稅務預留","budget":134306,"progress":"預估值"},{"item":"變動成本：7月食材 即時估算","budget":947096,"progress":"預估40%"},{"item":"固定成本：5月憑證統整費","budget":6000,"progress":"預估值"},{"item":"固定成本：6月憑證統整費","budget":6000,"progress":"預估值"},{"item":"固定成本：7月憑證統整費","budget":6000,"progress":"預估值"},{"item":"固定成本：7月勞保費預估","budget":42569,"progress":"預估值"},{"item":"固定成本：7月勞退費預估","budget":30173,"progress":"預估值"},{"item":"固定成本：7月健保費預估","budget":22848,"progress":"預估值"},{"item":"固定成本：7月電費預估","budget":90000,"progress":"預估值"},{"item":"固定成本：7月水費預估","budget":3000,"progress":"預估值"},{"item":"固定成本：7月記帳費預估","budget":2500,"progress":"預估值"},{"item":"固定成本：7月垃圾清運費預估","budget":12000,"progress":"預估值"},{"item":"固定成本：7月環境消毒費預估","budget":3000,"progress":"預估值"},{"item":"固定成本：7月電信費預估","budget":2000,"progress":"預估值"},{"item":"設備新增：壓力鍋","budget":26210,"progress":"預估值"},{"item":"設備新增：庫存層架","budget":20000,"progress":"預估值"}];
+
+document.getElementById('kz-cash-level').textContent = kzMoney(CASH.cash_level);
+document.getElementById('kz-cash-capital').textContent = kzMoney(CASH.total_capital);
+document.getElementById('kz-cash-payable').textContent = kzMoney(CASH.payable_budget);
+document.getElementById('kz-cash-spent').textContent = kzMoney(CASH.total_spent);
+document.getElementById('kz-cash-balance').textContent = kzMoney(CASH.book_balance);
+
+var kzBudgetSorted = BUDGET.slice().sort(function(a, b) { return b.budget - a.budget; });
+document.getElementById('kz-budget-count').textContent = BUDGET.length;
+document.getElementById('kz-budget-tbody').innerHTML = kzBudgetSorted.map(function(r) {
+  return '<tr><td>' + r.item + '</td><td style="color:var(--text-2);">' + r.progress + '</td><td style="text-align:right;">' + r.budget.toLocaleString() + '</td></tr>';
+}).join('');
+var kzBudgetTotal = BUDGET.reduce(function(s, r) { return s + r.budget; }, 0);
+document.getElementById('kz-budget-total').textContent = kzMoney(kzBudgetTotal);
+document.getElementById('kz-budget-tfoot').innerHTML =
+  '<tr><td colspan="2">合計</td><td style="text-align:right;">' + kzBudgetTotal.toLocaleString() + '</td></tr>';
 </script>
 
 <script>
