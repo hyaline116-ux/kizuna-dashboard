@@ -475,28 +475,34 @@ function kzRenderDonuts(months, label) {
       circle = '<div style="width:' + size + 'px; height:' + size + 'px; border-radius:50%; background:var(--card-2); display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--text-3); text-align:center; padding:8px; box-sizing:border-box; flex-shrink:0;">資料不足</div>';
       listHtml = '<p style="margin:0; font-size:12.5px; color:var(--text-3);">本月尚無足夠資料</p>';
     } else {
+      var totalPct = total / revenue * 100;
+      var marginPct = 100 - totalPct;
+      var marginColor = marginPct >= 0 ? 'var(--green)' : 'var(--red)';
+      var overflow = totalPct >= 100;
+      var scale = overflow ? (360 / (totalPct / 100 * 360)) : 1;
       var deg = 0;
       var stops = [];
       groupVals.forEach(function(g) {
         if (deg >= 360) return;
         var pct = g.value / revenue * 100;
-        var d0 = deg, d1 = Math.min(360, deg + pct / 100 * 360);
+        var d0 = deg, d1 = Math.min(360, deg + pct / 100 * 360 * scale);
         deg = d1;
         stops.push(g.color + ' ' + d0.toFixed(2) + 'deg ' + d1.toFixed(2) + 'deg');
       });
-      var marginPct = 100 - (total / revenue * 100);
-      if (deg < 360) {
-        stops.push('var(--card-2) ' + deg.toFixed(2) + 'deg 360deg');
+      if (!overflow && deg < 360) {
+        stops.push(marginColor + ' ' + deg.toFixed(2) + 'deg 360deg');
       }
-      circle = '<div style="width:' + size + 'px; height:' + size + 'px; border-radius:50%; flex-shrink:0; background:conic-gradient(' + stops.join(', ') + ');' +
-        '-webkit-mask: radial-gradient(farthest-side, transparent 56%, #000 57%); mask: radial-gradient(farthest-side, transparent 56%, #000 57%);"></div>';
+      circle = '<div style="position:relative; width:' + size + 'px; height:' + size + 'px; flex-shrink:0;">' +
+        '<div style="width:100%; height:100%; border-radius:50%; background:conic-gradient(' + stops.join(', ') + ');' +
+        '-webkit-mask: radial-gradient(farthest-side, transparent 56%, #000 57%); mask: radial-gradient(farthest-side, transparent 56%, #000 57%);"></div>' +
+        '<div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:500; color:' + marginColor + ';">' + marginPct.toFixed(0) + '%</div>' +
+        '</div>';
       listHtml = groupVals.filter(function(g) { return g.value > 0; })
         .sort(function(a, b) { return b.value - a.value; })
         .map(function(g) {
           var pct = (g.value / revenue * 100).toFixed(1);
           return '<div style="display:flex; justify-content:space-between; gap:8px;"><span><span style="display:inline-block; width:8px; height:8px; border-radius:2px; background:' + g.color + '; margin-right:6px;"></span>' + g.label + '</span><span style="color:var(--text-2);">' + pct + '%</span></div>';
         }).join('');
-      var marginColor = marginPct >= 0 ? 'var(--green)' : 'var(--red)';
       var marginLabel = marginPct >= 0 ? '淨利' : '虧損';
       listHtml += '<div style="display:flex; justify-content:space-between; gap:8px; border-top:1px solid var(--line); margin-top:4px; padding-top:4px;">' +
         '<span><span style="display:inline-block; width:8px; height:8px; border-radius:2px; background:' + marginColor + '; margin-right:6px;"></span>' + marginLabel + '</span>' +
