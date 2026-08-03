@@ -104,7 +104,7 @@
   <div id="kz-view-dash">
   <div class="tile" style="margin-bottom:12px;">
     <div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:8px;">
-      <p class="lbl" style="margin:0;">資金水位（即時，不受上方月份篩選影響）</p>
+      <p class="lbl" style="margin:0;">資金水位</p>
     </div>
     <p class="num" id="kz-cash-level" style="margin-top:4px;">—</p>
     <div style="margin-top:12px;">
@@ -117,7 +117,6 @@
       </div>
     </div>
     <div style="display:flex; gap:20px; flex-wrap:wrap; margin-top:10px; padding-top:10px; border-top:1px solid var(--line); font-size:12px; color:var(--text-2);">
-      <span>總資本(含息) <b id="kz-cash-capital" style="color:var(--text); font-weight:500;">—</b></span>
       <span>應付款預算 <b id="kz-cash-payable" style="color:var(--text); font-weight:500;">—</b></span>
       <span>已支出總額 <b id="kz-cash-spent" style="color:var(--text); font-weight:500;">—</b></span>
       <span>帳簿實際餘額 <b id="kz-cash-balance" style="color:var(--text); font-weight:500;">—</b></span>
@@ -568,7 +567,6 @@ var BUDGET = [{"item":"收銀開櫃 找零備用","budget":10000,"progress":"收
 
 var kzCashAdjusted = CASH.cash_level - CASH.pending_transfer;
 document.getElementById('kz-cash-level').textContent = kzMoney(kzCashAdjusted);
-document.getElementById('kz-cash-capital').textContent = kzMoney(CASH.total_capital);
 document.getElementById('kz-cash-payable').textContent = kzMoney(CASH.payable_budget);
 document.getElementById('kz-cash-spent').textContent = kzMoney(CASH.total_spent);
 document.getElementById('kz-cash-balance').textContent = kzMoney(CASH.book_balance);
