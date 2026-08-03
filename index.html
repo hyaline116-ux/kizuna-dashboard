@@ -85,8 +85,12 @@
       <p class="lbl" style="margin-top:4px;">營運財務總覽</p>
     </div>
     <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+      <div style="display:flex; border:1px solid var(--line); border-radius:8px; overflow:hidden;">
+        <button type="button" id="kz-mode-single" style="background:var(--card-2); color:var(--text); border:none; font:inherit; font-size:12.5px; padding:7px 10px; cursor:pointer;">單月</button>
+        <button type="button" id="kz-mode-range" style="background:var(--gold); color:#2c2008; border:none; font:inherit; font-size:12.5px; font-weight:500; padding:7px 10px; cursor:pointer;">範圍</button>
+      </div>
       <select class="q" id="kz-from"></select>
-      <span style="color:var(--text-3); font-size:13px;">–</span>
+      <span id="kz-range-sep" style="color:var(--text-3); font-size:13px;">–</span>
       <select class="q" id="kz-to"></select>
     </div>
   </div>
@@ -307,8 +311,23 @@ function kzPopulateRangeSelects() {
   from.value = 0;
   to.value = 3;
 }
+var kzRangeMode = 'range';
+function kzSetMode(mode) {
+  kzRangeMode = mode;
+  var single = mode === 'single';
+  document.getElementById('kz-mode-single').style.background = single ? 'var(--gold)' : 'var(--card-2)';
+  document.getElementById('kz-mode-single').style.color = single ? '#2c2008' : 'var(--text)';
+  document.getElementById('kz-mode-single').style.fontWeight = single ? '500' : '400';
+  document.getElementById('kz-mode-range').style.background = single ? 'var(--card-2)' : 'var(--gold)';
+  document.getElementById('kz-mode-range').style.color = single ? 'var(--text)' : '#2c2008';
+  document.getElementById('kz-mode-range').style.fontWeight = single ? '400' : '500';
+  document.getElementById('kz-to').style.display = single ? 'none' : '';
+  document.getElementById('kz-range-sep').style.display = single ? 'none' : '';
+  kzRenderSummary();
+}
 function kzCurrentMonths() {
   var fromI = parseInt(document.getElementById('kz-from').value, 10);
+  if (kzRangeMode === 'single') { return [KZ_MONTHS[fromI]]; }
   var toI = parseInt(document.getElementById('kz-to').value, 10);
   if (fromI > toI) { var t = fromI; fromI = toI; toI = t; }
   return KZ_MONTHS.slice(fromI, toI + 1);
@@ -482,6 +501,8 @@ function kzRenderDonuts(months, label) {
 kzPopulateRangeSelects();
 document.getElementById('kz-from').addEventListener('change', kzRenderSummary);
 document.getElementById('kz-to').addEventListener('change', kzRenderSummary);
+document.getElementById('kz-mode-single').addEventListener('click', function() { kzSetMode('single'); });
+document.getElementById('kz-mode-range').addEventListener('click', function() { kzSetMode('range'); });
 kzRenderSummary();
 </script>
 
