@@ -108,6 +108,15 @@
     </div>
     <p class="num" id="kz-cash-level" style="margin-top:4px;">—</p>
     <p style="margin:2px 0 0; font-size:12px; color:var(--text-3);" id="kz-cash-level-note"></p>
+    <div style="margin-top:12px;">
+      <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-2); margin-bottom:6px;">
+        <span id="kz-health-label">資金水位健康線 NT$3,000,000</span>
+        <span id="kz-health-pct" style="font-weight:500;">—</span>
+      </div>
+      <div style="height:8px; border-radius:4px; overflow:hidden; background:var(--card-2);">
+        <div id="kz-health-bar" style="height:100%; width:0%;"></div>
+      </div>
+    </div>
     <div style="display:flex; gap:20px; flex-wrap:wrap; margin-top:10px; padding-top:10px; border-top:1px solid var(--line); font-size:12px; color:var(--text-2);">
       <span>總資本(含息) <b id="kz-cash-capital" style="color:var(--text); font-weight:500;">—</b></span>
       <span>應付款預算 <b id="kz-cash-payable" style="color:var(--text); font-weight:500;">—</b></span>
@@ -567,6 +576,17 @@ document.getElementById('kz-cash-payable').textContent = kzMoney(CASH.payable_bu
 document.getElementById('kz-cash-spent').textContent = kzMoney(CASH.total_spent);
 document.getElementById('kz-cash-balance').textContent = kzMoney(CASH.book_balance);
 document.getElementById('kz-cash-pending').textContent = kzMoney(CASH.pending_transfer);
+
+var KZ_CASH_HEALTH_LINE = 3000000;
+var kzHealthPct = kzCashAdjusted / KZ_CASH_HEALTH_LINE * 100;
+var kzHealthy = kzCashAdjusted >= KZ_CASH_HEALTH_LINE;
+document.getElementById('kz-health-label').textContent = '資金水位健康線 ' + kzMoney(KZ_CASH_HEALTH_LINE);
+document.getElementById('kz-health-pct').textContent =
+  (kzHealthy ? '✓ 已達標 ' : '未達標 ') + Math.max(0, kzHealthPct).toFixed(0) + '%' +
+  (kzHealthy ? '' : '（距健康線尚差 ' + kzMoney(KZ_CASH_HEALTH_LINE - kzCashAdjusted) + '）');
+document.getElementById('kz-health-pct').style.color = kzHealthy ? 'var(--green)' : 'var(--red)';
+document.getElementById('kz-health-bar').style.width = Math.min(100, Math.max(0, kzHealthPct)) + '%';
+document.getElementById('kz-health-bar').style.background = kzHealthy ? 'var(--green)' : 'var(--red)';
 
 var kzBudgetSorted = BUDGET.slice().sort(function(a, b) { return b.budget - a.budget; });
 document.getElementById('kz-budget-count').textContent = BUDGET.length;
