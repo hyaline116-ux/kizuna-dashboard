@@ -107,7 +107,6 @@
       <p class="lbl" style="margin:0;">資金水位（即時，不受上方月份篩選影響）</p>
     </div>
     <p class="num" id="kz-cash-level" style="margin-top:4px;">—</p>
-    <p style="margin:2px 0 0; font-size:12px; color:var(--text-3);" id="kz-cash-level-note"></p>
     <div style="margin-top:12px;">
       <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-2); margin-bottom:6px;">
         <span id="kz-health-label">資金水位健康線 NT$3,000,000</span>
@@ -569,8 +568,6 @@ var BUDGET = [{"item":"收銀開櫃 找零備用","budget":10000,"progress":"收
 
 var kzCashAdjusted = CASH.cash_level - CASH.pending_transfer;
 document.getElementById('kz-cash-level').textContent = kzMoney(kzCashAdjusted);
-document.getElementById('kz-cash-level-note').textContent =
-  '原始資金水位 ' + kzMoney(CASH.cash_level) + '，已扣除約定轉帳尚未出款 ' + kzMoney(CASH.pending_transfer) + '（如已編列但銀行尚未實際扣款的薪資等）';
 document.getElementById('kz-cash-capital').textContent = kzMoney(CASH.total_capital);
 document.getElementById('kz-cash-payable').textContent = kzMoney(CASH.payable_budget);
 document.getElementById('kz-cash-spent').textContent = kzMoney(CASH.total_spent);
