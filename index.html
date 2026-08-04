@@ -158,12 +158,15 @@
   <hr class="rule" />
 
   <div class="card">
-    <div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:8px; margin-bottom:1.1rem;">
-      <p class="lbl" style="margin:0;">月度趨勢：實收（依收款管道）vs 支出</p>
-      <p style="margin:0; font-size:11.5px; color:var(--text-3);">滑鼠移到色塊上看金額與佔比</p>
-    </div>
-    <div id="kz-trend" style="display:flex; align-items:flex-end; justify-content:space-between; gap:14px; height:200px;"></div>
+    <p class="lbl" style="margin-bottom:1.1rem;">月度趨勢：實收（依收款管道）vs 支出</p>
+    <div id="kz-trend" style="display:flex; align-items:flex-end; justify-content:space-between; gap:14px; height:210px;"></div>
     <div id="kz-trend-legend" style="display:flex; gap:14px; flex-wrap:wrap; margin-top:1.1rem; padding-top:.9rem; border-top:1px solid var(--line); font-size:12px; color:var(--text-2);"></div>
+    <div class="scrollx" style="margin-top:1rem;">
+      <table style="min-width:420px;">
+        <thead id="kz-rev-table-thead"></thead>
+        <tbody id="kz-rev-table-tbody"></tbody>
+      </table>
+    </div>
   </div>
 
   <hr class="rule" />
@@ -331,6 +334,11 @@ function kzMoney(v) {
   var sign = v < 0 ? '−' : '';
   return sign + 'NT$' + Math.abs(Math.round(v)).toLocaleString();
 }
+function kzShortMoney(v) {
+  if (v === null || v === undefined) return '—';
+  var sign = v < 0 ? '−' : '';
+  return sign + Math.round(Math.abs(v) / 10000) + '萬';
+}
 function kzSum(cat, months) {
   var row = KZ_MATRIX_MAP[cat];
   var total = 0, any = false;
@@ -429,7 +437,10 @@ function kzRenderSummary() {
     } else {
       revBar = '<div title="實收合計 ' + kzMoney(t.rev) + '" style="width:18px; height:' + revH + '%; background:var(--gold); border-radius:3px 3px 0 0;"></div>';
     }
-    return '<div style="display:flex; flex-direction:column; align-items:center; gap:6px; flex:1; height:100%; justify-content:flex-end;">' +
+    return '<div style="display:flex; flex-direction:column; align-items:center; gap:4px; flex:1; height:100%; justify-content:flex-end;">' +
+      '<div style="display:flex; gap:4px; font-size:10px; color:var(--text-3); font-variant-numeric:tabular-nums;">' +
+      '<span style="width:18px; text-align:center;">' + kzShortMoney(t.rev) + '</span>' +
+      '<span style="width:18px; text-align:center;">' + kzShortMoney(t.exp) + '</span></div>' +
       '<div style="display:flex; align-items:flex-end; gap:4px; height:100%;">' +
       revBar +
       '<div title="實際支出 ' + kzMoney(t.exp) + '" style="width:18px; height:' + expH + '%; background:var(--card-2); border:1px solid var(--line); border-radius:3px 3px 0 0;"></div>' +
@@ -442,6 +453,22 @@ function kzRenderSummary() {
       return '<span><span style="display:inline-block; width:9px; height:9px; border-radius:2px; background:' + g.color + '; margin-right:5px;"></span>' + g.label + '</span>';
     }).join('') +
     '<span><span style="display:inline-block; width:9px; height:9px; border-radius:2px; background:var(--card-2); border:1px solid var(--line); margin-right:5px;"></span>實際支出</span>';
+
+  var kzRevTableRows = [{ label: '實收合計', get: function(m) { return KZ_MATRIX_MAP['實收'][m]; }, bold: true }]
+    .concat(KZ_REVENUE_GROUPS.map(function(g) {
+      return { label: g.label, get: function(m) { var c = REVENUE_CHANNELS[m]; return c ? (c[g.label] || 0) : null; } };
+    }))
+    .concat([{ label: '實際支出', get: function(m) { return KZ_MATRIX_MAP['實際支出'][m]; }, bold: true }]);
+  document.getElementById('kz-rev-table-thead').innerHTML =
+    '<tr><th>項目</th>' + months.map(function(m) { return '<th style="text-align:right;">' + m + '</th>'; }).join('') + '</tr>';
+  document.getElementById('kz-rev-table-tbody').innerHTML = kzRevTableRows.map(function(r) {
+    var style = r.bold ? 'font-weight:500;' : '';
+    var tds = months.map(function(m) {
+      var v = r.get(m);
+      return '<td style="text-align:right;' + style + '">' + (v === null || v === undefined ? '—' : Math.round(v).toLocaleString()) + '</td>';
+    }).join('');
+    return '<tr><td style="' + style + '">' + r.label + '</td>' + tds + '</tr>';
+  }).join('');
 
   kzRenderDonuts(months, label);
 
