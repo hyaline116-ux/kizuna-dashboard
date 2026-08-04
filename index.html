@@ -487,16 +487,19 @@ function kzRenderSummary() {
     .concat(KZ_REVENUE_GROUPS.map(function(g) {
       return { label: g.label, get: function(m) { var c = REVENUE_CHANNELS[m]; return c ? (c[g.label] || 0) : null; } };
     }))
-    .concat([{ label: '實際支出', get: function(m) { return KZ_MATRIX_MAP['實際支出'][m]; }, bold: true }]);
+    .concat([{ label: '實際支出', get: function(m) { return KZ_MATRIX_MAP['實際支出'][m]; }, bold: true }])
+    .concat([{ label: '淨額(未稅)', get: function(m) { return KZ_MATRIX_MAP['淨額(未稅)'][m]; }, bold: true, colorBySign: true }]);
   document.getElementById('kz-rev-table-thead').innerHTML =
     '<tr><th>項目</th>' + months.map(function(m) { return '<th style="text-align:right;">' + m + '</th>'; }).join('') + '</tr>';
   document.getElementById('kz-rev-table-tbody').innerHTML = kzRevTableRows.map(function(r) {
     var style = r.bold ? 'font-weight:500;' : '';
+    var rowTop = r.label === '淨額(未稅)' ? 'border-top:1px solid var(--line);' : '';
     var tds = months.map(function(m) {
       var v = r.get(m);
-      return '<td style="text-align:right;' + style + '">' + (v === null || v === undefined ? '—' : Math.round(v).toLocaleString()) + '</td>';
+      var col = (r.colorBySign && v !== null && v !== undefined) ? (v >= 0 ? 'var(--green)' : 'var(--red)') : '';
+      return '<td style="text-align:right;' + style + (col ? 'color:' + col + ';' : '') + rowTop + '">' + (v === null || v === undefined ? '—' : Math.round(v).toLocaleString()) + '</td>';
     }).join('');
-    return '<tr><td style="' + style + '">' + r.label + '</td>' + tds + '</tr>';
+    return '<tr><td style="' + style + rowTop + '">' + r.label + '</td>' + tds + '</tr>';
   }).join('');
 
   kzRenderDonuts(months, label);
