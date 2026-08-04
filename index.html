@@ -159,7 +159,7 @@
 
   <div class="card">
     <p class="lbl" style="margin-bottom:1.1rem;">月度趨勢：實收（依收款管道）vs 支出</p>
-    <div id="kz-trend" style="display:flex; align-items:flex-end; justify-content:space-between; gap:14px; height:210px;"></div>
+    <div id="kz-trend"></div>
     <div id="kz-trend-legend" style="display:flex; gap:14px; flex-wrap:wrap; margin-top:1.1rem; padding-top:.9rem; border-top:1px solid var(--line); font-size:12px; color:var(--text-2);"></div>
     <div class="scrollx" style="margin-top:1rem;">
       <table style="min-width:420px;">
@@ -339,6 +339,17 @@ function kzShortMoney(v) {
   var sign = v < 0 ? '−' : '';
   return sign + Math.round(Math.abs(v) / 10000) + '萬';
 }
+function kzNiceAxis(maxV) {
+  var roughStep = maxV / 4;
+  var mag = Math.pow(10, Math.floor(Math.log10(roughStep || 1)));
+  var norm = roughStep / mag;
+  var niceNorm = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10;
+  var step = niceNorm * mag;
+  var axisMax = Math.ceil(maxV / step) * step;
+  var ticks = [];
+  for (var v = 0; v <= axisMax + step * 0.001; v += step) ticks.push(Math.round(v));
+  return { max: axisMax, step: step, ticks: ticks };
+}
 function kzSum(cat, months) {
   var row = KZ_MATRIX_MAP[cat];
   var total = 0, any = false;
@@ -414,40 +425,63 @@ function kzRenderSummary() {
     return { m: m, rev: KZ_MATRIX_MAP['實收'][m], exp: KZ_MATRIX_MAP['實際支出'][m], net: KZ_MATRIX_MAP['淨額(未稅)'][m] };
   });
   var maxV = Math.max.apply(null, trendVals.map(function(t) { return Math.max(t.rev || 0, t.exp || 0); }).concat([1]));
+  var axis = kzNiceAxis(maxV);
+  function kzGridlines() {
+    return axis.ticks.map(function(t) {
+      var pct = (t / axis.max * 100).toFixed(2);
+      return '<div style="position:absolute; left:' + pct + '%; top:0; bottom:0; width:1px; background:var(--line);"></div>';
+    }).join('');
+  }
+  var LBLW = 42, AMTW = 58;
   document.getElementById('kz-trend').innerHTML = trendVals.map(function(t) {
     if (t.rev === null) {
-      return '<div style="display:flex; flex-direction:column; align-items:center; gap:6px; flex:1; height:100%; justify-content:flex-end;">' +
-        '<p style="margin:0; font-size:11px; color:var(--text-3);">進行中</p>' +
-        '<p style="margin:0; font-size:12px; color:var(--text-2);">' + t.m + '</p></div>';
+      return '<div style="display:flex; align-items:center; gap:8px; margin-bottom:10px; font-size:12px; color:var(--text-3);">' +
+        '<span style="width:' + LBLW + 'px; flex-shrink:0;">' + t.m + '</span><span>進行中</span></div>';
     }
-    var revH = (t.rev / maxV * 100).toFixed(2);
-    var expH = (t.exp / maxV * 100).toFixed(2);
+    var revPct = (t.rev / axis.max * 100).toFixed(2);
+    var expPct = (t.exp / axis.max * 100).toFixed(2);
     var netTxt = (t.net >= 0 ? '+' : '−') + Math.round(Math.abs(t.net) / 10000) + '萬';
     var netCol = t.net >= 0 ? 'var(--green)' : 'var(--red)';
     var chan = REVENUE_CHANNELS[t.m];
-    var revBar;
+    var revBarInner;
     if (chan) {
-      var segs = KZ_REVENUE_GROUPS.filter(function(g) { return (chan[g.label] || 0) > 0; }).map(function(g) {
+      revBarInner = KZ_REVENUE_GROUPS.filter(function(g) { return (chan[g.label] || 0) > 0; }).map(function(g) {
         var v = chan[g.label] || 0;
-        var segH = (v / t.rev * 100).toFixed(2);
-        var pct = (v / t.rev * 100).toFixed(1);
-        return '<div title="' + g.label + ' ' + kzMoney(v) + '（' + pct + '%）" style="width:100%; height:' + segH + '%; background:' + g.color + ';"></div>';
+        var pct = v / t.rev * 100;
+        var showLabel = pct >= 9;
+        return '<div title="' + g.label + ' ' + kzMoney(v) + '（' + pct.toFixed(1) + '%）" style="width:' + pct.toFixed(2) + '%; height:100%; background:' + g.color + '; display:flex; align-items:center; justify-content:center; overflow:hidden;">' +
+          (showLabel ? '<span style="font-size:10.5px; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.55); white-space:nowrap;">' + pct.toFixed(0) + '%</span>' : '') +
+          '</div>';
       }).join('');
-      revBar = '<div title="實收合計 ' + kzMoney(t.rev) + '" style="width:18px; height:' + revH + '%; display:flex; flex-direction:column-reverse; border-radius:3px 3px 0 0; overflow:hidden;">' + segs + '</div>';
     } else {
-      revBar = '<div title="實收合計 ' + kzMoney(t.rev) + '" style="width:18px; height:' + revH + '%; background:var(--gold); border-radius:3px 3px 0 0;"></div>';
+      revBarInner = '<div style="width:100%; height:100%; background:var(--gold);"></div>';
     }
-    return '<div style="display:flex; flex-direction:column; align-items:center; gap:4px; flex:1; height:100%; justify-content:flex-end;">' +
-      '<div style="display:flex; gap:4px; font-size:10px; color:var(--text-3); font-variant-numeric:tabular-nums;">' +
-      '<span style="width:18px; text-align:center;">' + kzShortMoney(t.rev) + '</span>' +
-      '<span style="width:18px; text-align:center;">' + kzShortMoney(t.exp) + '</span></div>' +
-      '<div style="display:flex; align-items:flex-end; gap:4px; height:100%;">' +
-      revBar +
-      '<div title="實際支出 ' + kzMoney(t.exp) + '" style="width:18px; height:' + expH + '%; background:var(--card-2); border:1px solid var(--line); border-radius:3px 3px 0 0;"></div>' +
-      '</div>' +
-      '<p style="margin:0; font-size:12px; color:var(--text-2);">' + t.m + '</p>' +
-      '<p style="margin:0; font-size:11px; color:' + netCol + ';">' + netTxt + '</p></div>';
-  }).join('');
+    return '<div style="margin-bottom:12px;">' +
+      '<div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px; padding-left:' + LBLW + 'px; padding-right:' + AMTW + 'px;">' +
+      '<span style="font-size:12.5px; font-weight:500; color:var(--text);">' + t.m + '</span>' +
+      '<span style="font-size:11px; color:' + netCol + ';">' + netTxt + '</span></div>' +
+      '<div style="display:flex; align-items:center; gap:8px; margin-bottom:3px;">' +
+      '<span style="width:' + LBLW + 'px; flex-shrink:0;"></span>' +
+      '<div title="實收合計 ' + kzMoney(t.rev) + '" style="flex:1; position:relative; height:24px; border-radius:3px; overflow:hidden;">' + kzGridlines() +
+      '<div style="position:absolute; left:0; top:0; bottom:0; width:' + revPct + '%; display:flex; border-radius:3px; overflow:hidden;">' + revBarInner + '</div></div>' +
+      '<span style="width:' + AMTW + 'px; flex-shrink:0; text-align:right; font-size:11px; color:var(--text-2); font-variant-numeric:tabular-nums;">' + kzShortMoney(t.rev) + '</span></div>' +
+      '<div style="display:flex; align-items:center; gap:8px;">' +
+      '<span style="width:' + LBLW + 'px; flex-shrink:0;"></span>' +
+      '<div title="實際支出 ' + kzMoney(t.exp) + '" style="flex:1; position:relative; height:14px; border-radius:3px; overflow:hidden;">' + kzGridlines() +
+      '<div style="position:absolute; left:0; top:0; bottom:0; width:' + expPct + '%; background:var(--card-2); border:1px solid var(--line); box-sizing:border-box; border-radius:3px;"></div></div>' +
+      '<span style="width:' + AMTW + 'px; flex-shrink:0; text-align:right; font-size:11px; color:var(--text-3); font-variant-numeric:tabular-nums;">' + kzShortMoney(t.exp) + '</span></div>' +
+      '</div>';
+  }).join('') +
+  '<div style="display:flex; align-items:center; gap:8px; margin-top:2px;">' +
+  '<span style="width:' + LBLW + 'px; flex-shrink:0;"></span>' +
+  '<div style="flex:1; position:relative; height:16px;">' +
+  axis.ticks.map(function(t) {
+    var pct = (t / axis.max * 100).toFixed(2);
+    var isLast = t === axis.ticks[axis.ticks.length - 1];
+    return '<span style="position:absolute; left:' + pct + '%; ' + (isLast ? 'transform:translateX(-100%);' : (t === 0 ? '' : 'transform:translateX(-50%);')) + ' font-size:10.5px; color:var(--text-3); font-variant-numeric:tabular-nums;">' + kzShortMoney(t) + '</span>';
+  }).join('') +
+  '</div>' +
+  '<span style="width:' + AMTW + 'px; flex-shrink:0;"></span></div>';
   document.getElementById('kz-trend-legend').innerHTML =
     KZ_REVENUE_GROUPS.map(function(g) {
       return '<span><span style="display:inline-block; width:9px; height:9px; border-radius:2px; background:' + g.color + '; margin-right:5px;"></span>' + g.label + '</span>';
