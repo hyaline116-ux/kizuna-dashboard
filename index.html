@@ -34,6 +34,7 @@
     --fc:#c8973f; --fc-2:#8a6a4a; --fc-3:#9c8452; --fc-4:#6b6258;
     --vc:#b6503f; --vc-2:#a3705f; --vc-3:#a97a86;
     --cap:#7d7466;
+    --teal:#5c7a8a; --purple:#8a7aa8;
     --green:#7d9a4e; --red:#b6503f;
     --bg: var(--ink-950); --card: var(--ink-900); --card-2: var(--ink-800);
     --line: var(--line-dark); --text: var(--text-dark); --text-2: var(--text-dark-2); --text-3: var(--text-dark-3);
@@ -163,6 +164,13 @@
       <span><span style="display:inline-block; width:9px; height:9px; border-radius:2px; background:var(--gold); margin-right:5px;"></span>實收</span>
       <span><span style="display:inline-block; width:9px; height:9px; border-radius:2px; background:var(--card-2); border:1px solid var(--line); margin-right:5px;"></span>實際支出</span>
     </div>
+  </div>
+
+  <hr class="rule" />
+
+  <div class="card">
+    <p class="lbl" style="margin-bottom:1.1rem;" id="kz-rev-donut-title">營收管道佔比</p>
+    <div id="kz-rev-donut-row" style="display:flex; flex-direction:column; gap:1.5rem;"></div>
   </div>
 
   <hr class="rule" />
@@ -425,6 +433,7 @@ function kzRenderSummary() {
   }).join('');
 
   kzRenderDonuts(months, label);
+  kzRenderRevenueDonuts(months, label);
 
   var items = KZ_RANK_ITEMS.map(function(cat) {
     return { cat: cat, value: kzSum(cat, months) || 0, tag: KZ_MATRIX_MAP[cat] ? undefined : undefined };
@@ -554,6 +563,59 @@ function kzRenderDonuts(months, label) {
       '</div></div>';
   }).join('');
 }
+
+var REVENUE_CHANNELS = {
+  '四月': {'現金收入':1445292,'ATM收入':373501,'Visa收入':0,'股東月結':33986,'員購月結':20771},
+  '五月': {'現金收入':2142713,'ATM收入':782942,'Visa收入':0,'股東月結':139692,'員購月結':27710},
+  '六月': {'現金收入':904907,'ATM收入':40897,'Visa收入':1822205,'股東月結':36784,'員購月結':15643},
+  '七月': {'現金收入':918796,'ATM收入':0,'Visa收入':1753207,'股東月結':21384,'員購月結':12601}
+};
+var KZ_REVENUE_GROUPS = [
+  { label: '現金收入', color: 'var(--gold)' },
+  { label: 'ATM收入', color: 'var(--teal)' },
+  { label: 'Visa收入', color: 'var(--purple)' },
+  { label: '股東月結', color: 'var(--fc-2)' },
+  { label: '員購月結', color: 'var(--vc-3)' }
+];
+function kzRenderRevenueDonuts(months, label) {
+  document.getElementById('kz-rev-donut-title').textContent = '營收管道佔比（' + label + '）';
+  var size = 108;
+  document.getElementById('kz-rev-donut-row').innerHTML = months.map(function(m, idx) {
+    var chan = REVENUE_CHANNELS[m];
+    var groupVals = KZ_REVENUE_GROUPS.map(function(g) {
+      return { label: g.label, color: g.color, value: chan ? (chan[g.label] || 0) : 0 };
+    });
+    var total = groupVals.reduce(function(s, g) { return s + g.value; }, 0);
+    var circle, listHtml;
+    if (!chan || !total) {
+      circle = '<div style="width:' + size + 'px; height:' + size + 'px; border-radius:50%; background:var(--card-2); display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--text-3); text-align:center; padding:8px; box-sizing:border-box; flex-shrink:0;">資料不足</div>';
+      listHtml = '<p style="margin:0; font-size:12.5px; color:var(--text-3);">本月尚無足夠資料</p>';
+    } else {
+      var deg = 0;
+      var stops = groupVals.filter(function(g) { return g.value > 0; }).map(function(g) {
+        var pct = g.value / total * 100;
+        var d0 = deg, d1 = Math.min(360, deg + pct / 100 * 360);
+        deg = d1;
+        return g.color + ' ' + d0.toFixed(2) + 'deg ' + d1.toFixed(2) + 'deg';
+      });
+      circle = '<div style="width:' + size + 'px; height:' + size + 'px; border-radius:50%; flex-shrink:0; background:conic-gradient(' + stops.join(', ') + ');' +
+        '-webkit-mask: radial-gradient(farthest-side, transparent 56%, #000 57%); mask: radial-gradient(farthest-side, transparent 56%, #000 57%);"></div>';
+      listHtml = groupVals.filter(function(g) { return g.value > 0; })
+        .sort(function(a, b) { return b.value - a.value; })
+        .map(function(g) {
+          var pct = (g.value / total * 100).toFixed(1);
+          return '<div style="display:flex; justify-content:space-between; gap:8px;"><span><span style="display:inline-block; width:8px; height:8px; border-radius:2px; background:' + g.color + '; margin-right:6px;"></span>' + g.label + '</span><span style="color:var(--text-2);">' + pct + '%</span></div>';
+        }).join('');
+    }
+    var rule = idx > 0 ? 'border-top:1px solid var(--line); padding-top:1.5rem;' : '';
+    return '<div style="' + rule + '">' +
+      '<p style="margin:0 0 .9rem; font-size:13px; font-weight:500; color:var(--text);">' + m + '</p>' +
+      '<div style="display:flex; gap:1.25rem; align-items:center;">' + circle +
+      '<div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:6px; font-size:12.5px;">' + listHtml + '</div>' +
+      '</div></div>';
+  }).join('');
+}
+
 kzPopulateRangeSelects();
 document.getElementById('kz-from').addEventListener('change', kzRenderSummary);
 document.getElementById('kz-to').addEventListener('change', kzRenderSummary);
