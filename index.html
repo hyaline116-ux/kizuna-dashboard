@@ -423,7 +423,7 @@ function kzRenderSummary() {
   function kzGridlines() {
     return axis.ticks.map(function(t) {
       var pct = (t / axis.max * 100).toFixed(2);
-      return '<div style="position:absolute; left:' + pct + '%; top:0; bottom:0; width:1px; background:var(--line);"></div>';
+      return '<div style="position:absolute; left:' + pct + '%; top:-4px; bottom:-4px; width:1.5px; background:color-mix(in srgb, var(--text) 55%, transparent); pointer-events:none;"></div>';
     }).join('');
   }
   document.getElementById('kz-trend').innerHTML = trendVals.map(function(t) {
@@ -472,12 +472,14 @@ function kzRenderSummary() {
       '<span style="font-size:12px; color:' + netCol + '; font-weight:500;">' + netTxt + '</span></div>' +
       '<div style="display:flex; justify-content:space-between; font-size:11.5px; color:var(--text-2); margin-bottom:4px;">' +
       '<span>實收</span><span style="font-variant-numeric:tabular-nums;">' + kzMoney(t.rev) + '</span></div>' +
-      '<div title="實收合計 ' + kzMoney(t.rev) + '" style="position:relative; height:26px; border-radius:4px; overflow:hidden; margin-bottom:12px;">' + kzGridlines() +
-      '<div style="position:absolute; left:0; top:0; bottom:0; width:' + revPct + '%; display:flex; border-radius:4px; overflow:hidden;">' + revBarInner + '</div></div>' +
+      '<div title="實收合計 ' + kzMoney(t.rev) + '" style="position:relative; height:26px; margin-bottom:16px;">' +
+      '<div style="position:absolute; inset:0; border-radius:4px; overflow:hidden;">' +
+      '<div style="position:absolute; left:0; top:0; bottom:0; width:' + revPct + '%; display:flex;">' + revBarInner + '</div></div>' + kzGridlines() + '</div>' +
       '<div style="display:flex; justify-content:space-between; font-size:11.5px; color:var(--text-3); margin-bottom:4px;">' +
       '<span>支出</span><span style="font-variant-numeric:tabular-nums;">' + kzMoney(t.exp) + '</span></div>' +
-      '<div title="實際支出 ' + kzMoney(t.exp) + '" style="position:relative; height:22px; border-radius:4px; overflow:hidden;">' + kzGridlines() +
-      '<div style="position:absolute; left:0; top:0; bottom:0; width:' + expPct + '%; display:flex; border-radius:4px; overflow:hidden;">' + expBarInner + '</div></div>' +
+      '<div title="實際支出 ' + kzMoney(t.exp) + '" style="position:relative; height:22px; margin-bottom:4px;">' +
+      '<div style="position:absolute; inset:0; border-radius:4px; overflow:hidden;">' +
+      '<div style="position:absolute; left:0; top:0; bottom:0; width:' + expPct + '%; display:flex;">' + expBarInner + '</div></div>' + kzGridlines() + '</div>' +
       '</div>';
   }).join('') +
   '<div style="padding:0 1.1rem; margin-top:4px;"><div style="position:relative; height:16px;">' +
