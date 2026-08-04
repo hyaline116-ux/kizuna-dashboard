@@ -36,6 +36,8 @@
     --cap:#7d7466;
     --teal:#5c7a8a; --purple:#8a7aa8;
     --green:#7d9a4e; --red:#b6503f;
+    --rev-1:#3f6f95; --rev-2:#5c93a0; --rev-3:#7a6fa0; --rev-4:#6fa3ad; --rev-5:#8aa8c4;
+    --exp-1:#b6503f; --exp-2:#c98a3f; --exp-3:#8a4a3f; --exp-4:#8a6a4a; --exp-5:#a68b52; --exp-6:#a3705f; --exp-7:#6b6258;
     --bg: var(--ink-950); --card: var(--ink-900); --card-2: var(--ink-800);
     --line: var(--line-dark); --text: var(--text-dark); --text-2: var(--text-dark-2); --text-3: var(--text-dark-3);
     font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Microsoft JhengHei", "Heiti TC", sans-serif;
@@ -314,13 +316,13 @@ var KZ_MONTH_TO_LEDGER = { '四月':'4月','五月':'5月','六月':'6月','七�
 var KZ_MATRIX_MAP = {};
 MATRIX.forEach(function(r) { KZ_MATRIX_MAP[r.cat] = r; });
 var KZ_DONUT_GROUPS = [
-  { label: '食材成本', color: 'var(--vc)', cats: ['食材成本'] },
-  { label: '人事關聯', color: 'var(--fc)', cats: ['人事成本','勞保','勞退','健保'] },
-  { label: '雜項支出', color: 'var(--vc-3)', cats: ['雜項支出'] },
-  { label: '房租', color: 'var(--fc-2)', cats: ['房租'] },
-  { label: '水電', color: 'var(--fc-3)', cats: ['電費','水費'] },
-  { label: '耗材成本', color: 'var(--vc-2)', cats: ['耗材成本'] },
-  { label: '其他固定', color: 'var(--fc-4)', cats: ['會計記帳費','憑證統整費','電信費','廚餘清運','垃圾清運','環境消毒','中興保全','室內花藝'] }
+  { label: '食材成本', color: 'var(--exp-1)', cats: ['食材成本'] },
+  { label: '人事關聯', color: 'var(--exp-2)', cats: ['人事成本','勞保','勞退','健保'] },
+  { label: '雜項支出', color: 'var(--exp-3)', cats: ['雜項支出'] },
+  { label: '房租', color: 'var(--exp-4)', cats: ['房租'] },
+  { label: '水電', color: 'var(--exp-5)', cats: ['電費','水費'] },
+  { label: '耗材成本', color: 'var(--exp-6)', cats: ['耗材成本'] },
+  { label: '其他固定', color: 'var(--exp-7)', cats: ['會計記帳費','憑證統整費','電信費','廚餘清運','垃圾清運','環境消毒','中興保全','室內花藝'] }
 ];
 var KZ_RANK_ITEMS = ['食材成本','人事成本','雜項支出','房租','電費','耗材成本','勞保','健保','勞退','垃圾清運','中興保全','室內花藝','水費','憑證統整費','廚餘清運','環境消毒','會計記帳費','電信費'];
 
@@ -332,17 +334,6 @@ function kzShortMoney(v) {
   if (v === null || v === undefined) return '—';
   var sign = v < 0 ? '−' : '';
   return sign + Math.round(Math.abs(v) / 10000) + '萬';
-}
-function kzNiceAxis(maxV) {
-  var roughStep = maxV / 4;
-  var mag = Math.pow(10, Math.floor(Math.log10(roughStep || 1)));
-  var norm = roughStep / mag;
-  var niceNorm = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10;
-  var step = niceNorm * mag;
-  var axisMax = Math.ceil(maxV / step) * step;
-  var ticks = [];
-  for (var v = 0; v <= axisMax + step * 0.001; v += step) ticks.push(Math.round(v));
-  return { max: axisMax, step: step, ticks: ticks };
 }
 function kzSum(cat, months) {
   var row = KZ_MATRIX_MAP[cat];
@@ -419,12 +410,21 @@ function kzRenderSummary() {
     return { m: m, rev: KZ_MATRIX_MAP['實收'][m], exp: KZ_MATRIX_MAP['實際支出'][m], net: KZ_MATRIX_MAP['淨額(未稅)'][m] };
   });
   var maxV = Math.max.apply(null, trendVals.map(function(t) { return Math.max(t.rev || 0, t.exp || 0); }).concat([1]));
-  var axis = kzNiceAxis(maxV);
-  function kzGridlines() {
-    return axis.ticks.map(function(t) {
-      var pct = (t / axis.max * 100).toFixed(2);
-      return '<div style="position:absolute; left:' + pct + '%; top:-4px; bottom:-4px; width:1.5px; background:color-mix(in srgb, var(--text) 55%, transparent); pointer-events:none;"></div>';
-    }).join('');
+  function kzPrevVal(cat, m) {
+    var idx = KZ_MONTHS.indexOf(m);
+    if (idx <= 0) return null;
+    var row = KZ_MATRIX_MAP[cat];
+    return row ? row[KZ_MONTHS[idx - 1]] : null;
+  }
+  function kzDeltaTag(curr, prev, goodWhenUp) {
+    if (curr === null || curr === undefined || prev === null || prev === undefined) return '';
+    var diff = curr - prev;
+    if (diff === 0) return '<span style="font-size:11px; color:var(--text-3); margin-left:6px;">與上月持平</span>';
+    var up = diff > 0;
+    var good = goodWhenUp ? up : !up;
+    var col = good ? 'var(--green)' : 'var(--red)';
+    var arrow = up ? '▲' : '▼';
+    return '<span style="font-size:11px; color:' + col + '; margin-left:6px; font-weight:500;">' + arrow + kzShortMoney(Math.abs(diff)) + ' 較上月</span>';
   }
   document.getElementById('kz-trend').innerHTML = trendVals.map(function(t) {
     if (t.rev === null) {
@@ -432,25 +432,28 @@ function kzRenderSummary() {
         '<span style="font-size:13px; font-weight:500;">' + t.m + '</span>' +
         '<span style="font-size:12px; color:var(--text-3);">進行中</span></div>';
     }
-    var revPct = (t.rev / axis.max * 100).toFixed(2);
-    var expPct = (t.exp / axis.max * 100).toFixed(2);
+    var revPct = (t.rev / maxV * 100).toFixed(2);
+    var expPct = (t.exp / maxV * 100).toFixed(2);
     var netTxt = (t.net >= 0 ? '淨利 +' : '虧損 −') + kzShortMoney(Math.abs(t.net));
     var netCol = t.net >= 0 ? 'var(--green)' : 'var(--red)';
+    var revDeltaTag = kzDeltaTag(t.rev, kzPrevVal('實收', t.m), true);
+    var expDeltaTag = kzDeltaTag(t.exp, kzPrevVal('實際支出', t.m), false);
     var chan = REVENUE_CHANNELS[t.m];
-    var revBarInner;
+    var revBarInner, revHidden = [];
     if (chan) {
       revBarInner = KZ_REVENUE_GROUPS.filter(function(g) { return (chan[g.label] || 0) > 0; }).map(function(g) {
         var v = chan[g.label] || 0;
         var pct = v / t.rev * 100;
-        var showLabel = pct >= 8;
+        var showLabel = pct >= 10;
+        if (!showLabel) revHidden.push({ label: g.label, value: v, color: g.color });
         return '<div title="' + g.label + ' ' + kzMoney(v) + '（' + pct.toFixed(1) + '%）" style="width:' + pct.toFixed(2) + '%; height:100%; background:' + g.color + '; display:flex; align-items:center; justify-content:center; overflow:hidden;">' +
-          (showLabel ? '<span style="font-size:11px; font-weight:500; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.6); white-space:nowrap;">' + pct.toFixed(0) + '%</span>' : '') +
+          (showLabel ? '<span style="font-size:11px; font-weight:500; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.6); white-space:nowrap;">' + kzShortMoney(v) + '</span>' : '') +
           '</div>';
       }).join('');
     } else {
-      revBarInner = '<div style="width:100%; height:100%; background:var(--gold);"></div>';
+      revBarInner = '<div style="width:100%; height:100%; background:var(--rev-1);"></div>';
     }
-    var expBarInner;
+    var expBarInner, expHidden = [];
     if (t.exp) {
       var expGroupVals = KZ_DONUT_GROUPS.map(function(g) {
         var v = g.cats.reduce(function(s, c) { return s + (kzSum(c, [t.m]) || 0); }, 0);
@@ -458,37 +461,37 @@ function kzRenderSummary() {
       }).filter(function(g) { return g.value > 0; });
       expBarInner = expGroupVals.map(function(g) {
         var pct = g.value / t.exp * 100;
-        var showLabel = pct >= 8;
+        var showLabel = pct >= 10;
+        if (!showLabel) expHidden.push(g);
         return '<div title="' + g.label + ' ' + kzMoney(g.value) + '（' + pct.toFixed(1) + '%）" style="width:' + pct.toFixed(2) + '%; height:100%; background:' + g.color + '; display:flex; align-items:center; justify-content:center; overflow:hidden;">' +
-          (showLabel ? '<span style="font-size:10.5px; font-weight:500; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.6); white-space:nowrap;">' + pct.toFixed(0) + '%</span>' : '') +
+          (showLabel ? '<span style="font-size:10.5px; font-weight:500; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.6); white-space:nowrap;">' + kzShortMoney(g.value) + '</span>' : '') +
           '</div>';
       }).join('');
     } else {
       expBarInner = '';
     }
+    function hiddenLine(hidden) {
+      if (!hidden.length) return '';
+      return '<div style="font-size:10.5px; color:var(--text-3); margin:2px 0 8px;">其他：' +
+        hidden.map(function(h) { return '<span style="color:' + h.color + ';">●</span> ' + h.label + ' ' + kzShortMoney(h.value); }).join('　') +
+        '</div>';
+    }
     return '<div class="tile" style="margin-bottom:10px;">' +
       '<div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px;">' +
       '<span style="font-size:14px; font-weight:500; color:var(--text);">' + t.m + '</span>' +
       '<span style="font-size:12px; color:' + netCol + '; font-weight:500;">' + netTxt + '</span></div>' +
-      '<div style="display:flex; justify-content:space-between; font-size:11.5px; color:var(--text-2); margin-bottom:4px;">' +
-      '<span>實收</span><span style="font-variant-numeric:tabular-nums;">' + kzMoney(t.rev) + '</span></div>' +
-      '<div title="實收合計 ' + kzMoney(t.rev) + '" style="position:relative; height:26px; margin-bottom:16px;">' +
-      '<div style="position:absolute; inset:0; border-radius:4px; overflow:hidden;">' +
-      '<div style="position:absolute; left:0; top:0; bottom:0; width:' + revPct + '%; display:flex;">' + revBarInner + '</div></div>' + kzGridlines() + '</div>' +
-      '<div style="display:flex; justify-content:space-between; font-size:11.5px; color:var(--text-3); margin-bottom:4px;">' +
-      '<span>支出</span><span style="font-variant-numeric:tabular-nums;">' + kzMoney(t.exp) + '</span></div>' +
-      '<div title="實際支出 ' + kzMoney(t.exp) + '" style="position:relative; height:22px; margin-bottom:4px;">' +
-      '<div style="position:absolute; inset:0; border-radius:4px; overflow:hidden;">' +
-      '<div style="position:absolute; left:0; top:0; bottom:0; width:' + expPct + '%; display:flex;">' + expBarInner + '</div></div>' + kzGridlines() + '</div>' +
+      '<div style="display:flex; justify-content:space-between; align-items:baseline; font-size:11.5px; color:var(--text-2); margin-bottom:4px;">' +
+      '<span>實收</span><span><span style="font-variant-numeric:tabular-nums;">' + kzMoney(t.rev) + '</span>' + revDeltaTag + '</span></div>' +
+      '<div title="實收合計 ' + kzMoney(t.rev) + '" style="position:relative; height:24px; border-radius:4px; overflow:hidden; margin-bottom:4px;">' +
+      '<div style="position:absolute; left:0; top:0; bottom:0; width:' + revPct + '%; display:flex;">' + revBarInner + '</div></div>' +
+      hiddenLine(revHidden) +
+      '<div style="display:flex; justify-content:space-between; align-items:baseline; font-size:11.5px; color:var(--text-3); margin-bottom:4px;">' +
+      '<span>支出</span><span><span style="font-variant-numeric:tabular-nums;">' + kzMoney(t.exp) + '</span>' + expDeltaTag + '</span></div>' +
+      '<div title="實際支出 ' + kzMoney(t.exp) + '" style="position:relative; height:24px; border-radius:4px; overflow:hidden; margin-bottom:4px;">' +
+      '<div style="position:absolute; left:0; top:0; bottom:0; width:' + expPct + '%; display:flex;">' + expBarInner + '</div></div>' +
+      hiddenLine(expHidden) +
       '</div>';
-  }).join('') +
-  '<div style="padding:0 1.1rem; margin-top:4px;"><div style="position:relative; height:16px;">' +
-  axis.ticks.map(function(t) {
-    var pct = (t / axis.max * 100).toFixed(2);
-    var isLast = t === axis.ticks[axis.ticks.length - 1];
-    return '<span style="position:absolute; left:' + pct + '%; ' + (isLast ? 'transform:translateX(-100%);' : (t === 0 ? '' : 'transform:translateX(-50%);')) + ' font-size:10.5px; color:var(--text-3); font-variant-numeric:tabular-nums;">' + kzShortMoney(t) + '</span>';
-  }).join('') +
-  '</div></div>';
+  }).join('');
   document.getElementById('kz-trend-legend').innerHTML =
     '<span style="color:var(--text-3);">實收：</span>' +
     KZ_REVENUE_GROUPS.map(function(g) {
@@ -500,20 +503,20 @@ function kzRenderSummary() {
       return '<span><span style="display:inline-block; width:9px; height:9px; border-radius:2px; background:' + g.color + '; margin-right:5px;"></span>' + g.label + '</span>';
     }).join('');
 
-  var kzRevTableRows = [{ label: '實收合計', get: function(m) { return KZ_MATRIX_MAP['實收'][m]; }, bold: true }]
+  var kzRevTableCols = [{ label: '實收合計', get: function(m) { return KZ_MATRIX_MAP['實收'][m]; }, bold: true }]
     .concat(KZ_REVENUE_GROUPS.map(function(g) {
       return { label: g.label, get: function(m) { var c = REVENUE_CHANNELS[m]; return c ? (c[g.label] || 0) : null; } };
     }))
     .concat([{ label: '實際支出', get: function(m) { return KZ_MATRIX_MAP['實際支出'][m]; }, bold: true }]);
   document.getElementById('kz-rev-table-thead').innerHTML =
-    '<tr><th>項目</th>' + months.map(function(m) { return '<th style="text-align:right;">' + m + '</th>'; }).join('') + '</tr>';
-  document.getElementById('kz-rev-table-tbody').innerHTML = kzRevTableRows.map(function(r) {
-    var style = r.bold ? 'font-weight:500;' : '';
-    var tds = months.map(function(m) {
-      var v = r.get(m);
+    '<tr><th>月份</th>' + kzRevTableCols.map(function(c) { return '<th style="text-align:right;">' + c.label + '</th>'; }).join('') + '</tr>';
+  document.getElementById('kz-rev-table-tbody').innerHTML = months.map(function(m) {
+    var tds = kzRevTableCols.map(function(c) {
+      var v = c.get(m);
+      var style = c.bold ? 'font-weight:500;' : '';
       return '<td style="text-align:right;' + style + '">' + (v === null || v === undefined ? '—' : Math.round(v).toLocaleString()) + '</td>';
     }).join('');
-    return '<tr><td style="' + style + '">' + r.label + '</td>' + tds + '</tr>';
+    return '<tr><td style="font-weight:500;">' + m + '</td>' + tds + '</tr>';
   }).join('');
 
   var items = KZ_RANK_ITEMS.map(function(cat) {
@@ -598,11 +601,11 @@ var REVENUE_CHANNELS = {
   '八月': {'現金收入':0,'ATM收入':0,'Visa收入':90981,'股東月結':0,'員購月結':0}
 };
 var KZ_REVENUE_GROUPS = [
-  { label: '現金收入', color: 'var(--gold)' },
-  { label: 'ATM收入', color: 'var(--teal)' },
-  { label: 'Visa收入', color: 'var(--purple)' },
-  { label: '股東月結', color: 'var(--fc-2)' },
-  { label: '員購月結', color: 'var(--vc-3)' }
+  { label: '現金收入', color: 'var(--rev-1)' },
+  { label: 'ATM收入', color: 'var(--rev-2)' },
+  { label: 'Visa收入', color: 'var(--rev-3)' },
+  { label: '股東月結', color: 'var(--rev-4)' },
+  { label: '員購月結', color: 'var(--rev-5)' }
 ];
 kzPopulateRangeSelects();
 document.getElementById('kz-from').addEventListener('change', kzRenderSummary);
