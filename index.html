@@ -502,19 +502,16 @@ function kzRenderSummary() {
     .concat(KZ_REVENUE_GROUPS.map(function(g) {
       return { label: g.label, get: function(m) { var c = REVENUE_CHANNELS[m]; return c ? (c[g.label] || 0) : null; } };
     }))
-    .concat([{ label: '實際支出', get: function(m) { return KZ_MATRIX_MAP['實際支出'][m]; }, bold: true }])
-    .concat([{ label: '淨額(未稅)', get: function(m) { return KZ_MATRIX_MAP['淨額(未稅)'][m]; }, bold: true, colorBySign: true }]);
+    .concat([{ label: '實際支出', get: function(m) { return KZ_MATRIX_MAP['實際支出'][m]; }, bold: true }]);
   document.getElementById('kz-rev-table-thead').innerHTML =
     '<tr><th>項目</th>' + months.map(function(m) { return '<th style="text-align:right;">' + m + '</th>'; }).join('') + '</tr>';
   document.getElementById('kz-rev-table-tbody').innerHTML = kzRevTableRows.map(function(r) {
     var style = r.bold ? 'font-weight:500;' : '';
-    var rowTop = r.label === '淨額(未稅)' ? 'border-top:1px solid var(--line);' : '';
     var tds = months.map(function(m) {
       var v = r.get(m);
-      var col = (r.colorBySign && v !== null && v !== undefined) ? (v >= 0 ? 'var(--green)' : 'var(--red)') : '';
-      return '<td style="text-align:right;' + style + (col ? 'color:' + col + ';' : '') + rowTop + '">' + (v === null || v === undefined ? '—' : Math.round(v).toLocaleString()) + '</td>';
+      return '<td style="text-align:right;' + style + '">' + (v === null || v === undefined ? '—' : Math.round(v).toLocaleString()) + '</td>';
     }).join('');
-    return '<tr><td style="' + style + rowTop + '">' + r.label + '</td>' + tds + '</tr>';
+    return '<tr><td style="' + style + '">' + r.label + '</td>' + tds + '</tr>';
   }).join('');
 
   var items = KZ_RANK_ITEMS.map(function(cat) {
@@ -538,7 +535,7 @@ function kzRenderSummary() {
 var KZ_ROW_DEFS = [
   { cat: '實收', bold: true },
   { cat: '實際支出', bold: true },
-  { cat: '淨額(未稅)', bold: true },
+  { cat: '淨額(未稅)', bold: true, colorBySign: true },
   { section: '固定成本 FC' },
   { cat: '固定成本FC', bold: true, label: '固定成本 合計' },
   { cat: '人事成本', indent: true },
@@ -583,7 +580,9 @@ function kzRenderMatrix(months, label) {
     var style = def.bold ? 'font-weight:500;' : '';
     var pad = def.indent ? 'padding-left:1.6em;' : '';
     var tds = months.map(function(m) {
-      return '<td style="text-align:right;">' + kzFmt(row[m]) + '</td>';
+      var v = row[m];
+      var col = (def.colorBySign && v !== null && v !== undefined) ? (v >= 0 ? 'color:var(--green);' : 'color:var(--red);') : '';
+      return '<td style="text-align:right;' + col + '">' + kzFmt(v) + '</td>';
     }).join('');
     return '<tr><td style="' + style + pad + '">' + (def.label || def.cat) + '</td>' + tds + '</tr>';
   }).join('');
