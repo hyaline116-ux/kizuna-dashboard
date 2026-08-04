@@ -432,15 +432,15 @@ function kzRenderSummary() {
       return '<div style="position:absolute; left:' + pct + '%; top:0; bottom:0; width:1px; background:var(--line);"></div>';
     }).join('');
   }
-  var LBLW = 42, AMTW = 58;
   document.getElementById('kz-trend').innerHTML = trendVals.map(function(t) {
     if (t.rev === null) {
-      return '<div style="display:flex; align-items:center; gap:8px; margin-bottom:10px; font-size:12px; color:var(--text-3);">' +
-        '<span style="width:' + LBLW + 'px; flex-shrink:0;">' + t.m + '</span><span>進行中</span></div>';
+      return '<div class="tile" style="margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">' +
+        '<span style="font-size:13px; font-weight:500;">' + t.m + '</span>' +
+        '<span style="font-size:12px; color:var(--text-3);">進行中</span></div>';
     }
     var revPct = (t.rev / axis.max * 100).toFixed(2);
     var expPct = (t.exp / axis.max * 100).toFixed(2);
-    var netTxt = (t.net >= 0 ? '+' : '−') + Math.round(Math.abs(t.net) / 10000) + '萬';
+    var netTxt = (t.net >= 0 ? '淨利 +' : '虧損 −') + kzShortMoney(Math.abs(t.net));
     var netCol = t.net >= 0 ? 'var(--green)' : 'var(--red)';
     var chan = REVENUE_CHANNELS[t.m];
     var revBarInner;
@@ -448,40 +448,35 @@ function kzRenderSummary() {
       revBarInner = KZ_REVENUE_GROUPS.filter(function(g) { return (chan[g.label] || 0) > 0; }).map(function(g) {
         var v = chan[g.label] || 0;
         var pct = v / t.rev * 100;
-        var showLabel = pct >= 9;
+        var showLabel = pct >= 8;
         return '<div title="' + g.label + ' ' + kzMoney(v) + '（' + pct.toFixed(1) + '%）" style="width:' + pct.toFixed(2) + '%; height:100%; background:' + g.color + '; display:flex; align-items:center; justify-content:center; overflow:hidden;">' +
-          (showLabel ? '<span style="font-size:10.5px; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.55); white-space:nowrap;">' + pct.toFixed(0) + '%</span>' : '') +
+          (showLabel ? '<span style="font-size:11px; font-weight:500; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.6); white-space:nowrap;">' + pct.toFixed(0) + '%</span>' : '') +
           '</div>';
       }).join('');
     } else {
       revBarInner = '<div style="width:100%; height:100%; background:var(--gold);"></div>';
     }
-    return '<div style="margin-bottom:12px;">' +
-      '<div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px; padding-left:' + LBLW + 'px; padding-right:' + AMTW + 'px;">' +
-      '<span style="font-size:12.5px; font-weight:500; color:var(--text);">' + t.m + '</span>' +
-      '<span style="font-size:11px; color:' + netCol + ';">' + netTxt + '</span></div>' +
-      '<div style="display:flex; align-items:center; gap:8px; margin-bottom:3px;">' +
-      '<span style="width:' + LBLW + 'px; flex-shrink:0;"></span>' +
-      '<div title="實收合計 ' + kzMoney(t.rev) + '" style="flex:1; position:relative; height:24px; border-radius:3px; overflow:hidden;">' + kzGridlines() +
-      '<div style="position:absolute; left:0; top:0; bottom:0; width:' + revPct + '%; display:flex; border-radius:3px; overflow:hidden;">' + revBarInner + '</div></div>' +
-      '<span style="width:' + AMTW + 'px; flex-shrink:0; text-align:right; font-size:11px; color:var(--text-2); font-variant-numeric:tabular-nums;">' + kzShortMoney(t.rev) + '</span></div>' +
-      '<div style="display:flex; align-items:center; gap:8px;">' +
-      '<span style="width:' + LBLW + 'px; flex-shrink:0;"></span>' +
-      '<div title="實際支出 ' + kzMoney(t.exp) + '" style="flex:1; position:relative; height:14px; border-radius:3px; overflow:hidden;">' + kzGridlines() +
-      '<div style="position:absolute; left:0; top:0; bottom:0; width:' + expPct + '%; background:var(--card-2); border:1px solid var(--line); box-sizing:border-box; border-radius:3px;"></div></div>' +
-      '<span style="width:' + AMTW + 'px; flex-shrink:0; text-align:right; font-size:11px; color:var(--text-3); font-variant-numeric:tabular-nums;">' + kzShortMoney(t.exp) + '</span></div>' +
+    return '<div class="tile" style="margin-bottom:10px;">' +
+      '<div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px;">' +
+      '<span style="font-size:14px; font-weight:500; color:var(--text);">' + t.m + '</span>' +
+      '<span style="font-size:12px; color:' + netCol + '; font-weight:500;">' + netTxt + '</span></div>' +
+      '<div style="display:flex; justify-content:space-between; font-size:11.5px; color:var(--text-2); margin-bottom:4px;">' +
+      '<span>實收</span><span style="font-variant-numeric:tabular-nums;">' + kzMoney(t.rev) + '</span></div>' +
+      '<div title="實收合計 ' + kzMoney(t.rev) + '" style="position:relative; height:26px; border-radius:4px; overflow:hidden; margin-bottom:12px;">' + kzGridlines() +
+      '<div style="position:absolute; left:0; top:0; bottom:0; width:' + revPct + '%; display:flex; border-radius:4px; overflow:hidden;">' + revBarInner + '</div></div>' +
+      '<div style="display:flex; justify-content:space-between; font-size:11.5px; color:var(--text-3); margin-bottom:4px;">' +
+      '<span>支出</span><span style="font-variant-numeric:tabular-nums;">' + kzMoney(t.exp) + '</span></div>' +
+      '<div title="實際支出 ' + kzMoney(t.exp) + '" style="position:relative; height:16px; border-radius:4px; overflow:hidden;">' + kzGridlines() +
+      '<div style="position:absolute; left:0; top:0; bottom:0; width:' + expPct + '%; background:var(--card-2); border:1px solid var(--line); box-sizing:border-box; border-radius:4px;"></div></div>' +
       '</div>';
   }).join('') +
-  '<div style="display:flex; align-items:center; gap:8px; margin-top:2px;">' +
-  '<span style="width:' + LBLW + 'px; flex-shrink:0;"></span>' +
-  '<div style="flex:1; position:relative; height:16px;">' +
+  '<div style="padding:0 1.1rem; margin-top:4px;"><div style="position:relative; height:16px;">' +
   axis.ticks.map(function(t) {
     var pct = (t / axis.max * 100).toFixed(2);
     var isLast = t === axis.ticks[axis.ticks.length - 1];
     return '<span style="position:absolute; left:' + pct + '%; ' + (isLast ? 'transform:translateX(-100%);' : (t === 0 ? '' : 'transform:translateX(-50%);')) + ' font-size:10.5px; color:var(--text-3); font-variant-numeric:tabular-nums;">' + kzShortMoney(t) + '</span>';
   }).join('') +
-  '</div>' +
-  '<span style="width:' + AMTW + 'px; flex-shrink:0;"></span></div>';
+  '</div></div>';
   document.getElementById('kz-trend-legend').innerHTML =
     KZ_REVENUE_GROUPS.map(function(g) {
       return '<span><span style="display:inline-block; width:9px; height:9px; border-radius:2px; background:' + g.color + '; margin-right:5px;"></span>' + g.label + '</span>';
