@@ -651,7 +651,10 @@ document.getElementById('kz-budget-tfoot').innerHTML =
 
 <script>
 (function() {
-  var HASH = 'c7cf37db3b2edad718b2e526a5b0f686e25184d501dceaa8998593b2fbad2af6';
+  var HASHES = [
+    'c7cf37db3b2edad718b2e526a5b0f686e25184d501dceaa8998593b2fbad2af6',
+    '23bf174d69664b3731c9a92d135582dcdfa8578af5f161ce477c7f503f791b65'
+  ];
   async function sha256(text) {
     var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
     return Array.from(new Uint8Array(buf)).map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
@@ -663,14 +666,14 @@ document.getElementById('kz-budget-tfoot').innerHTML =
   async function check() {
     var pw = document.getElementById('kz-pw').value;
     var h = await sha256(pw);
-    if (h === HASH) {
-      localStorage.setItem('kz_auth', HASH);
+    if (HASHES.indexOf(h) !== -1) {
+      localStorage.setItem('kz_auth', h);
       unlock();
     } else {
       document.getElementById('kz-err').textContent = '密碼錯誤';
     }
   }
-  if (localStorage.getItem('kz_auth') === HASH) unlock();
+  if (HASHES.indexOf(localStorage.getItem('kz_auth')) !== -1) unlock();
   document.getElementById('kz-go').addEventListener('click', check);
   document.getElementById('kz-pw').addEventListener('keydown', function(e) { if (e.key === 'Enter') check(); });
 })();
