@@ -153,20 +153,16 @@
     </div>
   </div>
 
-  <div class="tile" style="margin-top:12px;">
-    <div style="display:flex; justify-content:space-between; align-items:baseline;">
-      <p class="lbl" style="margin:0;">成本結構：固定 vs 變動（營運支出）</p>
-      <p style="margin:0; font-size:12.5px; color:var(--text-2);" id="kz-meter-legend"></p>
-    </div>
-    <div style="display:flex; height:10px; border-radius:5px; overflow:hidden; margin-top:10px; background:var(--card-2);" id="kz-meter-bar"></div>
-  </div>
-
   <hr class="rule" />
 
   <div class="card">
-    <p class="lbl" style="margin-bottom:1.1rem;">月度趨勢：實收（依收款管道）vs 支出（依成本結構）</p>
+    <div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:8px; margin-bottom:.6rem;">
+      <p class="lbl" style="margin:0;">月度趨勢：實收（依收款管道）vs 支出（依成本結構）</p>
+      <p style="margin:0; font-size:12px; color:var(--text-2);" id="kz-meter-legend"></p>
+    </div>
+    <div style="display:flex; height:8px; border-radius:4px; overflow:hidden; margin-bottom:1.1rem; background:var(--card-2);" id="kz-meter-bar"></div>
     <div id="kz-trend-legend" style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:6px; font-size:11.5px; color:var(--text-2);"></div>
-    <div id="kz-exp-legend" style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:1.1rem; padding-bottom:.9rem; border-bottom:1px solid var(--line); font-size:11.5px; color:var(--text-2);"></div>
+    <div id="kz-exp-legend" style="display:flex; flex-direction:column; gap:4px; margin-bottom:1.1rem; padding-bottom:.9rem; border-bottom:1px solid var(--line); font-size:11.5px; color:var(--text-2);"></div>
     <div id="kz-trend"></div>
     <div class="scrollx" style="margin-top:1rem;">
       <table style="min-width:420px;">
@@ -319,13 +315,13 @@ var KZ_MONTH_TO_LEDGER = { '四月':'4月','五月':'5月','六月':'6月','七�
 var KZ_MATRIX_MAP = {};
 MATRIX.forEach(function(r) { KZ_MATRIX_MAP[r.cat] = r; });
 var KZ_DONUT_GROUPS = [
-  { label: '食材成本', color: 'var(--exp-1)', cats: ['食材成本'] },
-  { label: '人事關聯', color: 'var(--exp-2)', cats: ['人事成本','勞保','勞退','健保'] },
-  { label: '雜項支出', color: 'var(--exp-3)', cats: ['雜項支出'] },
-  { label: '房租', color: 'var(--exp-4)', cats: ['房租'] },
-  { label: '水電', color: 'var(--exp-5)', cats: ['電費','水費'] },
-  { label: '耗材成本', color: 'var(--exp-6)', cats: ['耗材成本'] },
-  { label: '其他固定', color: 'var(--exp-7)', cats: ['會計記帳費','憑證統整費','電信費','廚餘清運','垃圾清運','環境消毒','中興保全','室內花藝'] }
+  { label: '食材成本', color: 'var(--exp-1)', type: 'VC', cats: ['食材成本'] },
+  { label: '人事關聯', color: 'var(--exp-2)', type: 'FC', cats: ['人事成本','勞保','勞退','健保'] },
+  { label: '雜項支出', color: 'var(--exp-3)', type: 'VC', cats: ['雜項支出'] },
+  { label: '房租', color: 'var(--exp-4)', type: 'FC', cats: ['房租'] },
+  { label: '水電', color: 'var(--exp-5)', type: 'FC', cats: ['電費','水費'] },
+  { label: '耗材成本', color: 'var(--exp-6)', type: 'VC', cats: ['耗材成本'] },
+  { label: '其他固定', color: 'var(--exp-7)', type: 'FC', cats: ['會計記帳費','憑證統整費','電信費','廚餘清運','垃圾清運','環境消毒','中興保全','室內花藝'] }
 ];
 var KZ_RANK_ITEMS = ['食材成本','人事成本','雜項支出','房租','電費','耗材成本','勞保','健保','勞退','垃圾清運','中興保全','室內花藝','水費','憑證統整費','廚餘清運','環境消毒','會計記帳費','電信費'];
 
@@ -441,6 +437,12 @@ function kzRenderSummary() {
     var netCol = t.net >= 0 ? 'var(--green)' : 'var(--red)';
     var revDeltaTag = kzDeltaTag(t.rev, kzPrevVal('實收', t.m), true);
     var expDeltaTag = kzDeltaTag(t.exp, kzPrevVal('實際支出', t.m), false);
+    var tFc = KZ_MATRIX_MAP['固定成本FC'][t.m], tVc = KZ_MATRIX_MAP['變動成本VC'][t.m];
+    var fcVcTag = '';
+    if (tFc != null && tVc != null && (tFc + tVc) > 0) {
+      var tFcPct = tFc / (tFc + tVc) * 100;
+      fcVcTag = '<span style="font-size:11px; color:var(--text-3); margin-left:6px;">固定' + tFcPct.toFixed(0) + '%．變動' + (100 - tFcPct).toFixed(0) + '%</span>';
+    }
     var chan = REVENUE_CHANNELS[t.m];
     var revBarInner, revHidden = [];
     if (chan) {
@@ -489,7 +491,7 @@ function kzRenderSummary() {
       '<div style="position:absolute; left:0; top:0; bottom:0; width:' + revPct + '%; display:flex;">' + revBarInner + '</div></div>' +
       hiddenLine(revHidden) +
       '<div style="display:flex; justify-content:space-between; align-items:baseline; font-size:11.5px; color:var(--text-3); margin-bottom:4px;">' +
-      '<span>支出</span><span><span style="font-variant-numeric:tabular-nums;">' + kzMoney(t.exp) + '</span>' + expDeltaTag + '</span></div>' +
+      '<span>支出' + fcVcTag + '</span><span><span style="font-variant-numeric:tabular-nums;">' + kzMoney(t.exp) + '</span>' + expDeltaTag + '</span></div>' +
       '<div title="實際支出 ' + kzMoney(t.exp) + '" style="position:relative; height:24px; border-radius:4px; overflow:hidden; margin-bottom:4px;">' +
       '<div style="position:absolute; left:0; top:0; bottom:0; width:' + expPct + '%; display:flex;">' + expBarInner + '</div></div>' +
       hiddenLine(expHidden) +
@@ -500,11 +502,17 @@ function kzRenderSummary() {
     KZ_REVENUE_GROUPS.map(function(g) {
       return '<span><span style="display:inline-block; width:9px; height:9px; border-radius:2px; background:' + g.color + '; margin-right:5px;"></span>' + g.label + '</span>';
     }).join('');
+  function kzLegendRow(typeLabel, items) {
+    return '<div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center;">' +
+      '<span style="color:var(--text-3); min-width:60px;">支出．' + typeLabel + '</span>' +
+      items.map(function(g) {
+        return '<span><span style="display:inline-block; width:9px; height:9px; border-radius:2px; background:' + g.color + '; margin-right:5px;"></span>' + g.label + '</span>';
+      }).join('') +
+      '</div>';
+  }
   document.getElementById('kz-exp-legend').innerHTML =
-    '<span style="color:var(--text-3);">支出：</span>' +
-    KZ_DONUT_GROUPS.map(function(g) {
-      return '<span><span style="display:inline-block; width:9px; height:9px; border-radius:2px; background:' + g.color + '; margin-right:5px;"></span>' + g.label + '</span>';
-    }).join('');
+    kzLegendRow('固定', KZ_DONUT_GROUPS.filter(function(g) { return g.type === 'FC'; })) +
+    kzLegendRow('變動', KZ_DONUT_GROUPS.filter(function(g) { return g.type === 'VC'; }));
 
   var kzRevTableCols = [{ label: '實收合計', get: function(m) { return KZ_MATRIX_MAP['實收'][m]; }, bold: true }]
     .concat(KZ_REVENUE_GROUPS.map(function(g) {
