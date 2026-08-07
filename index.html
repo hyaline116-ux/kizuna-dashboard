@@ -451,12 +451,19 @@ function kzRenderSummary() {
       (showLabel ? '<span style="font-size:10.5px; font-weight:500; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.6); white-space:nowrap;">' + kzShortMoney(g.value) + '</span>' : '') +
       '</div>';
   }).join('');
-  document.getElementById('kz-range-summary').innerHTML =
-    '<div style="display:flex; justify-content:space-between; align-items:baseline; font-size:11.5px; color:var(--text-2); margin-bottom:4px;">' +
-    '<span>' + label + ' 平均成本結構</span>' +
-    '<span style="color:var(--text-3);">固定 ' + fcPct.toFixed(1) + '%．變動 ' + vcPct.toFixed(1) + '%</span></div>' +
-    '<div title="支出結構（' + label + '）" style="position:relative; height:24px; border-radius:4px; overflow:hidden;">' +
-    '<div style="position:absolute; left:0; top:0; bottom:0; width:100%; display:flex;">' + rangeBarInner + '</div></div>';
+  var kzRangeSummaryEl = document.getElementById('kz-range-summary');
+  if (months.length > 1) {
+    kzRangeSummaryEl.style.display = '';
+    kzRangeSummaryEl.innerHTML =
+      '<div style="display:flex; justify-content:space-between; align-items:baseline; font-size:11.5px; color:var(--text-2); margin-bottom:4px;">' +
+      '<span>' + label + ' 平均成本結構</span>' +
+      '<span style="color:var(--text-3);">固定 ' + fcPct.toFixed(1) + '%．變動 ' + vcPct.toFixed(1) + '%</span></div>' +
+      '<div title="支出結構（' + label + '）" style="position:relative; height:24px; border-radius:4px; overflow:hidden;">' +
+      '<div style="position:absolute; left:0; top:0; bottom:0; width:100%; display:flex;">' + rangeBarInner + '</div></div>';
+  } else {
+    kzRangeSummaryEl.style.display = 'none';
+    kzRangeSummaryEl.innerHTML = '';
+  }
 
   var trendVals = months.map(function(m) {
     return { m: m, rev: KZ_MATRIX_MAP['實收'][m], exp: KZ_MATRIX_MAP['實際支出'][m], net: KZ_MATRIX_MAP['淨額(未稅)'][m] };
