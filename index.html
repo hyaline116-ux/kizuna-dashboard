@@ -156,13 +156,10 @@
   <hr class="rule" />
 
   <div class="card">
-    <div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:8px; margin-bottom:.6rem;">
-      <p class="lbl" style="margin:0;">月度趨勢：實收（依收款管道）vs 支出（依成本結構）</p>
-      <p style="margin:0; font-size:12px; color:var(--text-2);" id="kz-meter-legend"></p>
-    </div>
-    <div style="display:flex; height:8px; border-radius:4px; overflow:hidden; margin-bottom:1.1rem; background:var(--card-2);" id="kz-meter-bar"></div>
+    <p class="lbl" style="margin:0 0 .8rem;">月度趨勢：實收（依收款管道）vs 支出（依成本結構）</p>
     <div id="kz-trend-legend" style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:6px; font-size:11.5px; color:var(--text-2);"></div>
     <div id="kz-exp-legend" style="display:flex; flex-direction:column; gap:4px; margin-bottom:1.1rem; padding-bottom:.9rem; border-bottom:1px solid var(--line); font-size:11.5px; color:var(--text-2);"></div>
+    <div id="kz-range-summary" style="margin-bottom:14px;"></div>
     <div id="kz-trend"></div>
     <div class="scrollx" style="margin-top:1rem;">
       <table style="min-width:420px;">
@@ -400,10 +397,23 @@ function kzRenderSummary() {
   var fcvc = fc + vc;
   var fcPct = fcvc ? (fc / fcvc * 100) : 0;
   var vcPct = 100 - fcPct;
-  document.getElementById('kz-meter-legend').innerHTML =
-    '<span style="color:var(--fc);">● 固定成本 ' + fcPct.toFixed(1) + '%</span>&nbsp;&nbsp;<span style="color:var(--vc);">● 變動成本 ' + vcPct.toFixed(1) + '%</span>';
-  document.getElementById('kz-meter-bar').innerHTML =
-    '<div style="width:' + fcPct + '%; background:var(--fc);"></div><div style="width:' + vcPct + '%; background:var(--vc);"></div>';
+  var rangeExpGroups = KZ_DONUT_GROUPS.map(function(g) {
+    var v = g.cats.reduce(function(s, c) { return s + (kzSum(c, months) || 0); }, 0);
+    return { label: g.label, color: g.color, value: v };
+  }).filter(function(g) { return g.value > 0; });
+  var rangeBarInner = rangeExpGroups.map(function(g) {
+    var pct = fcvc ? g.value / fcvc * 100 : 0;
+    var showLabel = pct >= 6;
+    return '<div title="' + g.label + ' ' + kzMoney(g.value) + '（' + pct.toFixed(1) + '%）" style="width:' + pct.toFixed(2) + '%; height:100%; background:' + g.color + '; display:flex; align-items:center; justify-content:center; overflow:hidden;">' +
+      (showLabel ? '<span style="font-size:10.5px; font-weight:500; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.6); white-space:nowrap;">' + kzShortMoney(g.value) + '</span>' : '') +
+      '</div>';
+  }).join('');
+  document.getElementById('kz-range-summary').innerHTML =
+    '<div style="display:flex; justify-content:space-between; align-items:baseline; font-size:11.5px; color:var(--text-2); margin-bottom:4px;">' +
+    '<span>' + label + ' 平均成本結構</span>' +
+    '<span style="color:var(--text-3);">固定 ' + fcPct.toFixed(1) + '%．變動 ' + vcPct.toFixed(1) + '%</span></div>' +
+    '<div title="支出結構（' + label + '）" style="position:relative; height:24px; border-radius:4px; overflow:hidden;">' +
+    '<div style="position:absolute; left:0; top:0; bottom:0; width:100%; display:flex;">' + rangeBarInner + '</div></div>';
 
   var trendVals = months.map(function(m) {
     return { m: m, rev: KZ_MATRIX_MAP['實收'][m], exp: KZ_MATRIX_MAP['實際支出'][m], net: KZ_MATRIX_MAP['淨額(未稅)'][m] };
@@ -664,7 +674,8 @@ kzRenderCashAndBudget();
 (function() {
   var HASHES = [
     'c7cf37db3b2edad718b2e526a5b0f686e25184d501dceaa8998593b2fbad2af6',
-    '23bf174d69664b3731c9a92d135582dcdfa8578af5f161ce477c7f503f791b65'
+    '23bf174d69664b3731c9a92d135582dcdfa8578af5f161ce477c7f503f791b65',
+    '03d165e6943413ba5b467a99c67b7302c49d747bcca3627a63b874d0e0861bd3'
   ];
   async function sha256(text) {
     var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
