@@ -91,10 +91,12 @@
       <div style="display:flex; border:1px solid var(--line); border-radius:8px; overflow:hidden;">
         <button type="button" id="kz-mode-single" style="background:var(--card-2); color:var(--text); border:none; font:inherit; font-size:12.5px; padding:7px 10px; cursor:pointer;">單月</button>
         <button type="button" id="kz-mode-range" style="background:var(--gold); color:#2c2008; border:none; font:inherit; font-size:12.5px; font-weight:500; padding:7px 10px; cursor:pointer;">範圍</button>
+        <button type="button" id="kz-mode-quarter" style="background:var(--card-2); color:var(--text); border:none; font:inherit; font-size:12.5px; padding:7px 10px; cursor:pointer;">季度</button>
       </div>
       <select class="q" id="kz-from"></select>
       <span id="kz-range-sep" style="color:var(--text-3); font-size:13px;">–</span>
       <select class="q" id="kz-to"></select>
+      <select class="q" id="kz-quarter" style="display:none;"></select>
     </div>
   </div>
   <p id="kz-range-note" style="margin:0 0 1.25rem; font-size:12px; color:var(--text-3); text-align:right;"></p>
@@ -340,6 +342,19 @@ function kzSum(cat, months) {
   });
   return any ? total : null;
 }
+var KZ_YEAR = 2026;
+var KZ_MONTH_NUM = {'一月':1,'二月':2,'三月':3,'四月':4,'五月':5,'六月':6,'七月':7,'八月':8,'九月':9,'十月':10,'十一月':11,'十二月':12};
+function kzQuartersAvailable() {
+  var groups = {};
+  KZ_MONTHS.forEach(function(m) {
+    var q = Math.ceil(KZ_MONTH_NUM[m] / 3);
+    if (!groups[q]) groups[q] = [];
+    groups[q].push(m);
+  });
+  return Object.keys(groups).sort(function(a, b) { return a - b; }).map(function(q) {
+    return { q: +q, months: groups[q] };
+  });
+}
 function kzPopulateRangeSelects() {
   var from = document.getElementById('kz-from');
   var to = document.getElementById('kz-to');
@@ -349,22 +364,39 @@ function kzPopulateRangeSelects() {
   });
   from.value = 0;
   to.value = 3;
+  var quarterSel = document.getElementById('kz-quarter');
+  var quarters = kzQuartersAvailable();
+  var qLabels = ['','第一季','第二季','第三季','第四季'];
+  quarters.forEach(function(g) {
+    var startNum = KZ_MONTH_NUM[g.months[0]], endNum = KZ_MONTH_NUM[g.months[g.months.length - 1]];
+    var label = KZ_YEAR + ' ' + qLabels[g.q] + '（' + startNum + '~' + endNum + '月）';
+    quarterSel.appendChild(new Option(label, g.q));
+  });
+  if (quarters.length) quarterSel.value = quarters[quarters.length - 1].q;
 }
 var kzRangeMode = 'range';
 function kzSetMode(mode) {
   kzRangeMode = mode;
-  var single = mode === 'single';
-  document.getElementById('kz-mode-single').style.background = single ? 'var(--gold)' : 'var(--card-2)';
-  document.getElementById('kz-mode-single').style.color = single ? '#2c2008' : 'var(--text)';
-  document.getElementById('kz-mode-single').style.fontWeight = single ? '500' : '400';
-  document.getElementById('kz-mode-range').style.background = single ? 'var(--card-2)' : 'var(--gold)';
-  document.getElementById('kz-mode-range').style.color = single ? 'var(--text)' : '#2c2008';
-  document.getElementById('kz-mode-range').style.fontWeight = single ? '400' : '500';
-  document.getElementById('kz-to').style.display = single ? 'none' : '';
-  document.getElementById('kz-range-sep').style.display = single ? 'none' : '';
+  var buttons = { single: 'kz-mode-single', range: 'kz-mode-range', quarter: 'kz-mode-quarter' };
+  Object.keys(buttons).forEach(function(k) {
+    var active = k === mode;
+    var el = document.getElementById(buttons[k]);
+    el.style.background = active ? 'var(--gold)' : 'var(--card-2)';
+    el.style.color = active ? '#2c2008' : 'var(--text)';
+    el.style.fontWeight = active ? '500' : '400';
+  });
+  document.getElementById('kz-from').style.display = mode === 'quarter' ? 'none' : '';
+  document.getElementById('kz-to').style.display = mode === 'range' ? '' : 'none';
+  document.getElementById('kz-range-sep').style.display = mode === 'range' ? '' : 'none';
+  document.getElementById('kz-quarter').style.display = mode === 'quarter' ? '' : 'none';
   kzRenderSummary();
 }
 function kzCurrentMonths() {
+  if (kzRangeMode === 'quarter') {
+    var qVal = parseInt(document.getElementById('kz-quarter').value, 10);
+    var grp = kzQuartersAvailable().filter(function(g) { return g.q === qVal; })[0];
+    return grp ? grp.months : [];
+  }
   var fromI = parseInt(document.getElementById('kz-from').value, 10);
   if (kzRangeMode === 'single') { return [KZ_MONTHS[fromI]]; }
   var toI = parseInt(document.getElementById('kz-to').value, 10);
@@ -631,8 +663,10 @@ var KZ_REVENUE_GROUPS = [
 kzPopulateRangeSelects();
 document.getElementById('kz-from').addEventListener('change', kzRenderSummary);
 document.getElementById('kz-to').addEventListener('change', kzRenderSummary);
+document.getElementById('kz-quarter').addEventListener('change', kzRenderSummary);
 document.getElementById('kz-mode-single').addEventListener('click', function() { kzSetMode('single'); });
 document.getElementById('kz-mode-range').addEventListener('click', function() { kzSetMode('range'); });
+document.getElementById('kz-mode-quarter').addEventListener('click', function() { kzSetMode('quarter'); });
 kzRenderSummary();
 
 var CASH = {"total_capital":14527841,"payable_budget":1133772,"cash_level":2441145,"total_spent":22331195,"book_balance":3574917,"pending_transfer":609892,"cash_reserve":49103};
