@@ -255,11 +255,24 @@
     <div class="card">
       <p class="lbl" style="margin-bottom:.5rem;">上傳最新月結 Excel</p>
       <p style="margin:0 0 1.1rem; font-size:12.5px; color:var(--text-2); line-height:1.6;">
-        這裡上傳「運營財務_資金管理.xlsx」後，<b>只會在你目前這個瀏覽器暫時重算預覽</b>，不會更動股東實際看到的網站。<br />
-        要讓股東也看到最新數字，上傳確認沒問題後，仍要把同一份檔案傳給我，由我重新部署。
+        這裡上傳「運營財務_資金管理.xlsx」後，會先在你目前這個瀏覽器<b>本機重算預覽</b>，確認數字沒問題後，可以直接按下方「發布到正式網站」讓所有人看到最新資料。
       </p>
       <input type="file" id="kz-upload-input" accept=".xlsx" class="q" style="padding:8px;" />
       <p id="kz-upload-status" style="margin:.75rem 0 0; font-size:12.5px; color:var(--text-2);"></p>
+    </div>
+
+    <div class="card" style="margin-top:12px;">
+      <p class="lbl" style="margin-bottom:.5rem;">發布到正式網站</p>
+      <p style="margin:0 0 1rem; font-size:12.5px; color:var(--text-2); line-height:1.6;">
+        發布會直接更新正式網站（所有人都會看到），且不易復原，請先確認上方預覽數字正確。<br />
+        第一次使用需要輸入 GitHub 權限碼（Personal Access Token，僅限本 repo 的 Contents 讀寫權限即可），只會存在你這台電腦的瀏覽器裡，不會送到別的地方。
+      </p>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:.9rem;">
+        <input type="password" id="kz-gh-token" class="q" placeholder="GitHub Token（貼上後自動儲存）" style="flex:1; min-width:220px;" autocomplete="off" />
+        <button type="button" id="kz-gh-token-clear" style="background:var(--card-2); color:var(--text-2); border:1px solid var(--line); border-radius:8px; font:inherit; font-size:12px; padding:8px 10px; cursor:pointer;">清除已存Token</button>
+      </div>
+      <button type="button" id="kz-publish-btn" disabled style="background:var(--gold); color:#2c2008; border:none; border-radius:8px; font:inherit; font-size:13px; font-weight:500; padding:10px 16px; cursor:pointer; opacity:.5;">先上傳並預覽檔案</button>
+      <p id="kz-publish-status" style="margin:.75rem 0 0; font-size:12.5px; color:var(--text-2);"></p>
     </div>
   </div>
 </div>
@@ -905,6 +918,7 @@ function kzParseWorkbook(wb) {
   var budgetParsed = kzParseBudget(aoa);
   return { matrix: matrix, ledger: kzParseLedger(aoa), cash: kzParseCash(aoa), budget: budgetParsed.budget, cashReserve: budgetParsed.cashReserve, revenueChannels: kzParseRevenueChannels(wb) };
 }
+var kzUploadedFileName = null;
 document.getElementById('kz-upload-input').addEventListener('change', function(e) {
   var file = e.target.files[0];
   if (!file) return;
@@ -930,7 +944,9 @@ document.getElementById('kz-upload-input').addEventListener('change', function(e
       kzRender();
       kzRenderCashAndBudget();
       statusEl.style.color = 'var(--green)';
-      statusEl.textContent = '解析完成（' + file.name + '，' + LEDGER.length + ' 筆帳務）－ 已重新整理下方所有圖表、資金水位與明細（僅本機預覽，切回「儀表板」查看）';
+      statusEl.textContent = '解析完成（' + file.name + '，' + LEDGER.length + ' 筆帳務）－ 已重新整理下方所有圖表、資金水位與明細（切回「儀表板」查看預覽）';
+      kzUploadedFileName = file.name;
+      kzUpdatePublishBtn();
     } catch (err) {
       statusEl.style.color = 'var(--red)';
       statusEl.textContent = '解析失敗：' + err.message;
@@ -938,4 +954,98 @@ document.getElementById('kz-upload-input').addEventListener('change', function(e
   };
   reader.readAsArrayBuffer(file);
 });
+
+var KZ_GH_OWNER = 'hyaline116-ux';
+var KZ_GH_REPO = 'kizuna-dashboard';
+var KZ_GH_PATH = 'index.html';
+var KZ_GH_BRANCH = 'main';
+var KZ_GH_TOKEN_KEY = 'kz_gh_token';
+
+var kzGhTokenInput = document.getElementById('kz-gh-token');
+var kzSavedToken = localStorage.getItem(KZ_GH_TOKEN_KEY);
+if (kzSavedToken) kzGhTokenInput.value = kzSavedToken;
+kzGhTokenInput.addEventListener('input', function() {
+  if (kzGhTokenInput.value.trim()) {
+    localStorage.setItem(KZ_GH_TOKEN_KEY, kzGhTokenInput.value.trim());
+  } else {
+    localStorage.removeItem(KZ_GH_TOKEN_KEY);
+  }
+  kzUpdatePublishBtn();
+});
+document.getElementById('kz-gh-token-clear').addEventListener('click', function() {
+  localStorage.removeItem(KZ_GH_TOKEN_KEY);
+  kzGhTokenInput.value = '';
+  kzUpdatePublishBtn();
+  document.getElementById('kz-publish-status').textContent = '已清除本機儲存的 Token';
+  document.getElementById('kz-publish-status').style.color = 'var(--text-2)';
+});
+function kzUpdatePublishBtn() {
+  var btn = document.getElementById('kz-publish-btn');
+  var hasToken = !!kzGhTokenInput.value.trim();
+  var hasFile = !!kzUploadedFileName;
+  btn.disabled = !(hasToken && hasFile);
+  btn.style.opacity = btn.disabled ? '.5' : '1';
+  btn.textContent = !hasFile ? '先上傳並預覽檔案' : (!hasToken ? '請先輸入 GitHub Token' : '發布到正式網站');
+}
+kzUpdatePublishBtn();
+
+function kzUtf8ToB64(str) { return btoa(unescape(encodeURIComponent(str))); }
+function kzB64ToUtf8(str) { return decodeURIComponent(escape(atob(str.replace(/\n/g, '')))); }
+function kzReplaceVar(html, name, valueLiteral) {
+  var re = new RegExp('var ' + name + ' ?=\\s*(\\[.*?\\]|\\{.*?\\});', 's');
+  if (!re.test(html)) throw new Error('線上檔案裡找不到 var ' + name + '，發布中止（可能網站結構已變更，需要人工檢查）');
+  return html.replace(re, 'var ' + name + ' = ' + valueLiteral + ';');
+}
+async function kzGhApi(path, options) {
+  var token = localStorage.getItem(KZ_GH_TOKEN_KEY);
+  options = options || {};
+  options.headers = Object.assign({
+    'Authorization': 'token ' + token,
+    'Accept': 'application/vnd.github+json'
+  }, options.headers || {});
+  var resp = await fetch('https://api.github.com/repos/' + KZ_GH_OWNER + '/' + KZ_GH_REPO + path, options);
+  if (!resp.ok) {
+    var body = await resp.json().catch(function() { return {}; });
+    var msg = resp.status === 401 ? 'Token 無效或已過期' : (resp.status === 404 ? '找不到 repo 或檔案（權限不足？）' : (body.message || ('HTTP ' + resp.status)));
+    throw new Error(msg);
+  }
+  return resp.json();
+}
+async function kzPublishToGithub() {
+  var statusEl = document.getElementById('kz-publish-status');
+  var btn = document.getElementById('kz-publish-btn');
+  if (!window.confirm('確定要發布到正式網站嗎？\n這會直接更新所有人看到的頁面，且不易復原。\n請確認「儀表板」頁籤的預覽數字都正確。')) return;
+  btn.disabled = true;
+  statusEl.style.color = 'var(--text-2)';
+  statusEl.textContent = '讀取線上目前版本…';
+  try {
+    var current = await kzGhApi('/contents/' + KZ_GH_PATH + '?ref=' + KZ_GH_BRANCH);
+    var html = kzB64ToUtf8(current.content);
+    statusEl.textContent = '套用最新資料…';
+    html = kzReplaceVar(html, 'MATRIX', JSON.stringify(MATRIX));
+    html = kzReplaceVar(html, 'LEDGER', JSON.stringify(LEDGER));
+    html = kzReplaceVar(html, 'REVENUE_CHANNELS', JSON.stringify(REVENUE_CHANNELS));
+    html = kzReplaceVar(html, 'CASH', JSON.stringify(CASH));
+    html = kzReplaceVar(html, 'BUDGET', JSON.stringify(BUDGET));
+    statusEl.textContent = '提交到 GitHub…';
+    await kzGhApi('/contents/' + KZ_GH_PATH, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: '網頁上傳同步財務資料' + (kzUploadedFileName ? '（' + kzUploadedFileName + '）' : ''),
+        content: kzUtf8ToB64(html),
+        sha: current.sha,
+        branch: KZ_GH_BRANCH
+      })
+    });
+    statusEl.style.color = 'var(--green)';
+    statusEl.textContent = '發布成功！GitHub Pages 通常 30~60 秒後正式生效，稍後重新整理網站即可看到最新資料。';
+  } catch (err) {
+    statusEl.style.color = 'var(--red)';
+    statusEl.textContent = '發布失敗：' + err.message;
+  } finally {
+    kzUpdatePublishBtn();
+  }
+}
+document.getElementById('kz-publish-btn').addEventListener('click', kzPublishToGithub);
 </script>
