@@ -201,18 +201,10 @@
   <div class="card">
     <div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:8px; margin-bottom:1rem;">
       <p class="lbl" style="margin:0;">帳務明細（逐筆，共 <span id="kz-total">391</span> 筆）</p>
-      <p style="margin:0; font-size:12px; color:var(--text-2);">顯示 <span id="kz-count">391</span> 筆</p>
+      <p style="margin:0; font-size:12px; color:var(--text-2);">顯示 <span id="kz-count">391</span> 筆（範圍：<span id="kz-ledger-range-label">—</span>）</p>
     </div>
     <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:1rem;">
       <input class="q" id="kz-search" type="text" placeholder="搜尋項目說明，例如：和牛、房租、薪資" style="flex:1; min-width:180px;" />
-      <select class="q" id="kz-month">
-        <option value="">全部月份</option>
-        <option value="4月">4月</option>
-        <option value="5月">5月</option>
-        <option value="6月">6月</option>
-        <option value="7月">7月</option>
-        <option value="8月">8月</option>
-      </select>
       <select class="q" id="kz-cat">
         <option value="">全部類別</option>
         <option value="FC">營運支出．固定</option>
@@ -294,10 +286,13 @@ function kzCatKey(r) {
 }
 function kzRender() {
   var q = document.getElementById('kz-search').value.trim().toLowerCase();
-  var m = document.getElementById('kz-month').value;
   var c = document.getElementById('kz-cat').value;
+  var months = kzCurrentMonths();
+  var ledgerMonths = months.map(function(m) { return KZ_MONTH_TO_LEDGER[m]; });
+  var rangeLabel = months.length === 0 ? '—' : (months.length === 1 ? months[0] : (months[0] + '–' + months[months.length - 1]));
+  document.getElementById('kz-ledger-range-label').textContent = rangeLabel;
   var rows = LEDGER.filter(function(r) {
-    if (m && r.month !== m) return false;
+    if (ledgerMonths.indexOf(r.month) === -1) return false;
     if (c && kzCatKey(r) !== c) return false;
     if (q && r.desc.toLowerCase().indexOf(q) === -1) return false;
     return true;
@@ -316,10 +311,8 @@ function kzRender() {
     '<td></td></tr>';
 }
 document.getElementById('kz-search').addEventListener('input', kzRender);
-document.getElementById('kz-month').addEventListener('change', kzRender);
 document.getElementById('kz-cat').addEventListener('change', kzRender);
 document.getElementById('kz-total').textContent = LEDGER.length;
-kzRender();
 </script>
 
 <script>
@@ -619,6 +612,7 @@ function kzRenderSummary() {
   document.getElementById('kz-rank').innerHTML = rankHtml;
 
   kzRenderMatrix(months, label);
+  kzRender();
 }
 
 var KZ_ROW_DEFS = [
