@@ -85,7 +85,6 @@
   <div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:8px; margin-bottom:1.25rem;">
     <div>
       <p class="serif" style="font-size:22px; margin:0; letter-spacing:.02em;">絆 Kizuna <span style="color:var(--text-3); font-size:15px; font-weight:400;">鋤燒．燒肉</span></p>
-      <p class="lbl" style="margin-top:4px;">營運財務總覽</p>
     </div>
     <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
       <div style="display:flex; border:1px solid var(--line); border-radius:8px; overflow:hidden;">
@@ -104,7 +103,7 @@
   <p id="kz-range-note" style="margin:0 0 1.25rem; font-size:12px; color:var(--text-3); text-align:right;"></p>
 
   <div style="display:flex; gap:8px; margin-bottom:1.5rem; border-bottom:1px solid var(--line);">
-    <button type="button" class="kz-tab" id="kz-tab-dash" style="background:none; border:none; border-bottom:2px solid var(--gold); color:var(--text); font:inherit; font-size:13.5px; font-weight:500; padding:0 0 10px; cursor:pointer;">儀表板</button>
+    <button type="button" class="kz-tab" id="kz-tab-dash" style="background:none; border:none; border-bottom:2px solid var(--gold); color:var(--text); font:inherit; font-size:13.5px; font-weight:500; padding:0 0 10px; cursor:pointer;">營運財務總覽</button>
     <button type="button" class="kz-tab" id="kz-tab-upload" style="background:none; border:none; border-bottom:2px solid transparent; color:var(--text-3); font:inherit; font-size:13.5px; padding:0 0 10px; cursor:pointer;">上傳資料</button>
   </div>
 
@@ -938,7 +937,7 @@ document.getElementById('kz-upload-input').addEventListener('change', function(e
       kzRender();
       kzRenderCashAndBudget();
       statusEl.style.color = 'var(--green)';
-      statusEl.textContent = '解析完成（' + file.name + '，' + LEDGER.length + ' 筆帳務）－ 已重新整理下方所有圖表、資金水位與明細（切回「儀表板」查看預覽）';
+      statusEl.textContent = '解析完成（' + file.name + '，' + LEDGER.length + ' 筆帳務）－ 已重新整理下方所有圖表、資金水位與明細（切回「營運財務總覽」查看預覽）';
       kzUploadedFileName = file.name;
       kzUpdatePublishBtn();
     } catch (err) {
@@ -1008,7 +1007,7 @@ async function kzGhApi(path, options) {
 async function kzPublishToGithub() {
   var statusEl = document.getElementById('kz-publish-status');
   var btn = document.getElementById('kz-publish-btn');
-  if (!window.confirm('確定要發布到正式網站嗎？\n這會直接更新所有人看到的頁面，且不易復原。\n請確認「儀表板」頁籤的預覽數字都正確。')) return;
+  if (!window.confirm('確定要發布到正式網站嗎？\n這會直接更新所有人看到的頁面，且不易復原。\n請確認「營運財務總覽」頁籤的預覽數字都正確。')) return;
   btn.disabled = true;
   statusEl.style.color = 'var(--text-2)';
   statusEl.textContent = '讀取線上目前版本…';
