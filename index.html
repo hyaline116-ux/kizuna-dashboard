@@ -365,10 +365,8 @@ function kzQuartersAvailable() {
 function kzDefaultSingleIdx() {
   var allNames = ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
   var now = new Date();
-  var prevMonthNum = now.getMonth(); // getMonth() is 0-indexed, so this equals (current month - 1)
-  if (prevMonthNum === 0) prevMonthNum = 12;
-  var prevMonthName = allNames[prevMonthNum - 1];
-  var idx = KZ_MONTHS.indexOf(prevMonthName);
+  var currentMonthName = allNames[now.getMonth()];
+  var idx = KZ_MONTHS.indexOf(currentMonthName);
   return idx === -1 ? KZ_MONTHS.length - 1 : idx;
 }
 function kzPopulateRangeSelects() {
