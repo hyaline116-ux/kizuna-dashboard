@@ -137,6 +137,7 @@
     <div class="tile">
       <p class="lbl">實收</p>
       <p class="num" id="kz-kpi-revenue">—</p>
+      <p style="font-size:10px; color:var(--text-3); margin:3px 0 0;">Visa最新入款 <span id="kz-revenue-asof-visa">—</span>｜現金存入至 <span id="kz-revenue-asof-cash">—</span></p>
     </div>
     <div class="tile">
       <p class="lbl">實際支出</p>
@@ -691,10 +692,16 @@ document.getElementById('kz-mode-range').addEventListener('click', function() { 
 document.getElementById('kz-mode-quarter').addEventListener('click', function() { kzSetMode('quarter'); });
 kzSetMode('single');
 
-var CASH = {"total_capital":14527841,"payable_budget":2703914,"cash_level":2108932,"total_spent":22660592,"book_balance":4812846,"pending_transfer":0,"cash_reserve":60450};
+var CASH = {"total_capital":14527841,"payable_budget":2703914,"cash_level":2108932,"total_spent":22660592,"book_balance":4812846,"pending_transfer":0,"cash_reserve":60450,"visa_latest_date":null,"cash_asof_date":null};
 var BUDGET = [{"item":"品牌形象：主餐小卡,QR評論卡,飲品杯墊  輸出","budget":30000,"progress":"進行中"},{"item":"固定成本：4月營業稅務預留","budget":89217,"progress":"預估"},{"item":"固定成本：5月營業稅務預留","budget":147288,"progress":"預估"},{"item":"固定成本：6月營業稅務預留","budget":134306,"progress":"預估"},{"item":"固定成本：7月營業稅務預留","budget":132423,"progress":"預估"},{"item":"固定成本：7月憑證統整費","budget":5000,"progress":"預估"},{"item":"固定成本：7月電費預估","budget":90000,"progress":"預估"},{"item":"固定成本：7月水費預估","budget":3000,"progress":"預估"},{"item":"固定成本：7月記帳費預估","budget":2500,"progress":"預估"},{"item":"固定成本：7月環境消毒費預估","budget":3000,"progress":"預估"},{"item":"固定成本：7月電信費預估","budget":2000,"progress":"預估"},{"item":"固定成本：8月人事 即時估算","budget":628544,"progress":"預估"},{"item":"變動成本：8月食材 即時估算","budget":1022406,"progress":"預估40%"},{"item":"包廂投影幕,投影機,麥克風設備 增設預算","budget":120000,"progress":"預估"},{"item":"裝潢工程：廚房熱器對流孔拆除封板 工程預算","budget":8000,"progress":"預估"},{"item":"固定成本：8月勞保費預估","budget":55000,"progress":"預估"},{"item":"固定成本：8月勞退費預估","budget":27000,"progress":"預估"},{"item":"固定成本：8月健保費預估","budget":37000,"progress":"預估"},{"item":"固定成本：8月憑證統整費","budget":5000,"progress":"預估"},{"item":"固定成本：8月電費預估","budget":90000,"progress":"預估"},{"item":"固定成本：8月水費預估","budget":3000,"progress":"預估"},{"item":"固定成本：8月記帳費預估","budget":2500,"progress":"預估"},{"item":"固定成本：8月環境消毒費預估","budget":3000,"progress":"預估"},{"item":"固定成本：8月電信費預估","budget":2000,"progress":"預估"},{"item":"固定成本：8月廚餘清運預估","budget":3000,"progress":"預估"},{"item":"固定成本：8月垃圾清運預估","budget":11000,"progress":"預估"},{"item":"固定成本：8月室內花藝","budget":6000,"progress":"預估"}];
 
 var KZ_CASH_HEALTH_LINE = 3000000;
+function kzShortDate(iso) {
+  if (!iso) return '—';
+  var parts = iso.split('-');
+  if (parts.length !== 3) return iso;
+  return parseInt(parts[1], 10) + '/' + parseInt(parts[2], 10);
+}
 function kzRenderCashAndBudget() {
   var kzCashAdjusted = CASH.cash_level - CASH.pending_transfer;
   document.getElementById('kz-cash-level').textContent = kzMoney(kzCashAdjusted);
@@ -702,6 +709,8 @@ function kzRenderCashAndBudget() {
   document.getElementById('kz-cash-balance').textContent = kzMoney(CASH.book_balance);
   document.getElementById('kz-cash-pending').textContent = kzMoney(CASH.pending_transfer);
   document.getElementById('kz-cash-reserve').textContent = kzMoney(CASH.cash_reserve);
+  document.getElementById('kz-revenue-asof-visa').textContent = kzShortDate(CASH.visa_latest_date);
+  document.getElementById('kz-revenue-asof-cash').textContent = kzShortDate(CASH.cash_asof_date);
 
   var kzHealthPct = kzCashAdjusted / KZ_CASH_HEALTH_LINE * 100;
   var kzHealthy = kzCashAdjusted >= KZ_CASH_HEALTH_LINE;
