@@ -137,7 +137,11 @@
     <div class="tile">
       <p class="lbl">實收</p>
       <p class="num" id="kz-kpi-revenue">—</p>
-      <p style="font-size:10px; color:var(--text-3); margin:3px 0 0;">Visa最新入款 <span id="kz-revenue-asof-visa">—</span>｜現金存入至 <span id="kz-revenue-asof-cash">—</span></p>
+      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:8px 0 0; font-size:11px; color:var(--text-3);">
+        <span>Visa最新入款 <b style="color:var(--text-2); font-weight:500;" id="kz-revenue-asof-visa">—</b></span>
+        <span style="color:var(--line);">|</span>
+        <span>現金存入至 <b style="color:var(--text-2); font-weight:500;" id="kz-revenue-asof-cash">—</b></span>
+      </div>
     </div>
     <div class="tile">
       <p class="lbl">實際支出</p>
