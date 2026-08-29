@@ -9,3 +9,22 @@
 - 程式碼一律用 diff / partial code block；修改 <50 行不重寫整個檔案。
 - 不解釋程式碼邏輯，除非使用者明確問「為什麼」。
 - 策略類回覆：每主題最多 3 個 bullet，每 bullet ≤15 字。
+
+## Context Handoff（Trigger: `%%%`）
+
+當使用者輸入訊息為 `%%%` 時，立即產出「Context Handoff Prompt」，格式如下：
+
+```
+## Context Handoff Prompt
+
+**Task Summary** (≤3 lines)
+...
+
+**Modified Files / Current Status**
+- path/to/file — 狀態
+
+**Next Step**
+...
+```
+
+輸出後提示使用者：複製上方內容 → 執行 `/clear` → 貼到新 session 開頭。
