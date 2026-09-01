@@ -89,16 +89,16 @@
     <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
       <button type="button" class="kz-tab" id="kz-tab-upload" style="background:none; border:none; border-bottom:2px solid transparent; color:var(--text-3); font:inherit; font-size:12.5px; padding:7px 10px; cursor:pointer; margin-right:18px;">上傳資料</button>
       <div style="display:flex; border:1px solid var(--line); border-radius:8px; overflow:hidden;">
-        <button type="button" id="kz-mode-single" style="background:var(--gold); color:#2c2008; border:none; font:inherit; font-size:12.5px; font-weight:500; padding:7px 10px; cursor:pointer;">單月</button>
-        <button type="button" id="kz-mode-quarter" style="background:var(--card-2); color:var(--text); border:none; font:inherit; font-size:12.5px; padding:7px 10px; cursor:pointer;">季度</button>
+        <button type="button" id="kz-mode-single" style="background:var(--card-2); color:var(--text); border:none; font:inherit; font-size:12.5px; padding:7px 10px; cursor:pointer;">單月</button>
+        <button type="button" id="kz-mode-quarter" style="background:var(--gold); color:#2c2008; border:none; font:inherit; font-size:12.5px; font-weight:500; padding:7px 10px; cursor:pointer;">季度</button>
       </div>
       <div style="display:flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; margin-left:10px;">
         <button type="button" id="kz-mode-range" style="background:var(--card-2); color:var(--text); border:none; font:inherit; font-size:12.5px; padding:7px 10px; cursor:pointer;">自選範圍</button>
       </div>
-      <select class="q" id="kz-from"></select>
-      <span id="kz-range-sep" style="color:var(--text-3); font-size:13px;">–</span>
-      <select class="q" id="kz-to"></select>
-      <select class="q" id="kz-quarter" style="display:none;"></select>
+      <select class="q" id="kz-from" style="display:none;"></select>
+      <span id="kz-range-sep" style="color:var(--text-3); font-size:13px; display:none;">–</span>
+      <select class="q" id="kz-to" style="display:none;"></select>
+      <select class="q" id="kz-quarter"></select>
     </div>
   </div>
   <p id="kz-range-note" style="margin:0 0 1.25rem; font-size:12px; color:var(--text-3); text-align:right;"></p>
@@ -692,7 +692,7 @@ document.getElementById('kz-quarter').addEventListener('change', kzRenderSummary
 document.getElementById('kz-mode-single').addEventListener('click', function() { kzSetMode('single'); });
 document.getElementById('kz-mode-range').addEventListener('click', function() { kzSetMode('range'); });
 document.getElementById('kz-mode-quarter').addEventListener('click', function() { kzSetMode('quarter'); });
-kzSetMode('single');
+kzSetMode('quarter');
 
 var CASH = {"total_capital":14527841,"payable_budget":2859528,"cash_level":2071555,"total_spent":22774504,"book_balance":4931083,"pending_transfer":0,"cash_reserve":28090,"visa_latest_date":"2026-09-01","cash_asof_date":"2026-08-24"};
 var BUDGET = [{"item":"固定成本：4月營業稅務預留","budget":89217,"progress":"預估"},{"item":"固定成本：5月營業稅務預留","budget":147288,"progress":"預估"},{"item":"固定成本：6月營業稅務預留","budget":134306,"progress":"預估"},{"item":"固定成本：7月營業稅務預留","budget":132423,"progress":"預估"},{"item":"固定成本：7月憑證統整費","budget":5000,"progress":"預估"},{"item":"固定成本：7月電費預估","budget":90000,"progress":"預估"},{"item":"固定成本：7月水費預估","budget":3000,"progress":"預估"},{"item":"固定成本：7月記帳費預估","budget":2500,"progress":"預估"},{"item":"固定成本：7月環境消毒費預估","budget":3000,"progress":"預估"},{"item":"固定成本：7月電信費預估","budget":2000,"progress":"預估"},{"item":"固定成本：8月人事 即時估算","budget":708251,"progress":"預估"},{"item":"變動成本：8月食材 即時估算","budget":1104034,"progress":"預估40%"},{"item":"包廂投影幕,麥克風設備 增設預算","budget":60000,"progress":"預估"},{"item":"裝潢工程：廚房熱器對流孔拆除封板 工程預算","budget":8000,"progress":"預估"},{"item":"固定成本：8月勞保費預估","budget":55000,"progress":"預估"},{"item":"固定成本：8月勞退費預估","budget":27000,"progress":"預估"},{"item":"固定成本：8月健保費預估","budget":37000,"progress":"預估"},{"item":"固定成本：8月憑證統整費","budget":5000,"progress":"預估"},{"item":"固定成本：8月電費預估","budget":90000,"progress":"預估"},{"item":"固定成本：8月水費預估","budget":3000,"progress":"預估"},{"item":"固定成本：8月記帳費預估","budget":2500,"progress":"預估"},{"item":"固定成本：8月環境消毒費預估","budget":3000,"progress":"預估"},{"item":"固定成本：8月電信費預估","budget":2000,"progress":"預估"},{"item":"固定成本：8月廚餘清運預估","budget":3000,"progress":"預估"},{"item":"固定成本：8月垃圾清運預估","budget":11000,"progress":"預估"},{"item":"固定成本：8月室內花藝","budget":6000,"progress":"預估"},{"item":"固定成本：9月房租","budget":80000,"progress":"提現繳租"}];
