@@ -651,11 +651,14 @@ function kzRenderKline() {
   var el = document.getElementById('kz-kline');
   if (!el) return;
   var rows = KZ_MONTHS.map(function(m) {
-    return { m: m, net: KZ_MATRIX_MAP['淨額(未稅)'] ? KZ_MATRIX_MAP['淨額(未稅)'][m] : null };
+    var lm = KZ_MONTH_TO_LEDGER[m] || m;
+    var prov = BUDGET.some(function(b) { return b.item.indexOf(lm) >= 0 && b.item.indexOf('即時估算') >= 0; });
+    return { m: m, net: KZ_MATRIX_MAP['淨額(未稅)'] ? KZ_MATRIX_MAP['淨額(未稅)'][m] : null, prov: prov };
   }).filter(function(r) { return r.net !== null && r.net !== undefined; });
   if (!rows.length) return;
   var cum = 0;
   rows.forEach(function(r) { cum += r.net; r.cum = cum; });
+  var anyProv = rows.some(function(r) { return r.prov; });
 
   var W = 860, H = 200, PL = 46, PR = 14, PT = 16, PB = 24;
   var cums = rows.map(function(r) { return r.cum; });
@@ -681,10 +684,21 @@ function kzRenderKline() {
      + '<stop offset="1" stop-color="var(--kl-accent)" stop-opacity="0"/></linearGradient></defs>';
   var baseY = Math.min(y(bot), y(0));
   g += '<path d="M ' + PL + ',' + baseY.toFixed(1) + ' L ' + pts.join(' L ') + ' L ' + (W - PR) + ',' + baseY.toFixed(1) + ' Z" fill="url(#kzCashGrad)"/>';
-  g += '<polyline points="' + pts.join(' ') + '" fill="none" stroke="var(--kl-accent)" stroke-width="2" stroke-linejoin="round"/>';
+  var firstProv = -1;
+  for (var fp = 0; fp < rows.length; fp++) { if (rows[fp].prov) { firstProv = fp; break; } }
+  if (firstProv > 0) {
+    g += '<polyline points="' + pts.slice(0, firstProv + 1).join(' ') + '" fill="none" stroke="var(--kl-accent)" stroke-width="2" stroke-linejoin="round"/>';
+    g += '<polyline points="' + pts.slice(firstProv).join(' ') + '" fill="none" stroke="var(--kl-accent)" stroke-width="2" stroke-linejoin="round" stroke-dasharray="5 3" opacity="0.85"/>';
+  } else {
+    g += '<polyline points="' + pts.join(' ') + '" fill="none" stroke="var(--kl-accent)" stroke-width="2" stroke-linejoin="round"' + (firstProv === 0 ? ' stroke-dasharray="5 3"' : '') + '/>';
+  }
   rows.forEach(function(r, i) {
     var last = i === n - 1;
-    g += '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(r.cum).toFixed(1) + '" r="' + (last ? 4 : 2.6) + '" fill="var(--kl-accent)"><title>' + r.m + '　累計 ' + kzMoney(r.cum) + '</title></circle>';
+    if (r.prov) {
+      g += '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(r.cum).toFixed(1) + '" r="' + (last ? 4 : 3) + '" fill="var(--card)" stroke="var(--kl-accent)" stroke-width="1.6"><title>' + r.m + '　累計 ' + kzMoney(r.cum) + '（含即時估算）</title></circle>';
+    } else {
+      g += '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(r.cum).toFixed(1) + '" r="' + (last ? 4 : 2.6) + '" fill="var(--kl-accent)"><title>' + r.m + '　累計 ' + kzMoney(r.cum) + '</title></circle>';
+    }
     if (last) {
       g += '<text x="' + (x(i) - 7).toFixed(1) + '" y="' + (y(r.cum) - 9).toFixed(1) + '" text-anchor="end" font-size="10.5" font-weight="600" fill="var(--text)">' + fmtM(r.cum) + '</text>';
     }
@@ -692,7 +706,8 @@ function kzRenderKline() {
   });
 
   el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%; min-width:520px; height:auto;">' + g + '</svg>';
-  document.getElementById('kz-kline-note').textContent = '累計 ' + kzMoney(rows[n - 1].cum);
+  document.getElementById('kz-kline-note').textContent =
+    '累計 ' + kzMoney(rows[n - 1].cum) + (anyProv ? '　·　虛線／空心點 = 含即時估算（暫定）' : '');
 }
 
 var KZ_CASH_HEALTH_LINE = 3000000;
