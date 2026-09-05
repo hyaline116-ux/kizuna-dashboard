@@ -704,9 +704,16 @@ function kzRenderKline() {
   });
 
   el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%; min-width:560px; height:auto;">' + g + '</svg>';
-  var lastD = S[n - 1], chg = lastD.c - openBal;
-  document.getElementById('kz-kline-note').textContent =
-    '開業以來 ' + (chg >= 0 ? '+' : '−') + kzMoney(Math.abs(chg)) + '　現值 ' + kzMoney(lastD.c);
+  var lastD = S[n - 1];
+  var lowI = 0;
+  S.forEach(function(d, i) { if (d.c < S[lowI].c) lowI = i; });
+  var noteEl = document.getElementById('kz-kline-note');
+  if (lowI === n - 1) {
+    noteEl.textContent = '現值 ' + kzMoney(lastD.c);
+  } else {
+    var lowMon = parseInt(S[lowI].ym.split('/')[1], 10);
+    noteEl.textContent = '現值 ' + kzMoney(lastD.c) + '　（' + lowMon + '月低點 ' + kzShortMoney(S[lowI].c) + ' 以來 +' + kzShortMoney(lastD.c - S[lowI].c) + '）';
+  }
   var foot = document.getElementById('kz-kline-foot');
   if (foot) {
     foot.textContent = '此為銀行實際存款餘額。資金水位（可自由運用）＝ 帳簿餘額 − 應付款預算 '
