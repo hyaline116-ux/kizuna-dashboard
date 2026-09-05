@@ -178,14 +178,11 @@
   <hr class="rule" />
 
   <div class="card">
-    <p class="lbl" style="margin:0 0 .7rem;">月度趨勢</p>
-    <div id="kz-trend-net" style="font-size:11.5px; color:var(--text-2); margin-bottom:14px; line-height:1.7;"></div>
-    <p style="margin:0 0 5px; font-size:11.5px; color:var(--text-2);">實收 · 依收款管道</p>
-    <div id="kz-trend-rev" class="scrollx"></div>
-    <div id="kz-trend-rev-legend" style="display:flex; gap:9px 14px; flex-wrap:wrap; margin:6px 0 18px; font-size:10.5px; color:var(--text-3);"></div>
-    <p style="margin:0 0 5px; font-size:11.5px; color:var(--text-2);">實際支出 · 依成本科目</p>
-    <div id="kz-trend-exp" class="scrollx"></div>
-    <div id="kz-trend-exp-legend" style="display:flex; gap:9px 14px; flex-wrap:wrap; margin:6px 0 0; font-size:10.5px; color:var(--text-3);"></div>
+    <div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:4px 12px; margin-bottom:2px;">
+      <p class="lbl" style="margin:0;">月度損益（未稅）</p>
+      <p style="margin:0; font-size:11px; color:var(--text-3);" id="kz-trend-note">—</p>
+    </div>
+    <div id="kz-trend" class="scrollx"></div>
   </div>
 
   <hr class="rule" />
@@ -434,58 +431,51 @@ function kzCurrentMonths() {
   return KZ_MONTHS.slice(fromI, toI + 1);
 }
 function kzRenderTrend(months) {
-  var netHtml = months.map(function(m) {
-    var v = KZ_MATRIX_MAP['淨額(未稅)'][m];
-    if (v === null || v === undefined) return '<span style="color:var(--text-3);">' + m + ' 進行中</span>';
-    var col = v >= 0 ? 'var(--kl-accent)' : 'var(--exp-2)';
-    return '<span>' + m + ' <b style="color:' + col + ';">' + (v >= 0 ? '淨利 ' : '虧損 ') + kzShortMoney(Math.abs(v)) + '</b></span>';
-  }).join('　');
-  document.getElementById('kz-trend-net').innerHTML = '各月損益（未稅）：' + netHtml;
+  var el = document.getElementById('kz-trend');
+  if (!el) return;
+  var rows = months.map(function(m) {
+    var lm = KZ_MONTH_TO_LEDGER[m] || m;
+    var prov = BUDGET.some(function(b) { return b.item.indexOf(lm) >= 0 && b.item.indexOf('即時估算') >= 0; });
+    return { m: m, net: KZ_MATRIX_MAP['淨額(未稅)'] ? KZ_MATRIX_MAP['淨額(未稅)'][m] : null, prov: prov };
+  });
+  var vals = rows.filter(function(r) { return r.net !== null && r.net !== undefined; }).map(function(r) { return r.net; });
+  if (!vals.length) { el.innerHTML = ''; return; }
+  var mag = Math.max.apply(null, vals.map(function(v) { return Math.abs(v); }).concat([1]));
+  var pos = Math.max.apply(null, vals.concat([0])), neg = Math.min.apply(null, vals.concat([0]));
+  var top = pos + mag * 0.18, bot = neg - mag * 0.18;
+  if (top === bot) { top = 1; bot = -1; }
 
-  function stacked(elId, legendId, groups, valueOf, totalOf) {
-    var el = document.getElementById(elId);
-    if (!el) return;
-    var W = 640, H = 148, PL = 40, PR = 10, PT = 12, PB = 20;
-    var totals = months.map(totalOf);
-    var mx = Math.max.apply(null, totals.concat([1]));
-    function y(v) { return PT + (H - PT - PB) * (1 - v / mx); }
-    function fmtM(v) { return (v / 1000000).toFixed(1) + 'M'; }
-    var n = months.length, slot = (W - PL - PR) / n, bw = Math.min(26, slot * 0.5);
-    var g = '', ticks = mx >= 2000000 ? 3 : 2;
-    for (var t = 1; t <= ticks; t++) {
-      var gv = mx / ticks * t;
-      g += '<line x1="' + PL + '" y1="' + y(gv).toFixed(1) + '" x2="' + (W - PR) + '" y2="' + y(gv).toFixed(1) + '" stroke="var(--line)"/>'
-         + '<text x="' + (PL - 5) + '" y="' + (y(gv) + 3).toFixed(1) + '" text-anchor="end" font-size="9" fill="var(--text-3)">' + fmtM(gv) + '</text>';
-    }
-    months.forEach(function(m, i) {
-      var cx = PL + slot * i + slot / 2, acc = 0, tot = totalOf(m);
-      if (tot > 0) {
-        groups.forEach(function(grp) {
-          var v = valueOf(m, grp);
-          if (v <= 0) return;
-          var hh = y(acc) - y(acc + v);
-          g += '<rect x="' + (cx - bw / 2).toFixed(1) + '" y="' + y(acc + v).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + Math.max(0.6, hh).toFixed(1) + '" fill="' + grp.color + '"><title>' + m + '　' + grp.label + '　' + kzMoney(v) + '（' + (v / tot * 100).toFixed(1) + '%）</title></rect>';
-          acc += v;
-        });
-        g += '<text x="' + cx.toFixed(1) + '" y="' + (y(tot) - 4).toFixed(1) + '" text-anchor="middle" font-size="8.5" fill="var(--text-2)">' + kzShortMoney(tot) + '</text>';
-      } else {
-        g += '<text x="' + cx.toFixed(1) + '" y="' + (H - PB - 5) + '" text-anchor="middle" font-size="9" fill="var(--text-3)">—</text>';
-      }
-      g += '<text x="' + cx.toFixed(1) + '" y="' + (H - PB + 13) + '" text-anchor="middle" font-size="9" fill="var(--text-3)">' + m + '</text>';
-    });
-    el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%; min-width:' + Math.max(340, n * 68) + 'px; height:auto;">' + g + '</svg>';
-    document.getElementById(legendId).innerHTML = groups.map(function(grp) {
-      return '<span><span style="display:inline-block; width:9px; height:9px; border-radius:2px; background:' + grp.color + '; margin-right:4px; vertical-align:-1px;"></span>' + grp.label + '</span>';
-    }).join('');
+  var n = rows.length;
+  var W = 640, H = 190, PL = 44, PR = 12, PT = 20, PB = 30;
+  function y(v) { return PT + (H - PT - PB) * (1 - (v - bot) / (top - bot)); }
+  function fmtW(v) { return (v / 10000).toFixed(0) + '萬'; }
+  var slot = (W - PL - PR) / n, bw = Math.min(34, slot * 0.5);
+  var g = '';
+  var step = mag <= 400000 ? 200000 : (mag <= 1000000 ? 400000 : 1000000);
+  for (var gv = Math.floor(bot / step) * step; gv <= top + 1; gv += step) {
+    var zero = Math.abs(gv) < 1;
+    g += '<line x1="' + PL + '" y1="' + y(gv).toFixed(1) + '" x2="' + (W - PR) + '" y2="' + y(gv).toFixed(1) + '" stroke="' + (zero ? 'var(--text-3)' : 'var(--line)') + '" stroke-width="' + (zero ? 1.2 : 1) + '"/>'
+       + '<text x="' + (PL - 5) + '" y="' + (y(gv) + 3).toFixed(1) + '" text-anchor="end" font-size="9" fill="var(--text-3)">' + fmtW(gv) + '</text>';
   }
-
-  stacked('kz-trend-rev', 'kz-trend-rev-legend', KZ_REVENUE_GROUPS,
-    function(m, grp) { var c = REVENUE_CHANNELS[m]; return c ? (c[grp.label] || 0) : 0; },
-    function(m) { return KZ_MATRIX_MAP['實收'][m] || 0; });
-
-  stacked('kz-trend-exp', 'kz-trend-exp-legend', KZ_DONUT_GROUPS,
-    function(m, grp) { return grp.cats.reduce(function(s, c) { return s + (kzSum(c, [m]) || 0); }, 0); },
-    function(m) { return KZ_MATRIX_MAP['實際支出'][m] || 0; });
+  rows.forEach(function(r, i) {
+    var cx = PL + slot * i + slot / 2;
+    if (r.net === null || r.net === undefined) {
+      g += '<text x="' + cx.toFixed(1) + '" y="' + (y(0) - 6).toFixed(1) + '" text-anchor="middle" font-size="9" fill="var(--text-3)">進行中</text>';
+    } else {
+      var up = r.net >= 0, col = up ? 'var(--green)' : 'var(--red)';
+      var hgt = Math.max(1.5, Math.abs(y(r.net) - y(0)));
+      g += '<rect x="' + (cx - bw / 2).toFixed(1) + '" y="' + (up ? y(r.net) : y(0)).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + hgt.toFixed(1) + '" fill="' + col + '" opacity="' + (r.prov ? 0.5 : 1) + '" rx="2"><title>' + r.m + '　' + (up ? '淨利 ' : '虧損 ') + kzMoney(Math.abs(r.net)) + (r.prov ? '（含估算）' : '') + '</title></rect>';
+      g += '<text x="' + cx.toFixed(1) + '" y="' + (up ? y(r.net) - 6 : y(r.net) + 14).toFixed(1) + '" text-anchor="middle" font-size="9.5" font-weight="500" fill="' + col + '">' + (up ? '+' : '−') + kzShortMoney(Math.abs(r.net)) + '</text>';
+    }
+    g += '<text x="' + cx.toFixed(1) + '" y="' + (H - PB + 17) + '" text-anchor="middle" font-size="9.5" fill="var(--text-3)">' + r.m + '</text>';
+  });
+  el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%; min-width:' + Math.max(320, n * 62) + 'px; height:auto;">' + g + '</svg>';
+  var noteEl = document.getElementById('kz-trend-note');
+  if (noteEl) {
+    var sum = vals.reduce(function(s, v) { return s + v; }, 0);
+    var anyProv = rows.some(function(r) { return r.prov; });
+    noteEl.textContent = '合計 ' + (sum >= 0 ? '+' : '−') + kzMoney(Math.abs(sum)) + (anyProv ? '　·　淡色 = 含估算' : '');
+  }
 }
 
 function kzRenderSummary() {
@@ -633,6 +623,7 @@ var KZ_REVENUE_GROUPS = [
   { label: '股東月結', color: 'var(--rev-4)' },
   { label: '員購月結', color: 'var(--rev-5)' }
 ];
+var BUDGET = [{"item":"固定成本：7月營業稅務預留","budget":132423,"progress":"預估"},{"item":"固定成本：8月營業稅務預留","budget":146717,"progress":"預估"},{"item":"固定成本：7月憑證統整費","budget":5000,"progress":"預估"},{"item":"固定成本：7月電費預估","budget":90000,"progress":"預估"},{"item":"固定成本：7月水費預估","budget":3000,"progress":"預估"},{"item":"固定成本：7月記帳費預估","budget":2500,"progress":"預估"},{"item":"固定成本：7月環境消毒費預估","budget":3000,"progress":"預估"},{"item":"固定成本：7月電信費預估","budget":2000,"progress":"預估"},{"item":"固定成本：8月人事 即時估算","budget":687905,"progress":"初結算"},{"item":"變動成本：8月食材 即時估算","budget":1107146,"progress":"初結算"},{"item":"包廂投影幕,2F監視器 增設預算","budget":30000,"progress":"預估"},{"item":"裝潢工程：廚房熱器對流孔拆除封板 工程預算","budget":8000,"progress":"預估"},{"item":"固定成本：8月勞保費預估","budget":58000,"progress":"預估"},{"item":"固定成本：8月勞退費預估","budget":27000,"progress":"預估"},{"item":"固定成本：8月健保費預估","budget":38000,"progress":"預估"},{"item":"固定成本：8月憑證統整費","budget":5000,"progress":"預估"},{"item":"固定成本：8月電費預估","budget":90000,"progress":"預估"},{"item":"固定成本：8月水費預估","budget":3000,"progress":"預估"},{"item":"固定成本：8月記帳費預估","budget":2500,"progress":"預估"},{"item":"固定成本：8月環境消毒費預估","budget":3000,"progress":"預估"},{"item":"固定成本：8月電信費預估","budget":2000,"progress":"預估"},{"item":"固定成本：8月垃圾清運預估","budget":11000,"progress":"預估"},{"item":"固定成本：8月室內花藝","budget":6000,"progress":"預估"},{"item":"固定成本：9月人事 即時估算","budget":133509,"progress":"預估"},{"item":"變動成本：9月食材 即時估算","budget":30491,"progress":"預估35%"}];
 kzPopulateRangeSelects();
 document.getElementById('kz-from').addEventListener('change', kzRenderSummary);
 document.getElementById('kz-to').addEventListener('change', kzRenderSummary);
@@ -643,7 +634,6 @@ document.getElementById('kz-mode-quarter').addEventListener('click', function() 
 kzSetMode('quarter');
 
 var CASH = {"total_capital":14527841,"payable_budget":2649268,"cash_level":2484974,"total_spent":22885221,"book_balance":5134242,"pending_transfer":0,"cash_reserve":121304,"visa_latest_date":"2026-09-04","cash_asof_date":"2026-08-31"};
-var BUDGET = [{"item":"固定成本：7月營業稅務預留","budget":132423,"progress":"預估"},{"item":"固定成本：8月營業稅務預留","budget":146717,"progress":"預估"},{"item":"固定成本：7月憑證統整費","budget":5000,"progress":"預估"},{"item":"固定成本：7月電費預估","budget":90000,"progress":"預估"},{"item":"固定成本：7月水費預估","budget":3000,"progress":"預估"},{"item":"固定成本：7月記帳費預估","budget":2500,"progress":"預估"},{"item":"固定成本：7月環境消毒費預估","budget":3000,"progress":"預估"},{"item":"固定成本：7月電信費預估","budget":2000,"progress":"預估"},{"item":"固定成本：8月人事 即時估算","budget":687905,"progress":"初結算"},{"item":"變動成本：8月食材 即時估算","budget":1107146,"progress":"初結算"},{"item":"包廂投影幕,2F監視器 增設預算","budget":30000,"progress":"預估"},{"item":"裝潢工程：廚房熱器對流孔拆除封板 工程預算","budget":8000,"progress":"預估"},{"item":"固定成本：8月勞保費預估","budget":58000,"progress":"預估"},{"item":"固定成本：8月勞退費預估","budget":27000,"progress":"預估"},{"item":"固定成本：8月健保費預估","budget":38000,"progress":"預估"},{"item":"固定成本：8月憑證統整費","budget":5000,"progress":"預估"},{"item":"固定成本：8月電費預估","budget":90000,"progress":"預估"},{"item":"固定成本：8月水費預估","budget":3000,"progress":"預估"},{"item":"固定成本：8月記帳費預估","budget":2500,"progress":"預估"},{"item":"固定成本：8月環境消毒費預估","budget":3000,"progress":"預估"},{"item":"固定成本：8月電信費預估","budget":2000,"progress":"預估"},{"item":"固定成本：8月垃圾清運預估","budget":11000,"progress":"預估"},{"item":"固定成本：8月室內花藝","budget":6000,"progress":"預估"},{"item":"固定成本：9月人事 即時估算","budget":133509,"progress":"預估"},{"item":"變動成本：9月食材 即時估算","budget":30491,"progress":"預估35%"}];
 
 var CASH_LEVEL_SERIES = [{"ym":"26/09","level":2484974}];   // 月末資金水位；每次同步補當前值，逐季累積
 
