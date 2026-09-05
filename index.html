@@ -139,7 +139,7 @@
 
   <div class="card" style="margin-bottom:12px;">
     <div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:4px 12px; margin-bottom:2px;">
-      <p class="lbl" style="margin:0;">營運累計現金 · 開業以來</p>
+      <p class="lbl" style="margin:0;">累計損益（未稅）· 開業以來</p>
       <p style="margin:0; font-size:11px; color:var(--text-3);" id="kz-kline-note">—</p>
     </div>
     <div id="kz-kline" class="scrollx"></div>
@@ -707,7 +707,7 @@ function kzRenderKline() {
 
   el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%; min-width:520px; height:auto;">' + g + '</svg>';
   document.getElementById('kz-kline-note').textContent =
-    '累計 ' + kzMoney(rows[n - 1].cum) + (anyProv ? '　·　虛線／空心點 = 含即時估算（暫定）' : '');
+    '累計損益 ' + kzMoney(rows[n - 1].cum) + (anyProv ? '　·　虛線／空心點 = 含即時估算（暫定）' : '');
 }
 
 var KZ_CASH_HEALTH_LINE = 3000000;
