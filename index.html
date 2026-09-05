@@ -36,6 +36,7 @@
     --cap:#7d7466;
     --teal:#5c7a8a; --purple:#8a7aa8;
     --green:#7d9a4e; --red:#b6503f;
+    --kl-candle:#cdbfa8; --kl-accent:#3fb8a6;
     --rev-1:#3f6f95; --rev-2:#5c93a0; --rev-3:#7a6fa0; --rev-4:#6fa3ad; --rev-5:#8aa8c4;
     --exp-1:#b6503f; --exp-2:#c98a3f; --exp-3:#8a4a3f; --exp-4:#8a6a4a; --exp-5:#a68b52; --exp-6:#a3705f; --exp-7:#6b6258;
     --bg: var(--ink-950); --card: var(--ink-900); --card-2: var(--ink-800);
@@ -49,12 +50,13 @@
   @media (prefers-color-scheme: light) {
     .kz { --bg: var(--paper-50); --card: var(--paper-100); --card-2: #e7d9b8;
       --line: var(--line-light); --text: var(--text-light); --text-2: var(--text-light-2); --text-3: var(--text-light-3);
+      --kl-candle:#9a8358;
       color-scheme: light; }
   }
   .kz[data-theme="dark"] { --bg: var(--ink-950); --card: var(--ink-900); --card-2: var(--ink-800);
-    --line: var(--line-dark); --text: var(--text-dark); --text-2: var(--text-dark-2); --text-3: var(--text-dark-3); color-scheme: dark; }
+    --line: var(--line-dark); --text: var(--text-dark); --text-2: var(--text-dark-2); --text-3: var(--text-dark-3); --kl-candle:#cdbfa8; color-scheme: dark; }
   .kz[data-theme="light"] { --bg: var(--paper-50); --card: var(--paper-100); --card-2: #e7d9b8;
-    --line: var(--line-light); --text: var(--text-light); --text-2: var(--text-light-2); --text-3: var(--text-light-3); color-scheme: light; }
+    --line: var(--line-light); --text: var(--text-light); --text-2: var(--text-light-2); --text-3: var(--text-light-3); --kl-candle:#9a8358; color-scheme: light; }
   .kz * { box-sizing: border-box; }
   .kz .serif { font-family: "Noto Serif TC", "Songti TC", "PMingLiU", serif; }
   .kz .grid2 { display: grid; grid-template-columns: 1.15fr 1fr; gap: 1.25rem; }
@@ -129,6 +131,14 @@
       <span>已約定轉帳 <b id="kz-cash-pending" style="color:var(--cap); font-weight:500;">—</b></span>
       <span>川邑現金備用 <b id="kz-cash-reserve" style="color:var(--text); font-weight:500;">—</b></span>
     </div>
+  </div>
+
+  <div class="card" style="margin-bottom:12px;">
+    <div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:4px 12px; margin-bottom:2px;">
+      <p class="lbl" style="margin:0;">資金水位走勢 · 帳簿實際餘額月K線</p>
+      <p style="margin:0; font-size:11px; color:var(--text-3);" id="kz-kline-note">—</p>
+    </div>
+    <div id="kz-kline" class="scrollx"></div>
   </div>
 
   <hr class="rule" style="margin:1.4rem 0;" />
@@ -701,6 +711,61 @@ kzSetMode('quarter');
 var CASH = {"total_capital":14527841,"payable_budget":2649268,"cash_level":2484974,"total_spent":22885221,"book_balance":5134242,"pending_transfer":0,"cash_reserve":121304,"visa_latest_date":"2026-09-04","cash_asof_date":"2026-08-31"};
 var BUDGET = [{"item":"固定成本：7月營業稅務預留","budget":132423,"progress":"預估"},{"item":"固定成本：8月營業稅務預留","budget":146717,"progress":"預估"},{"item":"固定成本：7月憑證統整費","budget":5000,"progress":"預估"},{"item":"固定成本：7月電費預估","budget":90000,"progress":"預估"},{"item":"固定成本：7月水費預估","budget":3000,"progress":"預估"},{"item":"固定成本：7月記帳費預估","budget":2500,"progress":"預估"},{"item":"固定成本：7月環境消毒費預估","budget":3000,"progress":"預估"},{"item":"固定成本：7月電信費預估","budget":2000,"progress":"預估"},{"item":"固定成本：8月人事 即時估算","budget":687905,"progress":"初結算"},{"item":"變動成本：8月食材 即時估算","budget":1107146,"progress":"初結算"},{"item":"包廂投影幕,2F監視器 增設預算","budget":30000,"progress":"預估"},{"item":"裝潢工程：廚房熱器對流孔拆除封板 工程預算","budget":8000,"progress":"預估"},{"item":"固定成本：8月勞保費預估","budget":58000,"progress":"預估"},{"item":"固定成本：8月勞退費預估","budget":27000,"progress":"預估"},{"item":"固定成本：8月健保費預估","budget":38000,"progress":"預估"},{"item":"固定成本：8月憑證統整費","budget":5000,"progress":"預估"},{"item":"固定成本：8月電費預估","budget":90000,"progress":"預估"},{"item":"固定成本：8月水費預估","budget":3000,"progress":"預估"},{"item":"固定成本：8月記帳費預估","budget":2500,"progress":"預估"},{"item":"固定成本：8月環境消毒費預估","budget":3000,"progress":"預估"},{"item":"固定成本：8月電信費預估","budget":2000,"progress":"預估"},{"item":"固定成本：8月垃圾清運預估","budget":11000,"progress":"預估"},{"item":"固定成本：8月室內花藝","budget":6000,"progress":"預估"},{"item":"固定成本：9月人事 即時估算","budget":133509,"progress":"預估"},{"item":"變動成本：9月食材 即時估算","budget":30491,"progress":"預估35%"}];
 
+var CASH_SERIES = [{"ym":"25/09","o":0,"h":10500000,"l":0,"c":10500000},{"ym":"25/10","o":10500000,"h":10500000,"l":9264940,"c":9264940},{"ym":"25/11","o":9264940,"h":9264940,"l":9214940,"c":9214940},{"ym":"25/12","o":9214940,"h":9214940,"l":8004668,"c":8004668},{"ym":"26/01","o":8004668,"h":8004668,"l":5555148,"c":5555148},{"ym":"26/02","o":5555148,"h":5555148,"l":3222433,"c":3222433},{"ym":"26/03","o":3222433,"h":7165653,"l":3222433,"c":3980602},{"ym":"26/04","o":3980602,"h":3980602,"l":2010920,"c":2428074},{"ym":"26/05","o":2428074,"h":2882954,"l":1348135,"c":2724839},{"ym":"26/06","o":2724839,"h":3702228,"l":1603416,"c":3702228},{"ym":"26/07","o":3702228,"h":4193114,"l":2798187,"c":4193114},{"ym":"26/08","o":4193114,"h":4823000,"l":2917740,"c":4823000},{"ym":"26/09","o":4823000,"h":5134242,"l":4751083,"c":5134242}];
+var KZ_OPEN_MONTH = "26/04";
+
+var KZ_KLINE_FROM = "26/04";  // show operations only; full history kept in CASH_SERIES
+
+function kzRenderKline() {
+  var el = document.getElementById('kz-kline');
+  if (!el || !CASH_SERIES.length) return;
+  var fromI = CASH_SERIES.map(function(d){ return d.ym; }).indexOf(KZ_KLINE_FROM);
+  var S = fromI > 0 ? CASH_SERIES.slice(fromI) : CASH_SERIES;
+  var W = 860, H = 260, PL = 46, PR = 12, PT = 12, PB = 22;
+  var hi = Math.max.apply(null, S.map(function(d){ return d.h; }));
+  var lo = Math.min.apply(null, S.map(function(d){ return d.l; }));
+  var pad = (hi - lo) * 0.08 || 1;
+  var top = hi + pad, bot = Math.max(0, lo - pad);
+  function y(v) { return PT + (H - PT - PB) * (1 - (v - bot) / (top - bot)); }
+  function fmtM(v) { return (v / 1000000).toFixed(v >= 9500000 ? 0 : 1) + 'M'; }
+  var n = S.length, slot = (W - PL - PR) / n, bw = Math.min(22, slot * 0.42);
+  var g = '';
+  var ticks = 4, step = (top - bot) / ticks;
+  for (var t = 0; t <= ticks; t++) {
+    var gv = bot + step * t;
+    g += '<line x1="' + PL + '" y1="' + y(gv) + '" x2="' + (W - PR) + '" y2="' + y(gv) + '" stroke="var(--line)" stroke-width="1"/>'
+       + '<text x="' + (PL - 6) + '" y="' + (y(gv) + 3) + '" text-anchor="end" font-size="9.5" fill="var(--text-3)">' + fmtM(gv) + '</text>';
+  }
+  if (KZ_CASH_HEALTH_LINE > bot && KZ_CASH_HEALTH_LINE < top) {
+    g += '<line x1="' + PL + '" y1="' + y(KZ_CASH_HEALTH_LINE) + '" x2="' + (W - PR) + '" y2="' + y(KZ_CASH_HEALTH_LINE) + '" stroke="var(--text-3)" stroke-width="1" stroke-dasharray="3 3"/>'
+       + '<text x="' + (W - PR) + '" y="' + (y(KZ_CASH_HEALTH_LINE) - 4) + '" text-anchor="end" font-size="9" fill="var(--text-3)">健康線 ' + fmtM(KZ_CASH_HEALTH_LINE) + '</text>';
+  }
+  var openIdx = S.map(function(d){ return d.ym; }).indexOf(KZ_OPEN_MONTH);
+  if (openIdx > 0) {
+    var ox = PL + slot * openIdx;
+    g += '<line x1="' + ox + '" y1="' + PT + '" x2="' + ox + '" y2="' + (H - PB) + '" stroke="var(--line)" stroke-width="1"/>'
+       + '<text x="' + (ox + 3) + '" y="' + (PT + 9) + '" font-size="9" fill="var(--text-3)">開業</text>';
+  }
+  var linePts = S.map(function(d, i){ return (PL + slot * i + slot / 2) + ',' + y(d.c); }).join(' ');
+  g += '<polyline points="' + linePts + '" fill="none" stroke="var(--kl-candle)" stroke-width="1" stroke-linejoin="round" opacity="0.28"/>';
+  S.forEach(function(d, i) {
+    var cx = PL + slot * i + slot / 2;
+    var last = i === n - 1;
+    var col = last ? 'var(--kl-accent)' : 'var(--kl-candle)';
+    var yo = y(d.o), yc = y(d.c), yh = y(d.h), yl = y(d.l);
+    var bt = Math.min(yo, yc), bh = Math.max(2, Math.abs(yc - yo));
+    g += '<line x1="' + cx + '" y1="' + yh + '" x2="' + cx + '" y2="' + yl + '" stroke="' + col + '" stroke-width="1.3" stroke-linecap="round" opacity="' + (last ? 1 : 0.9) + '"/>';
+    g += '<rect x="' + (cx - bw / 2).toFixed(1) + '" y="' + bt.toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + bh.toFixed(1) + '" fill="' + col + '" rx="2">'
+       + '<title>' + d.ym + '　開 ' + kzMoney(d.o) + '　收 ' + kzMoney(d.c) + '　高 ' + kzMoney(d.h) + '　低 ' + kzMoney(d.l) + '</title></rect>';
+    g += '<text x="' + cx + '" y="' + (H - PB + 14) + '" text-anchor="middle" font-size="8.5" fill="var(--text-3)">' + d.ym + '</text>';
+  });
+  el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%; min-width:640px; height:auto;">' + g + '</svg>';
+  var lastD = S[n - 1], firstD = S[0];
+  var chg = lastD.c - firstD.o;
+  document.getElementById('kz-kline-note').textContent =
+    '開業以來 ' + (chg >= 0 ? '+' : '−') + kzMoney(Math.abs(chg)).replace('NT$', 'NT$') + '　現值 ' + kzMoney(lastD.c);
+}
+
 var KZ_CASH_HEALTH_LINE = 3000000;
 function kzShortDate(iso) {
   if (!iso) return '—';
@@ -739,6 +804,7 @@ function kzRenderCashAndBudget() {
     '<tr><td colspan="2">合計</td><td style="text-align:right;">' + kzBudgetTotal.toLocaleString() + '</td></tr>';
 }
 kzRenderCashAndBudget();
+kzRenderKline();
 </script>
 
 <script>
