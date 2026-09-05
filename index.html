@@ -118,7 +118,7 @@
     <p class="num" id="kz-cash-level" style="margin-top:4px;">—</p>
     <div style="margin-top:14px;">
       <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-2); margin-bottom:9px;">
-        <span id="kz-health-label">健康線</span>
+        <span id="kz-health-label">目標水位</span>
         <span id="kz-health-pct" style="font-weight:500;">—</span>
       </div>
       <div style="position:relative; height:14px;">
@@ -160,11 +160,11 @@
       <p class="num" id="kz-kpi-expense">—</p>
     </div>
     <div class="tile">
-      <p class="lbl">淨利（未稅）</p>
+      <p class="lbl">損益（未稅）</p>
       <p class="num" id="kz-kpi-net" style="color:var(--green);">—</p>
     </div>
     <div class="tile">
-      <p class="lbl">淨利率</p>
+      <p class="lbl">損益率</p>
       <p class="num" id="kz-kpi-margin">—</p>
     </div>
     <div class="tile">
@@ -240,10 +240,10 @@
 
   <div class="card">
     <div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:8px; margin-bottom:.5rem;">
-      <p class="lbl" style="margin:0;">進行中預算編列（共 <span id="kz-budget-count">0</span> 項）</p>
+      <p class="lbl" style="margin:0;">應付款項明細（已編列未付，共 <span id="kz-budget-count">0</span> 項）</p>
       <p style="margin:0; font-size:12px; color:var(--text-2);">合計 <span id="kz-budget-total">—</span></p>
     </div>
-    <p style="margin:0 0 1rem; font-size:12px; color:var(--text-3);">這些是已編列但尚未實際支出的預算，不計入上方帳務明細與實際支出總額</p>
+    <p style="margin:0 0 1rem; font-size:12px; color:var(--text-3);">已編列、尚未付款；合計即上方「應付款預算」，不計入帳務明細與已支出總額</p>
     <div class="scrollx">
     <table style="min-width:480px;">
       <thead><tr><th>項目</th><th>進度</th><th style="text-align:right;">預算金額</th></tr></thead>
@@ -254,7 +254,7 @@
   </div>
 
   <p style="margin:1.5rem 0 0; font-size:11.5px; color:var(--text-3);">
-    資料來源：絆Kizuna 運營財務_資金管理.xlsx／運營實況分頁（月度損益）＋逐筆帳務紀錄＋進行中預算編列
+    資料來源：絆Kizuna 運營財務_資金管理.xlsx／運營實況分頁（月度損益）＋逐筆帳務紀錄＋應付款項明細
   </p>
   </div>
 
@@ -440,7 +440,7 @@ function kzRenderTrend(months) {
     var col = v >= 0 ? 'var(--kl-accent)' : 'var(--exp-2)';
     return '<span>' + m + ' <b style="color:' + col + ';">' + (v >= 0 ? '淨利 ' : '虧損 ') + kzShortMoney(Math.abs(v)) + '</b></span>';
   }).join('　');
-  document.getElementById('kz-trend-net').innerHTML = '各月淨利（未稅）：' + netHtml;
+  document.getElementById('kz-trend-net').innerHTML = '各月損益（未稅）：' + netHtml;
 
   function stacked(elId, legendId, groups, valueOf, totalOf) {
     var el = document.getElementById(elId);
@@ -563,7 +563,7 @@ function kzRenderSummary() {
 var KZ_ROW_DEFS = [
   { cat: '實收', bold: true },
   { cat: '實際支出', bold: true },
-  { cat: '淨額(未稅)', bold: true, colorBySign: true },
+  { cat: '淨額(未稅)', label: '損益（未稅）', bold: true, colorBySign: true },
   { section: '固定成本 FC' },
   { cat: '固定成本FC', bold: true, label: '固定成本 合計' },
   { cat: '人事成本', indent: true },
@@ -730,15 +730,15 @@ function kzRenderCashAndBudget() {
   var kzHealthPct = kzCashAdjusted / KZ_CASH_HEALTH_LINE * 100;
   var kzHealthy = kzCashAdjusted >= KZ_CASH_HEALTH_LINE;
   var kzHealthShown = Math.max(0, Math.min(100, kzHealthPct));
-  document.getElementById('kz-health-label').textContent = '健康線 ' + kzMoney(KZ_CASH_HEALTH_LINE);
+  document.getElementById('kz-health-label').textContent = '目標水位 ' + kzMoney(KZ_CASH_HEALTH_LINE);
   document.getElementById('kz-health-pct').textContent =
     (kzHealthy ? '✓ 已達標 ' : '') + Math.max(0, kzHealthPct).toFixed(0) + '%';
   document.getElementById('kz-health-pct').style.color = kzHealthy ? 'var(--kl-accent)' : 'var(--text-2)';
   document.getElementById('kz-health-fill').style.width = kzHealthShown + '%';
   document.getElementById('kz-health-marker').style.left = kzHealthShown + '%';
   document.getElementById('kz-health-diff').textContent = kzHealthy
-    ? '高於健康線 ' + kzMoney(kzCashAdjusted - KZ_CASH_HEALTH_LINE)
-    : '距健康線尚差 ' + kzMoney(KZ_CASH_HEALTH_LINE - kzCashAdjusted);
+    ? '高於目標水位 ' + kzMoney(kzCashAdjusted - KZ_CASH_HEALTH_LINE)
+    : '距目標水位尚差 ' + kzMoney(KZ_CASH_HEALTH_LINE - kzCashAdjusted);
 
   var kzBudgetSorted = BUDGET.slice().sort(function(a, b) { return b.budget - a.budget; });
   document.getElementById('kz-budget-count').textContent = BUDGET.length;
