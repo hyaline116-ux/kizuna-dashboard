@@ -139,11 +139,10 @@
 
   <div class="card" style="margin-bottom:12px;">
     <div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:4px 12px; margin-bottom:2px;">
-      <p class="lbl" style="margin:0;">營運累計淨現金 · 開業以來</p>
+      <p class="lbl" style="margin:0;">營運累計現金 · 開業以來</p>
       <p style="margin:0; font-size:11px; color:var(--text-3);" id="kz-kline-note">—</p>
     </div>
     <div id="kz-kline" class="scrollx"></div>
-    <p style="margin:8px 0 0; font-size:10.5px; color:var(--text-3); line-height:1.5;" id="kz-kline-foot">—</p>
   </div>
 
   <hr class="rule" style="margin:1.4rem 0;" />
@@ -651,7 +650,6 @@ var CASH_LEVEL_SERIES = [{"ym":"26/09","level":2484974}];   // 月末資金水�
 function kzRenderKline() {
   var el = document.getElementById('kz-kline');
   if (!el) return;
-  // 累計營運淨現金：每月淨額(未稅)累加，開業(四月)以來
   var rows = KZ_MONTHS.map(function(m) {
     return { m: m, net: KZ_MATRIX_MAP['淨額(未稅)'] ? KZ_MATRIX_MAP['淨額(未稅)'][m] : null };
   }).filter(function(r) { return r.net !== null && r.net !== undefined; });
@@ -659,14 +657,12 @@ function kzRenderKline() {
   var cum = 0;
   rows.forEach(function(r) { cum += r.net; r.cum = cum; });
 
-  var W = 860, PL = 46, PR = 14, PT = 14;
-  var LH = 160, BAND_TOP = LH + 14, BAND_H = 26;
-  var H = BAND_TOP + BAND_H * 2 + 24;
+  var W = 860, H = 200, PL = 46, PR = 14, PT = 16, PB = 24;
   var cums = rows.map(function(r) { return r.cum; });
   var hi = Math.max.apply(null, cums.concat([0])), lo = Math.min.apply(null, cums.concat([0]));
-  var pad = (hi - lo) * 0.12 || 1;
+  var pad = (hi - lo) * 0.14 || 1;
   var top = hi + pad, bot = lo - pad;
-  function y(v) { return PT + (LH - PT) * (1 - (v - bot) / (top - bot)); }
+  function y(v) { return PT + (H - PT - PB) * (1 - (v - bot) / (top - bot)); }
   function fmtM(v) { return (Math.abs(v) < 100000 ? '0' : (v / 1000000).toFixed(1)) + 'M'; }
   var n = rows.length;
   function x(i) { return PL + (W - PL - PR) * (n > 1 ? i / (n - 1) : 0.5); }
@@ -681,7 +677,7 @@ function kzRenderKline() {
   }
   var pts = rows.map(function(r, i) { return x(i).toFixed(1) + ',' + y(r.cum).toFixed(1); });
   g += '<defs><linearGradient id="kzCashGrad" x1="0" y1="0" x2="0" y2="1">'
-     + '<stop offset="0" stop-color="var(--kl-accent)" stop-opacity="0.24"/>'
+     + '<stop offset="0" stop-color="var(--kl-accent)" stop-opacity="0.22"/>'
      + '<stop offset="1" stop-color="var(--kl-accent)" stop-opacity="0"/></linearGradient></defs>';
   var baseY = Math.min(y(bot), y(0));
   g += '<path d="M ' + PL + ',' + baseY.toFixed(1) + ' L ' + pts.join(' L ') + ' L ' + (W - PR) + ',' + baseY.toFixed(1) + ' Z" fill="url(#kzCashGrad)"/>';
@@ -692,32 +688,11 @@ function kzRenderKline() {
     if (last) {
       g += '<text x="' + (x(i) - 7).toFixed(1) + '" y="' + (y(r.cum) - 9).toFixed(1) + '" text-anchor="end" font-size="10.5" font-weight="600" fill="var(--text)">' + fmtM(r.cum) + '</text>';
     }
+    g += '<text x="' + x(i).toFixed(1) + '" y="' + (H - PB + 15) + '" text-anchor="middle" font-size="9" fill="var(--text-3)">' + r.m + '</text>';
   });
 
-  // monthly net band
-  var zero = BAND_TOP + BAND_H;
-  var mx = Math.max.apply(null, rows.map(function(r) { return Math.abs(r.net); })) || 1;
-  g += '<line x1="' + PL + '" y1="' + zero + '" x2="' + (W - PR) + '" y2="' + zero + '" stroke="var(--line)" stroke-width="1"/>'
-     + '<text x="' + PL + '" y="' + (BAND_TOP - 4) + '" font-size="9" fill="var(--text-3)">每月淨額（未稅）</text>';
-  rows.forEach(function(r, i) {
-    var up = r.net >= 0, bh = Math.max(2, Math.abs(r.net) / mx * BAND_H);
-    var col = up ? 'var(--kl-accent)' : 'var(--exp-2)';
-    g += '<rect x="' + (x(i) - 7).toFixed(1) + '" y="' + (up ? zero - bh : zero).toFixed(1) + '" width="14" height="' + bh.toFixed(1) + '" fill="' + col + '" rx="1.5"><title>' + r.m + '　' + (up ? '+' : '−') + kzMoney(Math.abs(r.net)) + '</title></rect>';
-    g += '<text x="' + x(i).toFixed(1) + '" y="' + (H - 15) + '" text-anchor="middle" font-size="8" fill="' + (up ? 'var(--text-3)' : 'var(--exp-2)') + '">' + (up ? '+' : '−') + Math.round(Math.abs(r.net) / 1000) + 'k</text>';
-    g += '<text x="' + x(i).toFixed(1) + '" y="' + (H - 4) + '" text-anchor="middle" font-size="8.5" fill="var(--text-3)">' + r.m + '</text>';
-  });
-
-  el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%; min-width:560px; height:auto;">' + g + '</svg>';
-  var lastCum = rows[n - 1].cum;
-  var toBreakeven = CASH.total_capital - lastCum;
-  document.getElementById('kz-kline-note').textContent =
-    '累計 ' + kzMoney(lastCum) + (toBreakeven > 0 ? '　距回本 ' + kzMoney(toBreakeven) : '　已回本');
-  var foot = document.getElementById('kz-kline-foot');
-  if (foot) {
-    foot.textContent = '此為營運累計淨現金（每月淨額未稅累加），代表開業以來營運產生的現金，回本目標 '
-      + kzMoney(CASH.total_capital) + '。｜ 目前資金水位（可分配）＝ 帳簿餘額 − 應付款 ＝ ' + kzMoney(CASH.cash_level)
-      + '；維持於 ' + kzMoney(KZ_CASH_HEALTH_LINE) + '，回本後每季派發超過此線的部分。';
-  }
+  el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%; min-width:520px; height:auto;">' + g + '</svg>';
+  document.getElementById('kz-kline-note').textContent = '累計 ' + kzMoney(rows[n - 1].cum);
 }
 
 var KZ_CASH_HEALTH_LINE = 3000000;
