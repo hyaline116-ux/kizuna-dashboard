@@ -346,6 +346,26 @@ var KZ_MONTHS = ['四月','五月','六月','七月','八月','九月'];
 var KZ_MONTH_TO_LEDGER = { '四月':'4月','五月':'5月','六月':'6月','七月':'7月','八月':'8月','九月':'9月' };
 var KZ_MATRIX_MAP = {};
 MATRIX.forEach(function(r) { KZ_MATRIX_MAP[r.cat] = r; });
+// 5月 LEDGER 資本支出中，屬開業建置收尾（訂金在4月桶的尾款/追加、與4月建置同性質）者，
+// 認列進「開業建置」而非「5月起資本支出」。6月起一律視為追加資本支出。每次同步需重新核對此清單。
+var KZ_CAPEX_TO_OPENING = [
+  "名都：包廂大桌*3、客座椅 尾款",
+  "營業運作設備 總額結算稅金：玖立達",
+  "營業運作設備 白鐵設備追加：玖立達",
+  "外場冷藏冰箱2樓增設 直立雙門冷藏*1 開吧",
+  "外場服務用具/餐具 酒杯 益順",
+  "川邑 管理作業用筆電 - mba",
+  "品牌形象：夥伴制服追加*35",
+  "追加建置成本 雜支 - Andy",
+  "軟裝：畫框 / 掛畫 函雅堂",
+  "餐具追加：甜點碗 陶雅",
+  "追加建置成本 雜支 - Amy",
+  "廚房刀具：刀鞘 和欣行",
+  "品牌形象：夥伴名牌訂製",
+  "品牌形象：夥伴圍裙追加*5",
+  "環控設備/網路設備 - 己誠 追加轉接器"
+];
+function kzIsOpeningCapex(r) { return r.month === '4月' || KZ_CAPEX_TO_OPENING.indexOf(r.desc) !== -1; }
 var KZ_DONUT_GROUPS = [
   { label: '食材成本', color: 'var(--exp-1)', type: 'VC', cats: ['食材成本'] },
   { label: '人事關聯', color: 'var(--exp-2)', type: 'FC', cats: ['人事成本','勞保','勞退','健保'] },
@@ -577,9 +597,9 @@ function kzRenderSummary() {
   var net = kzSum('淨額(未稅)', months) || 0;
   var margin = revenue ? (net / revenue * 100) : 0;
   var ledgerMonths = months.map(function(m) { return KZ_MONTH_TO_LEDGER[m]; });
-  // LEDGER 的「4月」是開業建置桶（頂讓/押金/裝潢/設備/品牌…約1263萬，一次性）；營運期資本支出只算 5月起
+  // 開業建置（4月桶 ＋ 5月開業收尾，見 kzIsOpeningCapex）另計；此區「資本支出」＝營運期（其餘）
   var kzCapexRows = LEDGER.filter(function(r) { return r.cat === '資本支出' && ledgerMonths.indexOf(r.month) !== -1; });
-  var capexPre = kzCapexRows.filter(function(r) { return r.month === '4月'; }).reduce(function(s, r) { return s + r.actual; }, 0);
+  var capexPre = kzCapexRows.filter(kzIsOpeningCapex).reduce(function(s, r) { return s + r.actual; }, 0);
   var capex = kzCapexRows.reduce(function(s, r) { return s + r.actual; }, 0) - capexPre;
 
   document.getElementById('kz-range-note').textContent = '顯示範圍：' + label + (months.indexOf('八月') !== -1 ? '（8月資料未滿月）' : '');
@@ -850,25 +870,6 @@ function kzRenderKline() {
 // 回本前每季分配中，股東（出資股東 78% ＋ 運營團隊 15%）合計 93%；其餘 7% ＝ 員工分紅 5% ＋ 公司基金 2%
 // （非股東，不計入回本）。來源：股份出資%分配 分頁「回本前 A」。
 var KZ_PAYBACK_SHARE = 0.93;
-// 5月 LEDGER 資本支出中，屬開業建置收尾（訂金在4月桶的尾款/追加、與4月建置同性質）者，
-// 認列進「開業建置」而非「5月起資本支出」。6月起一律視為追加資本支出。每次同步需重新核對此清單。
-var KZ_CAPEX_TO_OPENING = [
-  "名都：包廂大桌*3、客座椅 尾款",
-  "營業運作設備 總額結算稅金：玖立達",
-  "營業運作設備 白鐵設備追加：玖立達",
-  "外場冷藏冰箱2樓增設 直立雙門冷藏*1 開吧",
-  "外場服務用具/餐具 酒杯 益順",
-  "川邑 管理作業用筆電 - mba",
-  "品牌形象：夥伴制服追加*35",
-  "追加建置成本 雜支 - Andy",
-  "軟裝：畫框 / 掛畫 函雅堂",
-  "餐具追加：甜點碗 陶雅",
-  "追加建置成本 雜支 - Amy",
-  "廚房刀具：刀鞘 和欣行",
-  "品牌形象：夥伴名牌訂製",
-  "品牌形象：夥伴圍裙追加*5",
-  "環控設備/網路設備 - 己誠 追加轉接器"
-];
 // 回本追蹤：資本支出歸資本支出、營運虧損歸營運（4月起全計入）。
 // ① 累計淨額 vs 累計資本支出（開業建置＋資本支出）② 回本進度（股東實收股利 ÷ 出資額）
 function kzRenderPayback(cumNet, prov) {
@@ -878,7 +879,7 @@ function kzRenderPayback(cumNet, prov) {
   LEDGER.forEach(function(r) {
     if (r.cat !== '資本支出') return;
     capexAll += r.actual;
-    if (r.month === '4月' || KZ_CAPEX_TO_OPENING.indexOf(r.desc) !== -1) capexPre += r.actual;
+    if (kzIsOpeningCapex(r)) capexPre += r.actual;
   });
   if (capexAll <= 0) { el.innerHTML = ''; return; }
   var capexOp = capexAll - capexPre;
