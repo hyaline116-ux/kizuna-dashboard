@@ -561,7 +561,7 @@ function kzRenderSummary() {
     return { label: gp.label, color: gp.color, value: months.reduce(function(s, m) { var c = REVENUE_CHANNELS[m]; return s + (c ? (c[gp.label] || 0) : 0); }, 0) };
   }).filter(function(x) { return x.value > 0; });
   var kzChanSum = kzChanGroups.reduce(function(s, x) { return s + x.value; }, 0);
-  var kzCompMax = Math.max(revenue, expense, fcvc, kzChanSum, fcvc + Math.max(net, 0), 1);
+  var kzCompMax = Math.max(revenue, expense, fcvc, kzChanSum, fcvc + Math.max(net, 0), capex, 1);
 
   var kzRangeSummaryEl = document.getElementById('kz-range-summary');
   if (months.length > 1 && kzCompMax > 1) {
@@ -589,42 +589,31 @@ function kzRenderSummary() {
     var kzPctRev = function(v) { return kzRev ? (v / kzRev * 100) : 0; };
     var kzDenom = kzExpBar || 1;
     var kzHatch = 'repeating-linear-gradient(45deg, var(--green), var(--green) 3px, rgba(0,0,0,.34) 3px, rgba(0,0,0,.34) 6px)';
-    // 只有「資本支出全數由本期損益支應」時才把它畫成損益的子段；否則資本支出屬另籌資金，不放進「實收去向」條
-    var kzCapexInGain = kzGain > 0 && capex > 0 && capex <= kzGain;
-    var kzReinvest = kzCapexInGain ? capex : 0;
-    var kzLeftover = Math.max(0, kzGain - kzReinvest);
+    // 去向條 = 純營運：變動 + 固定 + 損益，恆等於實收
     var expInner =
       kzSeg(vc / kzDenom * 100, 'var(--vc)', '變動 ' + kzPctRev(vc).toFixed(0) + '%', '變動成本 ' + kzMoney(vc) + '（占實收 ' + kzPctRev(vc).toFixed(1) + '%）') +
-      kzSeg(fc / kzDenom * 100, 'var(--fc)', '固定 ' + kzPctRev(fc).toFixed(0) + '%', '固定成本 ' + kzMoney(fc) + '（占實收 ' + kzPctRev(fc).toFixed(1) + '%）');
-    if (kzGain > 0) {
-      if (kzReinvest > 0) {
-        expInner += kzSeg(kzReinvest / kzDenom * 100, kzHatch, '資本',
-          '資本支出（自本期損益再投入）' + kzMoney(kzReinvest) + '（占實收 ' + kzPctRev(kzReinvest).toFixed(1) + '%）', true);
-      }
-      expInner += kzSeg(kzLeftover / kzDenom * 100, 'var(--green)',
-        (kzReinvest > 0 ? '結餘 ' : '損益 ') + kzPctRev(kzLeftover).toFixed(0) + '%',
-        (kzReinvest > 0 ? '結餘（損益 − 再投入資本）' : '損益 ') + kzMoney(kzLeftover) + '（占實收 ' + kzPctRev(kzLeftover).toFixed(1) + '%）', true);
-    }
-    var kzBracket = '';
-    if (kzGain > 0) {
-      var kzBL = (vc + fc) / kzDenom * 100;
-      var kzBW = kzGain / kzDenom * 100;
-      kzBracket = '<div style="display:grid; grid-template-columns:40px 1fr 56px; gap:8px; margin:-3px 0 7px;">' +
-        '<span></span><div style="position:relative; height:15px;">' +
-        '<div style="position:absolute; left:' + kzBL.toFixed(2) + '%; width:' + kzBW.toFixed(2) + '%; height:4px; border:1px solid var(--green); border-top:none; box-sizing:border-box;"></div>' +
-        '<div style="position:absolute; left:' + kzBL.toFixed(2) + '%; width:' + kzBW.toFixed(2) + '%; top:4px; text-align:center; font-size:9px; color:var(--green); white-space:nowrap;">損益 ' + margin.toFixed(1) + '%</div>' +
-        '</div><span></span></div>';
+      kzSeg(fc / kzDenom * 100, 'var(--fc)', '固定 ' + kzPctRev(fc).toFixed(0) + '%', '固定成本 ' + kzMoney(fc) + '（占實收 ' + kzPctRev(fc).toFixed(1) + '%）') +
+      (kzGain > 0 ? kzSeg(kzGain / kzDenom * 100, 'var(--green)', '損益 ' + margin.toFixed(0) + '%',
+        '損益 ' + kzMoney(kzGain) + '（占實收 ' + margin.toFixed(1) + '%）', true) : '');
+    // 資本支出 = 另一條（非營運費用），同實收比例尺；斜紋綠=自本期損益投入，灰=另籌資金
+    var capexRow = '';
+    if (capex > 0) {
+      var kzCapGain = Math.min(capex, kzGain);
+      var kzCapOther = capex - kzCapGain;
+      var capInner =
+        (kzCapGain > 0 ? kzSeg(kzCapGain / capex * 100, kzHatch, '', '資本支出 · 自本期損益投入 ' + kzMoney(kzCapGain)) : '') +
+        (kzCapOther > 0 ? kzSeg(kzCapOther / capex * 100, 'var(--cap)', '', '資本支出 · 另籌資金（股東資本／資金水位）' + kzMoney(kzCapOther)) : '');
+      capexRow = compRow('資本', capex, capInner, kzShortMoney(capex));
     }
     kzRangeSummaryEl.style.display = '';
     kzRangeSummaryEl.innerHTML =
-      '<p style="margin:0 0 8px; font-size:11px; color:var(--text-3); line-height:1.6;">本期損益概覽 · 實收 100% 的去向（綠色＝損益' + (kzReinvest > 0 ? '，斜紋＝損益中再投入的資本支出' : '') + '）</p>' +
+      '<p style="margin:0 0 8px; font-size:11px; color:var(--text-3); line-height:1.6;">本期損益概覽 · 上條＝實收 100% 的去向（變動＋固定＝支出，綠＝損益）'
+      + (capex > 0 ? '；資本支出另一條（非營運費用｜斜紋＝自損益投入，灰＝另籌資金）' : '') + '</p>' +
       compRow('實收', kzRev, chanInner, kzShortMoney(kzRev)) +
       compRow('去向', kzExpBar, expInner, '') +
-      kzBracket +
+      capexRow +
       '<div style="display:grid; grid-template-columns:40px 1fr auto; align-items:center; gap:8px; padding-top:4px; border-top:1px solid var(--line);">' +
-      '<span style="font-size:11.5px; color:var(--text-2);">損益</span>' +
-      '<span style="font-size:10.5px; color:var(--text-3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' +
-      (kzReinvest > 0 ? '資本再投入 ' + kzShortMoney(kzReinvest) + '　結餘 ' + kzShortMoney(kzLeftover) : '') + '</span>' +
+      '<span style="font-size:11.5px; color:var(--text-2);">損益</span><span></span>' +
       '<span style="font-size:12.5px; font-weight:600; white-space:nowrap; color:' + (net >= 0 ? 'var(--green)' : 'var(--red)') + ';">' +
       (net >= 0 ? '+' : '−') + kzShortMoney(Math.abs(net)) + ' <span style="font-weight:400;">' + (revenue ? '（' + margin.toFixed(1) + '％）' : '') + '</span></span></div>';
   } else {
