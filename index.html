@@ -179,7 +179,7 @@
 
   <div class="card">
     <div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:4px 12px; margin-bottom:2px;">
-      <p class="lbl" style="margin:0;">月度損益（未稅）</p>
+      <p class="lbl" style="margin:0;">月度趨勢 · 實收／支出／損益</p>
       <p style="margin:0; font-size:11px; color:var(--text-3);" id="kz-trend-note">—</p>
     </div>
     <div id="kz-trend" class="scrollx"></div>
@@ -436,45 +436,77 @@ function kzRenderTrend(months) {
   var rows = months.map(function(m) {
     var lm = KZ_MONTH_TO_LEDGER[m] || m;
     var prov = BUDGET.some(function(b) { return b.item.indexOf(lm) >= 0 && b.item.indexOf('即時估算') >= 0; });
-    return { m: m, net: KZ_MATRIX_MAP['淨額(未稅)'] ? KZ_MATRIX_MAP['淨額(未稅)'][m] : null, prov: prov };
-  });
-  var vals = rows.filter(function(r) { return r.net !== null && r.net !== undefined; }).map(function(r) { return r.net; });
-  if (!vals.length) { el.innerHTML = ''; return; }
-  var mag = Math.max.apply(null, vals.map(function(v) { return Math.abs(v); }).concat([1]));
-  var pos = Math.max.apply(null, vals.concat([0])), neg = Math.min.apply(null, vals.concat([0]));
-  var top = pos + mag * 0.18, bot = neg - mag * 0.18;
-  if (top === bot) { top = 1; bot = -1; }
-
+    return {
+      m: m, prov: prov,
+      rev: KZ_MATRIX_MAP['實收'] ? KZ_MATRIX_MAP['實收'][m] : null,
+      exp: KZ_MATRIX_MAP['實際支出'] ? KZ_MATRIX_MAP['實際支出'][m] : null,
+      net: KZ_MATRIX_MAP['淨額(未稅)'] ? KZ_MATRIX_MAP['淨額(未稅)'][m] : null
+    };
+  }).filter(function(r) { return r.rev !== null && r.rev !== undefined; });
+  if (!rows.length) { el.innerHTML = ''; return; }
   var n = rows.length;
-  var W = 640, H = 190, PL = 44, PR = 12, PT = 20, PB = 30;
+
+  var all = [];
+  rows.forEach(function(r) { all.push(r.rev, r.exp, r.net); });
+  var hi = Math.max.apply(null, all.concat([0])), lo = Math.min.apply(null, all.concat([0]));
+  var padHi = (hi - lo) * 0.10, padLo = (hi - lo) * 0.14;
+  var top = hi + padHi, bot = lo - padLo;
+
+  var W = 640, H = 214, PL = 44, PR = 14, PT = 16, PB = 26;
   function y(v) { return PT + (H - PT - PB) * (1 - (v - bot) / (top - bot)); }
+  function x(i) { return PL + (W - PL - PR) * (n > 1 ? i / (n - 1) : 0.5); }
   function fmtW(v) { return (v / 10000).toFixed(0) + '萬'; }
-  var slot = (W - PL - PR) / n, bw = Math.min(34, slot * 0.5);
   var g = '';
-  var step = mag <= 400000 ? 200000 : (mag <= 1000000 ? 400000 : 1000000);
-  for (var gv = Math.floor(bot / step) * step; gv <= top + 1; gv += step) {
+  var span = top - bot, step = span <= 1500000 ? 500000 : 1000000;
+  for (var gv = Math.ceil(bot / step) * step; gv <= top; gv += step) {
     var zero = Math.abs(gv) < 1;
-    g += '<line x1="' + PL + '" y1="' + y(gv).toFixed(1) + '" x2="' + (W - PR) + '" y2="' + y(gv).toFixed(1) + '" stroke="' + (zero ? 'var(--text-3)' : 'var(--line)') + '" stroke-width="' + (zero ? 1.2 : 1) + '"/>'
+    g += '<line x1="' + PL + '" y1="' + y(gv).toFixed(1) + '" x2="' + (W - PR) + '" y2="' + y(gv).toFixed(1) + '" stroke="' + (zero ? 'var(--text-3)' : 'var(--line)') + '" stroke-width="' + (zero ? 1.1 : 1) + '"/>'
        + '<text x="' + (PL - 5) + '" y="' + (y(gv) + 3).toFixed(1) + '" text-anchor="end" font-size="9" fill="var(--text-3)">' + fmtW(gv) + '</text>';
   }
-  rows.forEach(function(r, i) {
-    var cx = PL + slot * i + slot / 2;
-    if (r.net === null || r.net === undefined) {
-      g += '<text x="' + cx.toFixed(1) + '" y="' + (y(0) - 6).toFixed(1) + '" text-anchor="middle" font-size="9" fill="var(--text-3)">進行中</text>';
+
+  var series = [
+    { key: 'rev', color: 'var(--rev-1)', w: 1.6, label: '實收' },
+    { key: 'exp', color: 'var(--exp-4)', w: 1.6, label: '實際支出' },
+    { key: 'net', color: 'var(--green)', w: 2.4, label: '損益', accent: true }
+  ];
+  var firstProv = -1;
+  for (var fp = 0; fp < rows.length; fp++) { if (rows[fp].prov) { firstProv = fp; break; } }
+  series.forEach(function(s) {
+    var pts = rows.map(function(r, i) { return x(i).toFixed(1) + ',' + y(r[s.key]).toFixed(1); });
+    if (firstProv > 0) {
+      g += '<polyline points="' + pts.slice(0, firstProv + 1).join(' ') + '" fill="none" stroke="' + s.color + '" stroke-width="' + s.w + '" stroke-linejoin="round"/>';
+      g += '<polyline points="' + pts.slice(firstProv).join(' ') + '" fill="none" stroke="' + s.color + '" stroke-width="' + s.w + '" stroke-linejoin="round" stroke-dasharray="5 3" opacity="0.9"/>';
     } else {
-      var up = r.net >= 0, col = up ? 'var(--green)' : 'var(--red)';
-      var hgt = Math.max(1.5, Math.abs(y(r.net) - y(0)));
-      g += '<rect x="' + (cx - bw / 2).toFixed(1) + '" y="' + (up ? y(r.net) : y(0)).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + hgt.toFixed(1) + '" fill="' + col + '" opacity="' + (r.prov ? 0.5 : 1) + '" rx="2"><title>' + r.m + '　' + (up ? '淨利 ' : '虧損 ') + kzMoney(Math.abs(r.net)) + (r.prov ? '（含估算）' : '') + '</title></rect>';
-      g += '<text x="' + cx.toFixed(1) + '" y="' + (up ? y(r.net) - 6 : y(r.net) + 14).toFixed(1) + '" text-anchor="middle" font-size="9.5" font-weight="500" fill="' + col + '">' + (up ? '+' : '−') + kzShortMoney(Math.abs(r.net)) + '</text>';
+      g += '<polyline points="' + pts.join(' ') + '" fill="none" stroke="' + s.color + '" stroke-width="' + s.w + '" stroke-linejoin="round"' + (firstProv === 0 ? ' stroke-dasharray="5 3"' : '') + '/>';
     }
-    g += '<text x="' + cx.toFixed(1) + '" y="' + (H - PB + 17) + '" text-anchor="middle" font-size="9.5" fill="var(--text-3)">' + r.m + '</text>';
+    rows.forEach(function(r, i) {
+      var last = i === n - 1;
+      var rad = s.accent ? (r.prov ? 3 : 3.4) : (r.prov ? 2.4 : 2.6);
+      var fill = r.prov ? 'var(--card)' : s.color;
+      var stroke = r.prov ? s.color : 'none';
+      g += '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(r[s.key]).toFixed(1) + '" r="' + rad + '" fill="' + fill + '" stroke="' + stroke + '" stroke-width="1.4"><title>' + r.m + '　' + s.label + '　' + kzMoney(r[s.key]) + '</title></circle>';
+      if (s.accent) {
+        var v = r.net, ny = v >= 0 ? y(v) - 8 : y(v) + 15;
+        g += '<text x="' + x(i).toFixed(1) + '" y="' + ny.toFixed(1) + '" text-anchor="middle" font-size="9" font-weight="500" fill="' + (v >= 0 ? 'var(--green)' : 'var(--red)') + '">' + (v >= 0 ? '+' : '−') + kzShortMoney(Math.abs(v)) + '</text>';
+      }
+    });
   });
-  el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%; min-width:' + Math.max(320, n * 62) + 'px; height:auto;">' + g + '</svg>';
+  rows.forEach(function(r, i) {
+    g += '<text x="' + x(i).toFixed(1) + '" y="' + (H - PB + 15) + '" text-anchor="middle" font-size="9.5" fill="var(--text-3)">' + r.m + '</text>';
+  });
+
+  var anyProv = rows.some(function(r) { return r.prov; });
+  el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%; min-width:' + Math.max(340, n * 66) + 'px; height:auto;">' + g + '</svg>'
+    + '<div style="display:flex; gap:14px; flex-wrap:wrap; margin-top:8px; font-size:10.5px; color:var(--text-3);">'
+    + series.map(function(s) { return '<span><span style="display:inline-block; width:14px; height:0; border-top:' + (s.accent ? 2.4 : 1.6) + 'px solid ' + s.color + '; margin-right:5px; vertical-align:3px;"></span>' + s.label + '</span>'; }).join('')
+    + (anyProv ? '<span>虛線／空心 = 含估算</span>' : '') + '</div>';
+
   var noteEl = document.getElementById('kz-trend-note');
   if (noteEl) {
-    var sum = vals.reduce(function(s, v) { return s + v; }, 0);
-    var anyProv = rows.some(function(r) { return r.prov; });
-    noteEl.textContent = '合計 ' + (sum >= 0 ? '+' : '−') + kzMoney(Math.abs(sum)) + (anyProv ? '　·　淡色 = 含估算' : '');
+    var sumN = rows.reduce(function(s, r) { return s + r.net; }, 0);
+    var sumR = rows.reduce(function(s, r) { return s + r.rev; }, 0);
+    noteEl.textContent = '損益合計 ' + (sumN >= 0 ? '+' : '−') + kzMoney(Math.abs(sumN))
+      + (sumR ? '　·　利潤率 ' + (sumN / sumR * 100).toFixed(1) + '%' : '');
   }
 }
 
