@@ -538,8 +538,10 @@ function kzRenderSummary() {
   var net = kzSum('淨額(未稅)', months) || 0;
   var margin = revenue ? (net / revenue * 100) : 0;
   var ledgerMonths = months.map(function(m) { return KZ_MONTH_TO_LEDGER[m]; });
-  var capex = LEDGER.filter(function(r) { return r.cat === '資本支出' && ledgerMonths.indexOf(r.month) !== -1; })
-    .reduce(function(s, r) { return s + r.actual; }, 0);
+  // LEDGER 的「4月」是開業建置桶（頂讓/押金/裝潢/設備/品牌…約1263萬，一次性）；營運期資本支出只算 5月起
+  var kzCapexRows = LEDGER.filter(function(r) { return r.cat === '資本支出' && ledgerMonths.indexOf(r.month) !== -1; });
+  var capexPre = kzCapexRows.filter(function(r) { return r.month === '4月'; }).reduce(function(s, r) { return s + r.actual; }, 0);
+  var capex = kzCapexRows.reduce(function(s, r) { return s + r.actual; }, 0) - capexPre;
 
   document.getElementById('kz-range-note').textContent = '顯示範圍：' + label + (months.indexOf('八月') !== -1 ? '（8月資料未滿月）' : '');
   document.getElementById('kz-kpi-revenue').textContent = kzMoney(revenue);
@@ -547,9 +549,11 @@ function kzRenderSummary() {
   document.getElementById('kz-kpi-net').textContent = kzMoney(net);
   document.getElementById('kz-kpi-net').style.color = net >= 0 ? 'var(--green)' : 'var(--red)';
   document.getElementById('kz-kpi-margin').textContent = margin.toFixed(1) + '%';
-  var kzCapexSrc = capex <= 0 ? '' : (net > 0 && capex <= net ? '自本期損益投入' : '逾損益，另籌資金（股東資本／資金水位）');
+  var kzCapexSrc = capex <= 0 ? '' : (net > 0 && capex <= net ? '自本期損益投入' : '逾損益，另籌資金');
   document.getElementById('kz-kpi-capex').innerHTML = kzMoney(capex) +
-    (revenue ? '<span style="display:block; font-size:11.5px; color:var(--text-3); font-weight:400; margin-top:2px;">占實收 ' + (capex / revenue * 100).toFixed(1) + '%' + (kzCapexSrc ? '<br>' + kzCapexSrc : '') + '</span>' : '');
+    '<span style="display:block; font-size:11.5px; color:var(--text-3); font-weight:400; margin-top:2px;">' +
+    (revenue ? '營運期 · 占實收 ' + (capex / revenue * 100).toFixed(1) + '%' + (kzCapexSrc ? '，' + kzCapexSrc : '') : '營運期資本支出') +
+    (capexPre > 0 ? '<br>另有開業投資 ' + kzMoney(capexPre) + '（一次性）' : '') + '</span>';
   document.getElementById('kz-rank-title').textContent = '費用項目排行（' + label + '累計）';
 
   var fc = kzSum('固定成本FC', months) || 0;
@@ -561,7 +565,7 @@ function kzRenderSummary() {
     return { label: gp.label, color: gp.color, value: months.reduce(function(s, m) { var c = REVENUE_CHANNELS[m]; return s + (c ? (c[gp.label] || 0) : 0); }, 0) };
   }).filter(function(x) { return x.value > 0; });
   var kzChanSum = kzChanGroups.reduce(function(s, x) { return s + x.value; }, 0);
-  var kzCompMax = Math.max(revenue, expense, fcvc, kzChanSum, fcvc + Math.max(net, 0), capex, 1);
+  var kzCompMax = Math.max(revenue, expense, fcvc, kzChanSum, fcvc + Math.max(net, 0), capex, capexPre, 1);
 
   var kzRangeSummaryEl = document.getElementById('kz-range-summary');
   if (months.length > 1 && kzCompMax > 1) {
@@ -594,22 +598,23 @@ function kzRenderSummary() {
       kzSeg(fc / kzDenom * 100, 'var(--fc)', '固定 ' + kzPctRev(fc).toFixed(0) + '%', '固定成本 ' + kzMoney(fc) + '（占實收 ' + kzPctRev(fc).toFixed(1) + '%）') +
       (kzGain > 0 ? kzSeg(kzGain / kzDenom * 100, 'var(--green)', '損益 ' + margin.toFixed(0) + '%',
         '損益 ' + kzMoney(kzGain) + '（占實收 ' + margin.toFixed(1) + '%）', true) : '');
-    // 資本支出 = 另一條（非營運費用，不進損益），同實收比例尺，單色
-    var capexRow = '';
-    if (capex > 0) {
-      var capPctRev = kzPctRev(capex);
-      var capInner = kzSeg(100, 'var(--cap)', capPctRev >= 12 ? '資本支出 · 占實收 ' + capPctRev.toFixed(0) + '%' : '',
-        '資本支出 ' + kzMoney(capex) + '（占實收 ' + capPctRev.toFixed(1) + '%）'
-        + (kzGain > 0 ? '　·　其中約 ' + kzMoney(Math.min(capex, kzGain)) + ' 相當於本期損益，其餘另籌' : ''));
-      capexRow = compRow('資本', capex, capInner, kzShortMoney(capex));
+    // 資本支出 = 另一條（非營運費用，不進損益），同實收比例尺，單色；開業建置另一條，一次性
+    function kzCapexRow(name, val, color, tip) {
+      var p = kzPctRev(val);
+      return compRow(name, val, kzSeg(100, color, p >= 14 ? '占實收 ' + p.toFixed(0) + '%' : '', tip + '（占實收 ' + p.toFixed(1) + '%）'), kzShortMoney(val));
     }
+    var capexRow = capex > 0 ? kzCapexRow('資本', capex, 'var(--cap)',
+      '營運期資本支出 ' + kzMoney(capex) + (kzGain > 0 ? '　·　約 ' + kzMoney(Math.min(capex, kzGain)) + ' 可由本期損益支應' : '')) : '';
+    var preRow = capexPre > 0 ? kzCapexRow('開業', capexPre, 'color-mix(in srgb, var(--cap) 55%, transparent)',
+      '開業建置投入（2025Q4–2026/4，頂讓／押金／裝潢／設備等）' + kzMoney(capexPre) + '，一次性') : '';
     kzRangeSummaryEl.style.display = '';
     kzRangeSummaryEl.innerHTML =
       '<p style="margin:0 0 8px; font-size:11px; color:var(--text-3); line-height:1.6;">本期損益概覽 · 上條＝實收 100% 的去向（變動＋固定＝支出，綠＝損益）'
-      + (capex > 0 ? '；資本條＝資本支出（非營運費用，與實收同比例尺）' : '') + '</p>' +
+      + (capex > 0 || capexPre > 0 ? '；資本／開業條與實收同比例尺（非營運費用，不進損益）' : '') + '</p>' +
       compRow('實收', kzRev, chanInner, kzShortMoney(kzRev)) +
       compRow('去向', kzExpBar, expInner, '') +
       capexRow +
+      preRow +
       '<div style="display:grid; grid-template-columns:40px 1fr auto; align-items:center; gap:8px; padding-top:4px; border-top:1px solid var(--line);">' +
       '<span style="font-size:11.5px; color:var(--text-2);">損益</span><span></span>' +
       '<span style="font-size:12.5px; font-weight:600; white-space:nowrap; color:' + (net >= 0 ? 'var(--green)' : 'var(--red)') + ';">' +
