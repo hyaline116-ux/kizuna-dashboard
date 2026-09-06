@@ -183,6 +183,8 @@
       <p style="margin:0; font-size:11px; color:var(--text-3);" id="kz-trend-note">—</p>
     </div>
     <div id="kz-trend" class="scrollx"></div>
+    <div id="kz-trend-table" class="scrollx" style="margin-top:14px;"></div>
+    <div id="kz-trend-chan" style="margin-top:16px;"></div>
   </div>
 
   <hr class="rule" />
@@ -501,12 +503,50 @@ function kzRenderTrend(months) {
     + series.map(function(s) { return '<span><span style="display:inline-block; width:14px; height:0; border-top:' + (s.accent ? 2.4 : 1.6) + 'px solid ' + s.color + '; margin-right:5px; vertical-align:3px;"></span>' + s.label + '</span>'; }).join('')
     + (anyProv ? '<span>虛線／空心 = 含估算</span>' : '') + '</div>';
 
+  var sumN = rows.reduce(function(s, r) { return s + r.net; }, 0);
+  var sumR = rows.reduce(function(s, r) { return s + r.rev; }, 0);
   var noteEl = document.getElementById('kz-trend-note');
   if (noteEl) {
-    var sumN = rows.reduce(function(s, r) { return s + r.net; }, 0);
-    var sumR = rows.reduce(function(s, r) { return s + r.rev; }, 0);
     noteEl.textContent = '損益合計 ' + (sumN >= 0 ? '+' : '−') + kzMoney(Math.abs(sumN))
       + (sumR ? '　·　利潤率 ' + (sumN / sumR * 100).toFixed(1) + '%' : '');
+  }
+
+  // 迷你數字表
+  var tEl = document.getElementById('kz-trend-table');
+  if (tEl) {
+    function tr(label, fn, cls) {
+      return '<tr><td style="' + (cls || '') + '">' + label + '</td>' + rows.map(function(r) {
+        return '<td style="text-align:right;' + (cls || '') + '">' + fn(r) + '</td>';
+      }).join('') + '</tr>';
+    }
+    tEl.innerHTML = '<table style="min-width:' + Math.max(300, n * 66 + 60) + 'px; font-size:12px;">'
+      + '<thead><tr><th></th>' + rows.map(function(r) { return '<th style="text-align:right;">' + r.m + (r.prov ? '＊' : '') + '</th>'; }).join('') + '</tr></thead><tbody>'
+      + tr('實收', function(r) { return Math.round(r.rev).toLocaleString(); })
+      + tr('實際支出', function(r) { return Math.round(r.exp).toLocaleString(); })
+      + tr('損益（未稅）', function(r) { return '<span style="color:' + (r.net >= 0 ? 'var(--green)' : 'var(--red)') + ';">' + (r.net >= 0 ? '+' : '−') + Math.round(Math.abs(r.net)).toLocaleString() + '</span>'; }, 'font-weight:500;')
+      + tr('利潤率', function(r) { return (r.rev && Math.abs(r.net / r.rev) <= 1) ? (r.net / r.rev * 100).toFixed(1) + '%' : '—'; }, 'color:var(--text-2);')
+      + '</tbody></table>'
+      + (anyProv ? '<p style="margin:6px 0 0; font-size:10.5px; color:var(--text-3);">＊含即時估算，數字為暫定</p>' : '');
+  }
+
+  // 本期收款管道占比
+  var cEl = document.getElementById('kz-trend-chan');
+  if (cEl && typeof REVENUE_CHANNELS !== 'undefined') {
+    var chanTot = KZ_REVENUE_GROUPS.map(function(gp) {
+      var v = rows.reduce(function(s, r) { var c = REVENUE_CHANNELS[r.m]; return s + (c ? (c[gp.label] || 0) : 0); }, 0);
+      return { label: gp.label, color: gp.color, value: v };
+    }).filter(function(x) { return x.value > 0; });
+    var chanSum = chanTot.reduce(function(s, x) { return s + x.value; }, 0) || 1;
+    cEl.innerHTML =
+      '<p style="margin:0 0 5px; font-size:11px; color:var(--text-3);">本期收款管道占比</p>'
+      + '<div style="display:flex; height:20px; border-radius:4px; overflow:hidden;">'
+      + chanTot.map(function(x) {
+        var pct = x.value / chanSum * 100;
+        return '<div title="' + x.label + ' ' + kzMoney(x.value) + '（' + pct.toFixed(1) + '%）" style="width:' + pct.toFixed(2) + '%; background:' + x.color + '; display:flex; align-items:center; justify-content:center;">'
+          + (pct >= 12 ? '<span style="font-size:10px; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.5); white-space:nowrap;">' + x.label.replace('收入', '').replace('月結', '') + ' ' + pct.toFixed(0) + '%</span>' : '') + '</div>';
+      }).join('') + '</div>'
+      + '<div style="display:flex; gap:10px 14px; flex-wrap:wrap; margin-top:6px; font-size:10px; color:var(--text-3);">'
+      + chanTot.map(function(x) { return '<span><span style="display:inline-block; width:8px; height:8px; border-radius:2px; background:' + x.color + '; margin-right:4px; vertical-align:0;"></span>' + x.label + ' ' + kzShortMoney(x.value) + '</span>'; }).join('') + '</div>';
   }
 }
 
