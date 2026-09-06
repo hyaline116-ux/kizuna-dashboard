@@ -839,11 +839,11 @@ function kzRenderPayback(cumNet, prov) {
       '5月起累計淨額 ' + wan(cumNetOps) + '萬' + (prov ? '＊' : ''),
       '累計投入 ' + (wan(openCost) + wan(capexOp)) + '萬（開業建置 ' + wan(openCost) + '萬＋營運期資本支出 ' + wan(capexOp) + '萬，隨投資增加）',
       '開業建置 ' + wan(openCost) + '萬 ＝ 4月資本支出 ' + wan(aprCapex) + '萬 ＋ 4月試營運虧損 ' + wan(Math.max(0, -aprNet)) + '萬。4月整月視為把引擎啟動的投資，5月起才是正常營運') +
+    (prov ? '<p style="margin:-3px 0 0; font-size:10px; color:var(--text-3);">＊含即時估算，數字為暫定</p>' : '') +
     seg('回本進度', paidPct, 'var(--green)',
       '股東實收股利 ' + kzShortMoney(paidShare),
       '出資額 ' + kzShortMoney(equity) + (paidShare <= 0 ? '，預計 2026 Q4 首次分潤' : ''),
-      '完成回本 ＝ 股東實收股利達出資額。每季分配 7% 歸員工分紅+公司基金、且須維持 ' + kzShortMoney(KZ_CASH_HEALTH_LINE) + ' 資金水位，5月起累計淨額約需達 ' + thrW + '萬') +
-    (prov ? '<p style="margin:7px 0 0; font-size:10px; color:var(--text-3);">＊含即時估算，數字為暫定</p>' : '');
+      '完成回本 ＝ 股東實收股利達出資額。每季分配 7% 歸員工分紅+公司基金、且須維持 ' + kzShortMoney(KZ_CASH_HEALTH_LINE) + ' 資金水位，5月起累計淨額約需達 ' + thrW + '萬');
 }
 
 var KZ_CASH_HEALTH_LINE = 3000000;
