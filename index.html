@@ -580,8 +580,8 @@ function kzRenderSummary() {
     var kzRev = kzChanSum || revenue;
     function compRow(name, barValue, inner, numText) {
       var w = (barValue / kzCompMax * 100).toFixed(2);
-      return '<div style="display:grid; grid-template-columns:40px 1fr 56px; align-items:center; gap:8px; margin-bottom:7px;">' +
-        '<span style="font-size:11.5px; color:var(--text-2);">' + name + '</span>' +
+      return '<div style="display:grid; grid-template-columns:60px 1fr 52px; align-items:center; gap:8px; margin-bottom:7px;">' +
+        '<span style="font-size:11px; color:var(--text-2); white-space:nowrap;">' + name + '</span>' +
         '<div style="height:22px; border-radius:4px; background:var(--card-2); overflow:hidden;">' +
         '<div style="height:100%; width:' + w + '%; display:flex; min-width:2px;">' + inner + '</div></div>' +
         '<span style="font-size:12px; font-weight:600; white-space:nowrap; text-align:right;">' + numText + '</span></div>';
@@ -603,20 +603,20 @@ function kzRenderSummary() {
       var p = kzPctRev(val);
       return compRow(name, val, kzSeg(100, color, p >= 14 ? '占實收 ' + p.toFixed(0) + '%' : '', tip + '（占實收 ' + p.toFixed(1) + '%）'), kzShortMoney(val));
     }
-    var capexRow = capex > 0 ? kzCapexRow('資本', capex, 'var(--cap)',
+    var capexRow = capex > 0 ? kzCapexRow('資本支出', capex, 'var(--cap)',
       '營運期資本支出 ' + kzMoney(capex) + (kzGain > 0 ? '　·　約 ' + kzMoney(Math.min(capex, kzGain)) + ' 可由本期損益支應' : '')) : '';
-    var preRow = capexPre > 0 ? kzCapexRow('開業', capexPre, 'color-mix(in srgb, var(--cap) 55%, transparent)',
+    var preRow = capexPre > 0 ? kzCapexRow('開業建置', capexPre, 'color-mix(in srgb, var(--cap) 55%, transparent)',
       '開業建置投入（2025Q4–2026/4，頂讓／押金／裝潢／設備等）' + kzMoney(capexPre) + '，一次性') : '';
     kzRangeSummaryEl.style.display = '';
     kzRangeSummaryEl.innerHTML =
-      '<p style="margin:0 0 8px; font-size:11px; color:var(--text-3); line-height:1.6;">本期損益概覽 · 上條＝實收 100% 的去向（變動＋固定＝支出，綠＝損益）'
-      + (capex > 0 || capexPre > 0 ? '；資本／開業條與實收同比例尺（非營運費用，不進損益）' : '') + '</p>' +
-      compRow('實收', kzRev, chanInner, kzShortMoney(kzRev)) +
-      compRow('去向', kzExpBar, expInner, '') +
+      '<p style="margin:0 0 8px; font-size:11px; color:var(--text-3); line-height:1.6;">本期損益概覽 · 上條＝實際收入 100% 的分配（變動＋固定＝支出，綠＝損益）'
+      + (capex > 0 || capexPre > 0 ? '；資本支出／開業建置條與實際收入同比例尺（非營運費用，不進損益）' : '') + '</p>' +
+      compRow('實際收入', kzRev, chanInner, kzShortMoney(kzRev)) +
+      compRow('支出去向', kzExpBar, expInner, '') +
       capexRow +
       preRow +
-      '<div style="display:grid; grid-template-columns:40px 1fr auto; align-items:center; gap:8px; padding-top:4px; border-top:1px solid var(--line);">' +
-      '<span style="font-size:11.5px; color:var(--text-2);">損益</span><span></span>' +
+      '<div style="display:grid; grid-template-columns:60px 1fr auto; align-items:center; gap:8px; padding-top:4px; border-top:1px solid var(--line);">' +
+      '<span style="font-size:11px; color:var(--text-2);">損益</span><span></span>' +
       '<span style="font-size:12.5px; font-weight:600; white-space:nowrap; color:' + (net >= 0 ? 'var(--green)' : 'var(--red)') + ';">' +
       (net >= 0 ? '+' : '−') + kzShortMoney(Math.abs(net)) + ' <span style="font-weight:400;">' + (revenue ? '（' + margin.toFixed(1) + '％）' : '') + '</span></span></div>';
   } else {
