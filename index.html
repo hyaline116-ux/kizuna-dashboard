@@ -548,7 +548,7 @@ function kzRenderSummary() {
   document.getElementById('kz-kpi-net').style.color = net >= 0 ? 'var(--green)' : 'var(--red)';
   document.getElementById('kz-kpi-margin').textContent = margin.toFixed(1) + '%';
   document.getElementById('kz-kpi-capex').innerHTML = kzMoney(capex) +
-    (revenue ? '<span style="display:block; font-size:11.5px; color:var(--text-3); font-weight:400; margin-top:2px;">占實收 ' + (capex / revenue * 100).toFixed(1) + '%（不含於實際支出）</span>' : '');
+    (revenue ? '<span style="display:block; font-size:11.5px; color:var(--text-3); font-weight:400; margin-top:2px;">占實收 ' + (capex / revenue * 100).toFixed(1) + '%　·　自損益投入，非營運費用</span>' : '');
   document.getElementById('kz-rank-title').textContent = '費用項目排行（' + label + '累計）';
 
   var fc = kzSum('固定成本FC', months) || 0;
@@ -583,7 +583,7 @@ function kzRenderSummary() {
     }
     var chanInner = kzChanGroups.map(function(x) {
       var pct = kzChanSum ? x.value / kzChanSum * 100 : 0;
-      return kzSeg(pct, x.color, x.label.replace('收入', '').replace('月結', ''), x.label + ' ' + kzMoney(x.value) + '（' + pct.toFixed(1) + '%）');
+      return kzSeg(pct, x.color, x.label.replace('收入', '').replace('月結', '') + ' ' + pct.toFixed(0) + '%', x.label + ' ' + kzMoney(x.value) + '（占實收 ' + pct.toFixed(1) + '%）');
     }).join('');
     var kzPctRev = function(v) { return kzRev ? (v / kzRev * 100) : 0; };
     var kzDenom = kzExpBar || 1;
