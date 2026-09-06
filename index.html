@@ -575,11 +575,11 @@ function kzRenderSummary() {
     var kzRev = kzChanSum || revenue;
     function compRow(name, barValue, inner, numText) {
       var w = (barValue / kzCompMax * 100).toFixed(2);
-      return '<div style="display:grid; grid-template-columns:40px 1fr auto; align-items:center; gap:8px; margin-bottom:7px;">' +
+      return '<div style="display:grid; grid-template-columns:40px 1fr 56px; align-items:center; gap:8px; margin-bottom:7px;">' +
         '<span style="font-size:11.5px; color:var(--text-2);">' + name + '</span>' +
         '<div style="height:22px; border-radius:4px; background:var(--card-2); overflow:hidden;">' +
         '<div style="height:100%; width:' + w + '%; display:flex; min-width:2px;">' + inner + '</div></div>' +
-        '<span style="font-size:12px; font-weight:600; white-space:nowrap;">' + numText + '</span></div>';
+        '<span style="font-size:12px; font-weight:600; white-space:nowrap; text-align:right;">' + numText + '</span></div>';
     }
     var chanInner = kzChanGroups.map(function(x) {
       var pct = kzChanSum ? x.value / kzChanSum * 100 : 0;
@@ -606,7 +606,7 @@ function kzRenderSummary() {
     if (kzGain > 0) {
       var kzBL = (vc + fc) / kzDenom * 100;
       var kzBW = kzGain / kzDenom * 100;
-      kzBracket = '<div style="display:grid; grid-template-columns:40px 1fr auto; gap:8px; margin:-3px 0 7px;">' +
+      kzBracket = '<div style="display:grid; grid-template-columns:40px 1fr 56px; gap:8px; margin:-3px 0 7px;">' +
         '<span></span><div style="position:relative; height:15px;">' +
         '<div style="position:absolute; left:' + kzBL.toFixed(2) + '%; width:' + kzBW.toFixed(2) + '%; height:4px; border:1px solid var(--green); border-top:none; box-sizing:border-box;"></div>' +
         '<div style="position:absolute; left:' + kzBL.toFixed(2) + '%; width:' + kzBW.toFixed(2) + '%; top:4px; text-align:center; font-size:9px; color:var(--green); white-space:nowrap;">損益 ' + margin.toFixed(1) + '%</div>' +
