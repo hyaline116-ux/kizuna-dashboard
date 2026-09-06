@@ -604,7 +604,7 @@ function kzRenderSummary() {
     return { label: gp.label, color: gp.color, value: months.reduce(function(s, m) { var c = REVENUE_CHANNELS[m]; return s + (c ? (c[gp.label] || 0) : 0); }, 0) };
   }).filter(function(x) { return x.value > 0; });
   var kzChanSum = kzChanGroups.reduce(function(s, x) { return s + x.value; }, 0);
-  var kzCompMax = Math.max(revenue, expense, fcvc, kzChanSum, fcvc + Math.max(net, 0), capex, capexPre, 1);
+  var kzCompMax = Math.max(revenue, expense, fcvc, kzChanSum, fcvc + Math.max(net, 0), capex, 1);
 
   var kzRangeSummaryEl = document.getElementById('kz-range-summary');
   if (months.length > 1 && kzCompMax > 1) {
@@ -637,23 +637,20 @@ function kzRenderSummary() {
       kzSeg(fc / kzDenom * 100, 'var(--fc)', '固定 ' + kzPctRev(fc).toFixed(0) + '%', '固定成本 ' + kzMoney(fc) + '（占實收 ' + kzPctRev(fc).toFixed(1) + '%）') +
       (kzGain > 0 ? kzSeg(kzGain / kzDenom * 100, 'var(--green)', '損益 ' + margin.toFixed(0) + '%',
         '損益 ' + kzMoney(kzGain) + '（占實收 ' + margin.toFixed(1) + '%）', true) : '');
-    // 資本支出 = 另一條（非營運費用，不進損益），同實收比例尺，單色；開業建置另一條，一次性
+    // 資本支出（營運期）另一條，同實收比例尺，單色。開業建置一次性投入見上方「回本追蹤」，此處不重複
     function kzCapexRow(name, val, color, tip) {
       var p = kzPctRev(val);
       return compRow(name, val, kzSeg(100, color, p >= 14 ? '占實收 ' + p.toFixed(0) + '%' : '', tip + '（占實收 ' + p.toFixed(1) + '%）'), kzShortMoney(val));
     }
     var capexRow = capex > 0 ? kzCapexRow('資本支出', capex, 'var(--cap)',
       '營運期資本支出 ' + kzMoney(capex) + (kzGain > 0 ? '　·　約 ' + kzMoney(Math.min(capex, kzGain)) + ' 可由本期損益支應' : '')) : '';
-    var preRow = capexPre > 0 ? kzCapexRow('開業建置', capexPre, 'color-mix(in srgb, var(--cap) 55%, transparent)',
-      '開業建置投入（2025Q4–2026/4，頂讓／押金／裝潢／設備等）' + kzMoney(capexPre) + '，一次性') : '';
     kzRangeSummaryEl.style.display = '';
     kzRangeSummaryEl.innerHTML =
       '<p style="margin:0 0 8px; font-size:11px; color:var(--text-3); line-height:1.6;">本期損益概覽 · 上條＝實際收入 100% 的分配（變動＋固定＝支出，綠＝損益）'
-      + (capex > 0 || capexPre > 0 ? '；資本支出／開業建置條與實際收入同比例尺（屬資本投入，需回本，不進損益）' : '') + '</p>' +
+      + (capex > 0 ? '；資本支出條與實際收入同比例尺（屬資本投入，不進損益）' : '') + '</p>' +
       compRow('實際收入', kzRev, chanInner, kzShortMoney(kzRev)) +
       compRow('支出去向', kzExpBar, expInner, '') +
       capexRow +
-      preRow +
       '<div style="display:grid; grid-template-columns:60px 1fr auto; align-items:center; gap:8px; padding-top:4px; border-top:1px solid var(--line);">' +
       '<span style="font-size:11px; color:var(--text-2);">損益</span><span></span>' +
       '<span style="font-size:12.5px; font-weight:600; white-space:nowrap; color:' + (net >= 0 ? 'var(--green)' : 'var(--red)') + ';">' +
