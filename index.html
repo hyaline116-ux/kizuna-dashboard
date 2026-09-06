@@ -173,8 +173,7 @@
     </div>
   </div>
 
-  <div id="kz-range-chan" style="margin:14px 0 2px;"></div>
-  <div id="kz-range-summary" style="margin:12px 0 2px;"></div>
+  <div id="kz-range-summary" style="margin:14px 0 2px;"></div>
 
   <hr class="rule" />
 
@@ -562,9 +561,8 @@ function kzRenderSummary() {
   }).filter(function(g) { return g.value > 0; });
   var rangeBarInner = rangeExpGroups.map(function(g) {
     var pct = fcvc ? g.value / fcvc * 100 : 0;
-    var showLabel = pct >= 6;
     return '<div title="' + g.label + ' ' + kzMoney(g.value) + '（' + pct.toFixed(1) + '%）" style="width:' + pct.toFixed(2) + '%; height:100%; background:' + g.color + '; display:flex; align-items:center; justify-content:center; overflow:hidden;">' +
-      (showLabel ? '<span style="font-size:10.5px; font-weight:500; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.6); white-space:nowrap;">' + kzShortMoney(g.value) + '</span>' : '') +
+      (pct >= 8 ? '<span style="font-size:10px; font-weight:500; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.6); white-space:nowrap;">' + g.label.replace('成本', '').replace('關聯', '') + '</span>' : '') +
       '</div>';
   }).join('');
   var kzChanGroups = KZ_REVENUE_GROUPS.map(function(gp) {
@@ -573,40 +571,33 @@ function kzRenderSummary() {
   var kzChanSum = kzChanGroups.reduce(function(s, x) { return s + x.value; }, 0);
   var kzCompMax = Math.max(revenue, expense, fcvc, kzChanSum, 1);
 
-  function kzCompBar(title, right, total, inner) {
-    var w = (total / kzCompMax * 100).toFixed(2);
-    return '<div style="display:flex; justify-content:space-between; align-items:baseline; font-size:11.5px; color:var(--text-2); margin-bottom:4px;">' +
-      '<span>' + title + '　<b style="color:var(--text); font-weight:500;">' + kzShortMoney(total) + '</b></span>' +
-      '<span style="color:var(--text-3);">' + right + '</span></div>' +
-      '<div style="height:24px; border-radius:4px; background:var(--card-2);">' +
-      '<div style="height:100%; width:' + w + '%; border-radius:4px; overflow:hidden; display:flex; min-width:2px;">' + inner + '</div></div>';
-  }
-
   var kzRangeSummaryEl = document.getElementById('kz-range-summary');
-  if (months.length > 1) {
+  if (months.length > 1 && kzCompMax > 1) {
+    function compRow(name, total, inner, sub) {
+      var w = (total / kzCompMax * 100).toFixed(2);
+      return '<div style="display:grid; grid-template-columns:56px 1fr auto; align-items:center; gap:10px; margin-bottom:7px;">' +
+        '<span style="font-size:11.5px; color:var(--text-2);">' + name + '</span>' +
+        '<div style="height:22px; border-radius:4px; background:var(--card-2);">' +
+        '<div style="height:100%; width:' + w + '%; border-radius:4px; overflow:hidden; display:flex; min-width:2px;">' + inner + '</div></div>' +
+        '<span style="font-size:12px; font-weight:500; white-space:nowrap;">' + kzShortMoney(total) + (sub ? ' <span style="color:var(--text-3); font-weight:400;">' + sub + '</span>' : '') + '</span></div>';
+    }
+    var chanInner = kzChanGroups.map(function(x) {
+      var pct = kzChanSum ? x.value / kzChanSum * 100 : 0;
+      return '<div title="' + x.label + ' ' + kzMoney(x.value) + '（' + pct.toFixed(1) + '%）" style="width:' + pct.toFixed(2) + '%; background:' + x.color + '; display:flex; align-items:center; justify-content:center; overflow:hidden;">' +
+        (pct >= 8 ? '<span style="font-size:10px; font-weight:500; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.6); white-space:nowrap;">' + x.label.replace('收入', '').replace('月結', '') + '</span>' : '') + '</div>';
+    }).join('');
     kzRangeSummaryEl.style.display = '';
-    kzRangeSummaryEl.innerHTML = kzCompBar('成本結構', '固定 ' + fcPct.toFixed(1) + '%．變動 ' + vcPct.toFixed(1) + '%', fcvc, rangeBarInner);
+    kzRangeSummaryEl.innerHTML =
+      '<p style="margin:0 0 8px; font-size:11px; color:var(--text-3);">本期損益概覽（收入條與支出條同比例，落差＝損益）</p>' +
+      compRow('實收', kzChanSum || revenue, chanInner) +
+      compRow('實際支出', fcvc, rangeBarInner, '固定' + fcPct.toFixed(0) + '％') +
+      '<div style="display:grid; grid-template-columns:56px 1fr auto; align-items:center; gap:10px; padding-top:4px; border-top:1px solid var(--line);">' +
+      '<span style="font-size:11.5px; color:var(--text-2);">損益</span><span></span>' +
+      '<span style="font-size:12.5px; font-weight:600; white-space:nowrap; color:' + (net >= 0 ? 'var(--green)' : 'var(--red)') + ';">' +
+      (net >= 0 ? '+' : '−') + kzShortMoney(Math.abs(net)) + ' <span style="font-weight:400;">' + (revenue ? '（' + margin.toFixed(1) + '％）' : '') + '</span></span></div>';
   } else {
     kzRangeSummaryEl.style.display = 'none';
     kzRangeSummaryEl.innerHTML = '';
-  }
-
-  var kzChanEl = document.getElementById('kz-range-chan');
-  if (kzChanEl) {
-    if (months.length > 1 && kzChanSum > 0) {
-      var topTwo = kzChanGroups.slice().sort(function(a, b) { return b.value - a.value; }).slice(0, 2)
-        .map(function(x) { return x.label.replace('收入', '').replace('月結', '') + ' ' + (x.value / kzChanSum * 100).toFixed(0) + '%'; }).join('．');
-      var chanInner = kzChanGroups.map(function(x) {
-        var pct = x.value / kzChanSum * 100;
-        return '<div title="' + x.label + ' ' + kzMoney(x.value) + '（' + pct.toFixed(1) + '%）" style="width:' + pct.toFixed(2) + '%; background:' + x.color + '; display:flex; align-items:center; justify-content:center; overflow:hidden;">' +
-          (pct >= 6 ? '<span style="font-size:10.5px; font-weight:500; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.6); white-space:nowrap;">' + kzShortMoney(x.value) + '</span>' : '') + '</div>';
-      }).join('');
-      kzChanEl.style.display = '';
-      kzChanEl.innerHTML = kzCompBar('收款管道占比', topTwo, kzChanSum, chanInner);
-    } else {
-      kzChanEl.style.display = 'none';
-      kzChanEl.innerHTML = '';
-    }
   }
 
   kzRenderTrend(months);
