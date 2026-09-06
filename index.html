@@ -797,7 +797,7 @@ function kzRenderKline() {
   kzRenderPayback(rows[n - 1].cum, anyProv);
 }
 
-// 回本進度：資本投入（開業建置 ＋ 營運期資本支出，皆屬投資非營業成本）需由累計損益回收
+// 回本進度：需回本 = 累計資本投入（開業建置＋營運期資本支出）＋ 需永久維持的資金水位；由開業以來累計損益回收
 function kzRenderPayback(cumNet, prov) {
   var el = document.getElementById('kz-payback');
   if (!el) return;
@@ -809,9 +809,10 @@ function kzRenderPayback(cumNet, prov) {
   });
   var capexOp = capexAll - capexPre;
   if (capexAll <= 0) { el.innerHTML = ''; return; }
-  var pct = cumNet / capexAll * 100;
-  var remain = capexAll - cumNet;
-  var done = cumNet >= capexAll;
+  var target = capexAll + KZ_CASH_HEALTH_LINE;
+  var pct = cumNet / target * 100;
+  var remain = target - cumNet;
+  var done = cumNet >= target;
   el.innerHTML =
     '<div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:2px 12px;">' +
       '<p class="lbl" style="margin:0;">回本進度</p>' +
@@ -822,9 +823,10 @@ function kzRenderPayback(cumNet, prov) {
       '<div style="height:100%; width:' + Math.max(0, Math.min(100, pct)).toFixed(2) + '%; background:var(--green);"></div>' +
     '</div>' +
     '<p style="margin:0; font-size:11px; color:var(--text-3); line-height:1.7;">' +
-      '需回本 <b style="color:var(--text-2); font-weight:600;">' + kzMoney(capexAll) + '</b>' +
-      '（開業建置 ' + kzMoney(capexPre) + ' ＋ 營運期資本支出 ' + kzMoney(capexOp) + '）' +
-      '<br>已回收（開業以來累計損益）<b style="color:var(--text-2); font-weight:600;">' + kzMoney(cumNet) + '</b>' +
+      '需回本 <b style="color:var(--text-2); font-weight:600;">' + kzMoney(target) + '</b>　＝　' +
+      '資本投入 ' + kzMoney(capexAll) + '（開業建置 ' + kzShortMoney(capexPre) + ' ＋ 營運期資本支出 ' + kzShortMoney(capexOp) + '）' +
+      ' ＋ 維持資金水位 ' + kzMoney(KZ_CASH_HEALTH_LINE) +
+      '<br>已回收（開業以來累計損益·未稅）<b style="color:var(--text-2); font-weight:600;">' + kzMoney(cumNet) + '</b>' +
       (done ? '　·　<span style="color:var(--green);">已回本</span>' : '　·　尚需 ' + kzMoney(remain)) +
       (prov ? '<br><span style="color:var(--text-3);">＊含即時估算，數字為暫定</span>' : '') +
     '</p>';
