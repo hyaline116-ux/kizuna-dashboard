@@ -781,6 +781,11 @@ function kzRenderKline() {
      + '<stop offset="1" stop-color="var(--kl-accent)" stop-opacity="0"/></linearGradient></defs>';
   var baseY = Math.min(y(bot), y(0));
   g += '<path d="M ' + PL + ',' + baseY.toFixed(1) + ' L ' + pts.join(' L ') + ' L ' + (W - PR) + ',' + baseY.toFixed(1) + ' Z" fill="url(#kzCashGrad)"/>';
+  // 低於零（虧損）區域警示：紅色底 + 紅色線段
+  g += '<clipPath id="kzNeg"><rect x="' + PL + '" y="' + y(0).toFixed(1) + '" width="' + (W - PR - PL).toFixed(1) + '" height="' + Math.max(0, H - PB - y(0)).toFixed(1) + '"/></clipPath>';
+  if (lo < 0) {
+    g += '<path d="M ' + PL + ',' + baseY.toFixed(1) + ' L ' + pts.join(' L ') + ' L ' + (W - PR) + ',' + baseY.toFixed(1) + ' Z" fill="var(--red)" fill-opacity="0.15" clip-path="url(#kzNeg)"/>';
+  }
   var firstProv = -1;
   for (var fp = 0; fp < rows.length; fp++) { if (rows[fp].prov) { firstProv = fp; break; } }
   if (firstProv > 0) {
@@ -789,12 +794,23 @@ function kzRenderKline() {
   } else {
     g += '<polyline points="' + pts.join(' ') + '" fill="none" stroke="var(--kl-accent)" stroke-width="2" stroke-linejoin="round"' + (firstProv === 0 ? ' stroke-dasharray="5 3"' : '') + '/>';
   }
+  if (lo < 0) {
+    g += '<polyline points="' + pts.join(' ') + '" fill="none" stroke="var(--red)" stroke-width="2.2" stroke-linejoin="round" clip-path="url(#kzNeg)"/>';
+  }
   rows.forEach(function(r, i) {
     var last = i === n - 1;
+    var neg = r.cum < 0;
+    var acc = neg ? 'var(--red)' : 'var(--kl-accent)';
+    if (neg) {
+      g += '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(r.cum).toFixed(1) + '" r="6.5" fill="var(--red)" fill-opacity="0.16"/>';
+    }
     if (r.prov) {
-      g += '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(r.cum).toFixed(1) + '" r="' + (last ? 4 : 3) + '" fill="var(--card)" stroke="var(--kl-accent)" stroke-width="1.6"><title>' + r.m + '　累計 ' + kzMoney(r.cum) + '（含即時估算）</title></circle>';
+      g += '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(r.cum).toFixed(1) + '" r="' + (last ? 4 : 3) + '" fill="var(--card)" stroke="' + acc + '" stroke-width="1.6"><title>' + r.m + '　累計 ' + kzMoney(r.cum) + '（含即時估算）</title></circle>';
     } else {
-      g += '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(r.cum).toFixed(1) + '" r="' + (last ? 4 : 2.6) + '" fill="var(--kl-accent)"><title>' + r.m + '　累計 ' + kzMoney(r.cum) + '</title></circle>';
+      g += '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(r.cum).toFixed(1) + '" r="' + (last ? 4 : 2.6) + '" fill="' + acc + '"><title>' + r.m + '　累計 ' + kzMoney(r.cum) + '</title></circle>';
+    }
+    if (neg) {
+      g += '<text x="' + (x(i) + 9).toFixed(1) + '" y="' + (y(r.cum) - 5).toFixed(1) + '" font-size="9" font-weight="600" fill="var(--red)">⚠ 試營運虧損 ' + kzShortMoney(r.cum) + '</text>';
     }
     if (last) {
       g += '<text x="' + (x(i) - 7).toFixed(1) + '" y="' + (y(r.cum) - 9).toFixed(1) + '" text-anchor="end" font-size="10.5" font-weight="600" fill="var(--text)">' + fmtM(r.cum) + '</text>';
