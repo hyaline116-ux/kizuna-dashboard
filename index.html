@@ -174,6 +174,7 @@
   </div>
 
   <div id="kz-range-summary" style="margin:14px 0 2px;"></div>
+  <div id="kz-range-chan" style="margin:12px 0 2px;"></div>
 
   <hr class="rule" />
 
@@ -184,7 +185,6 @@
     </div>
     <div id="kz-trend" class="scrollx"></div>
     <div id="kz-trend-table" class="scrollx" style="margin-top:14px;"></div>
-    <div id="kz-trend-chan" style="margin-top:16px;"></div>
   </div>
 
   <hr class="rule" />
@@ -528,26 +528,6 @@ function kzRenderTrend(months) {
       + '</tbody></table>'
       + (anyProv ? '<p style="margin:6px 0 0; font-size:10.5px; color:var(--text-3);">＊含即時估算，數字為暫定</p>' : '');
   }
-
-  // 本期收款管道占比
-  var cEl = document.getElementById('kz-trend-chan');
-  if (cEl && typeof REVENUE_CHANNELS !== 'undefined') {
-    var chanTot = KZ_REVENUE_GROUPS.map(function(gp) {
-      var v = rows.reduce(function(s, r) { var c = REVENUE_CHANNELS[r.m]; return s + (c ? (c[gp.label] || 0) : 0); }, 0);
-      return { label: gp.label, color: gp.color, value: v };
-    }).filter(function(x) { return x.value > 0; });
-    var chanSum = chanTot.reduce(function(s, x) { return s + x.value; }, 0) || 1;
-    cEl.innerHTML =
-      '<p style="margin:0 0 5px; font-size:11px; color:var(--text-3);">本期收款管道占比</p>'
-      + '<div style="display:flex; height:20px; border-radius:4px; overflow:hidden;">'
-      + chanTot.map(function(x) {
-        var pct = x.value / chanSum * 100;
-        return '<div title="' + x.label + ' ' + kzMoney(x.value) + '（' + pct.toFixed(1) + '%）" style="width:' + pct.toFixed(2) + '%; background:' + x.color + '; display:flex; align-items:center; justify-content:center;">'
-          + (pct >= 12 ? '<span style="font-size:10px; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.5); white-space:nowrap;">' + x.label.replace('收入', '').replace('月結', '') + ' ' + pct.toFixed(0) + '%</span>' : '') + '</div>';
-      }).join('') + '</div>'
-      + '<div style="display:flex; gap:10px 14px; flex-wrap:wrap; margin-top:6px; font-size:10px; color:var(--text-3);">'
-      + chanTot.map(function(x) { return '<span><span style="display:inline-block; width:8px; height:8px; border-radius:2px; background:' + x.color + '; margin-right:4px; vertical-align:0;"></span>' + x.label + ' ' + kzShortMoney(x.value) + '</span>'; }).join('') + '</div>';
-  }
 }
 
 function kzRenderSummary() {
@@ -599,6 +579,31 @@ function kzRenderSummary() {
   } else {
     kzRangeSummaryEl.style.display = 'none';
     kzRangeSummaryEl.innerHTML = '';
+  }
+
+  var kzChanEl = document.getElementById('kz-range-chan');
+  if (kzChanEl) {
+    var chanGroups = KZ_REVENUE_GROUPS.map(function(gp) {
+      return { label: gp.label, color: gp.color, value: months.reduce(function(s, m) { var c = REVENUE_CHANNELS[m]; return s + (c ? (c[gp.label] || 0) : 0); }, 0) };
+    }).filter(function(x) { return x.value > 0; });
+    var chanSum = chanGroups.reduce(function(s, x) { return s + x.value; }, 0);
+    if (months.length > 1 && chanSum > 0) {
+      var topTwo = chanGroups.slice().sort(function(a, b) { return b.value - a.value; }).slice(0, 2)
+        .map(function(x) { return x.label.replace('收入', '').replace('月結', '') + ' ' + (x.value / chanSum * 100).toFixed(0) + '%'; }).join('．');
+      kzChanEl.style.display = '';
+      kzChanEl.innerHTML =
+        '<div style="display:flex; justify-content:space-between; align-items:baseline; font-size:11.5px; color:var(--text-2); margin-bottom:4px;">' +
+        '<span>' + label + ' 收款管道占比</span><span style="color:var(--text-3);">' + topTwo + '</span></div>' +
+        '<div title="收款管道（' + label + '）" style="display:flex; height:24px; border-radius:4px; overflow:hidden;">' +
+        chanGroups.map(function(x) {
+          var pct = x.value / chanSum * 100;
+          return '<div title="' + x.label + ' ' + kzMoney(x.value) + '（' + pct.toFixed(1) + '%）" style="width:' + pct.toFixed(2) + '%; background:' + x.color + '; display:flex; align-items:center; justify-content:center; overflow:hidden;">' +
+            (pct >= 6 ? '<span style="font-size:10.5px; font-weight:500; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.6); white-space:nowrap;">' + kzShortMoney(x.value) + '</span>' : '') + '</div>';
+        }).join('') + '</div>';
+    } else {
+      kzChanEl.style.display = 'none';
+      kzChanEl.innerHTML = '';
+    }
   }
 
   kzRenderTrend(months);
