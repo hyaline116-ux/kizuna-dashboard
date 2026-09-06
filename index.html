@@ -143,6 +143,7 @@
       <p style="margin:0; font-size:11px; color:var(--text-3);" id="kz-kline-note">—</p>
     </div>
     <div id="kz-kline" class="scrollx"></div>
+    <div id="kz-payback" style="margin-top:14px; padding-top:12px; border-top:1px solid var(--line);"></div>
   </div>
 
   <hr class="rule" style="margin:1.4rem 0;" />
@@ -610,7 +611,7 @@ function kzRenderSummary() {
     kzRangeSummaryEl.style.display = '';
     kzRangeSummaryEl.innerHTML =
       '<p style="margin:0 0 8px; font-size:11px; color:var(--text-3); line-height:1.6;">本期損益概覽 · 上條＝實際收入 100% 的分配（變動＋固定＝支出，綠＝損益）'
-      + (capex > 0 || capexPre > 0 ? '；資本支出／開業建置條與實際收入同比例尺（非營運費用，不進損益）' : '') + '</p>' +
+      + (capex > 0 || capexPre > 0 ? '；資本支出／開業建置條與實際收入同比例尺（屬資本投入，需回本，不進損益）' : '') + '</p>' +
       compRow('實際收入', kzRev, chanInner, kzShortMoney(kzRev)) +
       compRow('支出去向', kzExpBar, expInner, '') +
       capexRow +
@@ -793,6 +794,40 @@ function kzRenderKline() {
   el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%; min-width:520px; height:auto;">' + g + '</svg>';
   document.getElementById('kz-kline-note').textContent =
     '累計損益 ' + kzMoney(rows[n - 1].cum) + (anyProv ? '　·　虛線／空心點 = 含即時估算（暫定）' : '');
+  kzRenderPayback(rows[n - 1].cum, anyProv);
+}
+
+// 回本進度：資本投入（開業建置 ＋ 營運期資本支出，皆屬投資非營業成本）需由累計損益回收
+function kzRenderPayback(cumNet, prov) {
+  var el = document.getElementById('kz-payback');
+  if (!el) return;
+  var capexAll = 0, capexPre = 0;
+  LEDGER.forEach(function(r) {
+    if (r.cat !== '資本支出') return;
+    capexAll += r.actual;
+    if (r.month === '4月') capexPre += r.actual;
+  });
+  var capexOp = capexAll - capexPre;
+  if (capexAll <= 0) { el.innerHTML = ''; return; }
+  var pct = cumNet / capexAll * 100;
+  var remain = capexAll - cumNet;
+  var done = cumNet >= capexAll;
+  el.innerHTML =
+    '<div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:2px 12px;">' +
+      '<p class="lbl" style="margin:0;">回本進度</p>' +
+      '<p style="margin:0; font-size:12.5px; font-weight:700; color:' + (done ? 'var(--green)' : 'var(--text)') + ';">' +
+      Math.max(0, pct).toFixed(1) + '%' + (prov ? '＊' : '') + '</p>' +
+    '</div>' +
+    '<div style="height:16px; border-radius:5px; background:var(--card-2); overflow:hidden; margin:8px 0 7px;">' +
+      '<div style="height:100%; width:' + Math.max(0, Math.min(100, pct)).toFixed(2) + '%; background:var(--green);"></div>' +
+    '</div>' +
+    '<p style="margin:0; font-size:11px; color:var(--text-3); line-height:1.7;">' +
+      '需回本 <b style="color:var(--text-2); font-weight:600;">' + kzMoney(capexAll) + '</b>' +
+      '（開業建置 ' + kzMoney(capexPre) + ' ＋ 營運期資本支出 ' + kzMoney(capexOp) + '）' +
+      '<br>已回收（開業以來累計損益）<b style="color:var(--text-2); font-weight:600;">' + kzMoney(cumNet) + '</b>' +
+      (done ? '　·　<span style="color:var(--green);">已回本</span>' : '　·　尚需 ' + kzMoney(remain)) +
+      (prov ? '<br><span style="color:var(--text-3);">＊含即時估算，數字為暫定</span>' : '') +
+    '</p>';
 }
 
 var KZ_CASH_HEALTH_LINE = 3000000;
