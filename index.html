@@ -800,7 +800,7 @@ function kzRenderKline() {
 // 回本前每季分配中，股東（出資股東 78% ＋ 運營團隊 15%）合計 93%；其餘 7% ＝ 員工分紅 5% ＋ 公司基金 2%
 // （非股東，不計入回本）。來源：股份出資%分配 分頁「回本前 A」。
 var KZ_PAYBACK_SHARE = 0.93;
-// 回本追蹤：① 獲利累積（累計損益 vs 回本門檻）② 股利回收（股東實收股利 vs 股東資本額 ＝ 真正的回本）
+// 回本進度：股東實收股利 ÷ 出資額（真正的回本標準）。回本門檻僅作為文字參考，不再畫成第二條。
 function kzRenderPayback(cumNet, prov) {
   var el = document.getElementById('kz-payback');
   if (!el) return;
@@ -810,35 +810,30 @@ function kzRenderPayback(cumNet, prov) {
     capexAll += r.actual;
     if (r.month === '4月') capexPre += r.actual;
   });
-  var capexOp = capexAll - capexPre;
   if (capexAll <= 0) { el.innerHTML = ''; return; }
+  var capexOp = capexAll - capexPre;
   var equity = CASH.total_capital || 0;
   var paidTotal = CASH.dividends_paid || 0;                       // 公司帳簿 Q5 起：每季實際分配總額
-  var paidShare = paidTotal * KZ_PAYBACK_SHARE;                   // 其中股東實收
-  var leak = equity * (1 - KZ_PAYBACK_SHARE) / KZ_PAYBACK_SHARE;  // 為讓股東收滿 equity，需多分配的 7% 損耗
-  var threshold = capexAll + KZ_CASH_HEALTH_LINE + leak;
+  var paidShare = paidTotal * KZ_PAYBACK_SHARE;
+  var leak = equity * (1 - KZ_PAYBACK_SHARE) / KZ_PAYBACK_SHARE;
   var wan = function(v) { return Math.round(v / 10000); };
-  var thrW = wan(capexAll) + wan(KZ_CASH_HEALTH_LINE) + wan(leak);   // 以四捨五入後的分項加總顯示，避免 ±1萬 落差
-  var earnedPct = threshold ? Math.max(0, cumNet) / threshold * 100 : 0;
+  var thrW = wan(capexAll) + wan(KZ_CASH_HEALTH_LINE) + wan(leak);
   var paidPct = equity ? paidShare / equity * 100 : 0;
-  function row(name, pct, color, sub, tip) {
-    return '<div title="' + tip + '" style="display:grid; grid-template-columns:60px 1fr 46px; align-items:center; gap:10px; cursor:help;">' +
-        '<span style="font-size:11.5px; color:var(--text-2);">' + name + '</span>' +
-        '<div style="height:13px; border-radius:4px; background:var(--card-2); overflow:hidden;">' +
-          '<div style="height:100%; width:' + Math.max(0, Math.min(100, pct)).toFixed(2) + '%; background:' + color + ';"></div>' +
-        '</div>' +
-        '<span style="font-size:12px; font-weight:700; text-align:right;">' + pct.toFixed(1) + '%</span>' +
-      '</div>' +
-      '<p style="margin:3px 0 12px; font-size:10.5px; color:var(--text-3);">' + sub + '</p>';
-  }
+  var thrTip = '回本門檻 ' + thrW + '萬 ＝ 資本投入 ' + kzShortMoney(capexAll) + '（開業建置 ' + kzShortMoney(capexPre) + '＋營運期 ' + kzShortMoney(capexOp) + '）＋ 維持資金水位 ' + kzShortMoney(KZ_CASH_HEALTH_LINE) + ' ＋ 分潤損耗 ' + kzShortMoney(leak) + '（每季分配 7% 歸員工分紅+公司基金）';
   el.innerHTML =
-    '<p class="lbl" style="margin:0 0 11px;">回本追蹤</p>' +
-    row('獲利累積', earnedPct, 'color-mix(in srgb, var(--green) 42%, var(--card-2))',
-      '累計損益 <b style="color:var(--text-2); font-weight:600;">' + kzShortMoney(cumNet) + (prov ? '＊' : '') + '</b> ／ 門檻 ' + thrW + '萬',
-      '回本門檻 ' + thrW + '萬 ＝ 資本投入 ' + kzShortMoney(capexAll) + '（開業建置 ' + kzShortMoney(capexPre) + '＋營運期 ' + kzShortMoney(capexOp) + '）＋ 維持資金水位 ' + kzShortMoney(KZ_CASH_HEALTH_LINE) + ' ＋ 分潤損耗 ' + kzShortMoney(leak) + '（每季分配 7% 給員工分紅+公司基金）' + (prov ? '。＊含即時估算' : '')) +
-    row('股利回收', paidPct, 'var(--green)',
-      '股東實收 <b style="color:var(--text-2); font-weight:600;">' + kzShortMoney(paidShare) + '</b> ／ 出資額 ' + kzShortMoney(equity) + (paidPct <= 0 ? ' · 預計 2026 Q4 首次分潤' : '（占分配 93%）'),
-      '完成回本的標準。資金水位達 ' + kzShortMoney(KZ_CASH_HEALTH_LINE) + ' 後每季分配超額，股東分得 93%（員工分紅 5%、公司基金 2%）');
+    '<div style="display:flex; justify-content:space-between; align-items:baseline; gap:10px;">' +
+      '<p class="lbl" style="margin:0;">回本進度</p>' +
+      '<span style="font-size:15px; font-weight:700; color:' + (paidPct >= 100 ? 'var(--green)' : 'var(--text)') + '; font-variant-numeric:tabular-nums;">' + paidPct.toFixed(1) + '%</span>' +
+    '</div>' +
+    '<div style="height:14px; border-radius:5px; background:var(--card-2); overflow:hidden; margin:9px 0 10px;">' +
+      '<div style="height:100%; width:' + Math.max(0, Math.min(100, paidPct)).toFixed(2) + '%; background:var(--green);"></div>' +
+    '</div>' +
+    '<div style="display:grid; grid-template-columns:auto 1fr; gap:4px 14px; font-size:11.5px; line-height:1.5;">' +
+      '<span style="color:var(--text-3);">股東實收股利</span>' +
+      '<span style="color:var(--text);">' + kzShortMoney(paidShare) + '　<span style="color:var(--text-3);">／ 出資額 ' + kzShortMoney(equity) + (paidTotal <= 0 ? '，預計 2026 Q4 首次分潤' : '') + '</span></span>' +
+      '<span style="color:var(--text-3);">獲利進度</span>' +
+      '<span style="color:var(--text);" title="' + thrTip + '">累計損益 ' + kzShortMoney(cumNet) + (prov ? '＊' : '') + '　<span style="color:var(--text-3);">／ 回本門檻 ' + thrW + '萬</span></span>' +
+    '</div>';
 }
 
 var KZ_CASH_HEALTH_LINE = 3000000;
