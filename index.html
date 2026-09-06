@@ -800,8 +800,27 @@ function kzRenderKline() {
 // 回本前每季分配中，股東（出資股東 78% ＋ 運營團隊 15%）合計 93%；其餘 7% ＝ 員工分紅 5% ＋ 公司基金 2%
 // （非股東，不計入回本）。來源：股份出資%分配 分頁「回本前 A」。
 var KZ_PAYBACK_SHARE = 0.93;
+// 5月 LEDGER 資本支出中，屬開業建置收尾（訂金在4月桶的尾款/追加、與4月建置同性質）者，
+// 認列進「開業建置」而非「5月起資本支出」。6月起一律視為追加資本支出。每次同步需重新核對此清單。
+var KZ_CAPEX_TO_OPENING = [
+  "名都：包廂大桌*3、客座椅 尾款",
+  "營業運作設備 總額結算稅金：玖立達",
+  "營業運作設備 白鐵設備追加：玖立達",
+  "外場冷藏冰箱2樓增設 直立雙門冷藏*1 開吧",
+  "外場服務用具/餐具 酒杯 益順",
+  "川邑 管理作業用筆電 - mba",
+  "品牌形象：夥伴制服追加*35",
+  "追加建置成本 雜支 - Andy",
+  "軟裝：畫框 / 掛畫 函雅堂",
+  "餐具追加：甜點碗 陶雅",
+  "追加建置成本 雜支 - Amy",
+  "廚房刀具：刀鞘 和欣行",
+  "品牌形象：夥伴名牌訂製",
+  "品牌形象：夥伴圍裙追加*5",
+  "環控設備/網路設備 - 己誠 追加轉接器"
+];
 // 回本追蹤：資本支出歸資本支出、營運虧損歸營運（4月起全計入）。
-// ① 累計淨額 vs 累計資本支出（開業建置＋營運期）② 回本進度（股東實收股利 ÷ 出資額）
+// ① 累計淨額 vs 累計資本支出（開業建置＋資本支出）② 回本進度（股東實收股利 ÷ 出資額）
 function kzRenderPayback(cumNet, prov) {
   var el = document.getElementById('kz-payback');
   if (!el) return;
@@ -809,7 +828,7 @@ function kzRenderPayback(cumNet, prov) {
   LEDGER.forEach(function(r) {
     if (r.cat !== '資本支出') return;
     capexAll += r.actual;
-    if (r.month === '4月') capexPre += r.actual;
+    if (r.month === '4月' || KZ_CAPEX_TO_OPENING.indexOf(r.desc) !== -1) capexPre += r.actual;
   });
   if (capexAll <= 0) { el.innerHTML = ''; return; }
   var capexOp = capexAll - capexPre;
@@ -836,8 +855,8 @@ function kzRenderPayback(cumNet, prov) {
     '<p class="lbl" style="margin:0;">回本追蹤</p>' +
     seg('累計淨額 vs 累計資本支出', prov ? '＊含即時估算' : '', recoverPct, 'color-mix(in srgb, var(--green) 45%, var(--card-2))',
       '累計淨額 ' + wan(cumNet) + '萬',
-      '累計資本支出 ' + wan(capexAll) + '萬（開業建置 ' + wan(capexPre) + '萬＋資本支出 ' + wan(capexOp) + '萬）',
-      '資本支出獨立計算（不含營運虧損）。開業建置 ＝ 4月全部資本支出；資本支出 ＝ 5月起新增投資項目') +
+      '累計資本支出 ' + (wan(capexPre) + wan(capexOp)) + '萬（開業建置 ' + wan(capexPre) + '萬＋資本支出 ' + wan(capexOp) + '萬）',
+      '資本支出獨立計算（不含營運虧損）。開業建置 ＝ 4月全部資本支出 ＋ 5月開業收尾（尾款／追加，約 50萬）；資本支出 ＝ 6月起及5月營運後真正新增的投資項目') +
     seg('回本進度', '', paidPct, 'var(--green)',
       '股東實收股利 ' + kzShortMoney(paidShare),
       '出資額 ' + kzShortMoney(equity) + (paidShare <= 0 ? '，預計 2026 Q4 首次分潤' : ''),
