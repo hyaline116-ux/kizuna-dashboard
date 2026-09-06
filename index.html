@@ -191,7 +191,7 @@
 
   <div class="card">
     <div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:4px 12px; margin-bottom:2px;">
-      <p class="lbl" style="margin:0;">月度趨勢 · 實收／支出／損益</p>
+      <p class="lbl" style="margin:0;" id="kz-trend-title">月度趨勢 · 實收／支出／損益</p>
       <p style="margin:0; font-size:11px; color:var(--text-3);" id="kz-trend-note">—</p>
     </div>
     <div id="kz-trend" class="scrollx"></div>
@@ -459,6 +459,29 @@ function kzRenderTrend(months) {
   if (!rows.length) { el.innerHTML = ''; return; }
   var n = rows.length;
 
+  if (n === 1) {
+    // 單月：折線圖沒有意義，改用損益結構橫條
+    var r1 = rows[0];
+    var scale1 = Math.max(r1.rev, r1.exp, 1);
+    var netPos1 = r1.net >= 0;
+    function kzTrendBar(label, w, color, tail, tailColor, strong) {
+      return '<div style="display:grid; grid-template-columns:60px 1fr auto; align-items:center; gap:10px; margin-bottom:9px;">' +
+        '<span style="font-size:11.5px; color:var(--text-2);">' + label + '</span>' +
+        '<div style="height:16px; border-radius:5px; background:var(--card-2); overflow:hidden;">' +
+          '<div style="height:100%; width:' + Math.max(0, Math.min(100, w)).toFixed(1) + '%; background:' + color + ';"></div></div>' +
+        '<span style="font-size:12.5px; font-weight:' + (strong ? 700 : 600) + '; white-space:nowrap; color:' + (tailColor || 'var(--text)') + ';">' + tail + '</span></div>';
+    }
+    el.innerHTML =
+      '<p style="margin:2px 0 14px; font-size:11px; color:var(--text-3);">' + r1.m + '單月損益結構' + (r1.prov ? '（含即時估算）' : '') + '</p>' +
+      kzTrendBar('實收', r1.rev / scale1 * 100, 'var(--rev-1)', kzShortMoney(r1.rev)) +
+      kzTrendBar('實際支出', r1.exp / scale1 * 100, 'var(--exp-4)', kzShortMoney(r1.exp)) +
+      '<div style="border-top:1px solid var(--line); margin-top:2px; padding-top:9px;">' +
+      kzTrendBar('損益', Math.abs(r1.net) / scale1 * 100, netPos1 ? 'var(--green)' : 'var(--red)',
+        (netPos1 ? '+' : '−') + kzShortMoney(Math.abs(r1.net)) + (r1.rev ? '　' + (r1.net / r1.rev * 100).toFixed(1) + '%' : ''),
+        netPos1 ? 'var(--green)' : 'var(--red)', true) +
+      '</div>';
+  } else {
+
   var all = [];
   rows.forEach(function(r) { all.push(r.rev, r.exp, r.net); });
   var hi = Math.max.apply(null, all.concat([0])), lo = Math.min.apply(null, all.concat([0]));
@@ -514,11 +537,15 @@ function kzRenderTrend(months) {
     + series.map(function(s) { return '<span><span style="display:inline-block; width:14px; height:0; border-top:' + (s.accent ? 2.4 : 1.6) + 'px solid ' + s.color + '; margin-right:5px; vertical-align:3px;"></span>' + s.label + '</span>'; }).join('')
     + (anyProv ? '<span>虛線／空心 = 含估算</span>' : '') + '</div>';
 
+  }
+
   var sumN = rows.reduce(function(s, r) { return s + r.net; }, 0);
   var sumR = rows.reduce(function(s, r) { return s + r.rev; }, 0);
+  var titleEl = document.getElementById('kz-trend-title');
+  if (titleEl) titleEl.textContent = (n === 1 ? '單月損益 · 實收／支出／損益' : '月度趨勢 · 實收／支出／損益');
   var noteEl = document.getElementById('kz-trend-note');
   if (noteEl) {
-    noteEl.textContent = '損益合計 ' + (sumN >= 0 ? '+' : '−') + kzMoney(Math.abs(sumN))
+    noteEl.textContent = (n === 1 ? '損益 ' : '損益合計 ') + (sumN >= 0 ? '+' : '−') + kzMoney(Math.abs(sumN))
       + (sumR ? '　·　利潤率 ' + (sumN / sumR * 100).toFixed(1) + '%' : '');
   }
 
