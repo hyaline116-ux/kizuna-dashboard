@@ -366,16 +366,7 @@ var KZ_CAPEX_TO_OPENING = [
   "環控設備/網路設備 - 己誠 追加轉接器"
 ];
 function kzIsOpeningCapex(r) { return r.month === '4月' || KZ_CAPEX_TO_OPENING.indexOf(r.desc) !== -1; }
-var KZ_DONUT_GROUPS = [
-  { label: '食材成本', color: 'var(--exp-1)', type: 'VC', cats: ['食材成本'] },
-  { label: '人事關聯', color: 'var(--exp-2)', type: 'FC', cats: ['人事成本','勞保','勞退','健保'] },
-  { label: '雜項支出', color: 'var(--exp-3)', type: 'VC', cats: ['雜項支出'] },
-  { label: '房租', color: 'var(--exp-4)', type: 'FC', cats: ['房租'] },
-  { label: '水電', color: 'var(--exp-5)', type: 'FC', cats: ['電費','水費'] },
-  { label: '耗材成本', color: 'var(--exp-6)', type: 'VC', cats: ['耗材成本'] },
-  { label: '其他固定', color: 'var(--exp-7)', type: 'FC', cats: ['會計記帳費','憑證統整費','電信費','廚餘清運','垃圾清運','環境消毒','中興保全','室內花藝'] }
-];
-var KZ_RANK_ITEMS = ['食材成本','人事成本','雜項支出','房租','電費','耗材成本','勞保','健保','勞退','垃圾清運','中興保全','室內花藝','水費','憑證統整費','廚餘清運','環境消毒','會計記帳費','電信費'];
+var KZ_RANK_ITEMS =['食材成本','人事成本','雜項支出','房租','電費','耗材成本','勞保','健保','勞退','垃圾清運','中興保全','室內花藝','水費','憑證統整費','廚餘清運','環境消毒','會計記帳費','電信費'];
 
 function kzMoney(v) {
   var sign = v < 0 ? '−' : '';
@@ -618,8 +609,6 @@ function kzRenderSummary() {
   var fc = kzSum('固定成本FC', months) || 0;
   var vc = kzSum('變動成本VC', months) || 0;
   var fcvc = fc + vc;
-  var fcPct = fcvc ? (fc / fcvc * 100) : 0;
-  var vcPct = 100 - fcPct;
   var kzChanGroups = KZ_REVENUE_GROUPS.map(function(gp) {
     return { label: gp.label, color: gp.color, value: months.reduce(function(s, m) { var c = REVENUE_CHANNELS[m]; return s + (c ? (c[gp.label] || 0) : 0); }, 0) };
   }).filter(function(x) { return x.value > 0; });
@@ -632,8 +621,8 @@ function kzRenderSummary() {
     var kzExpBar = fcvc + kzGain;
     function kzSeg(w, color, label, title, bold) {
       return '<div title="' + title + '" style="width:' + w.toFixed(2) + '%; height:100%; background:' + color +
-        '; box-shadow:inset -1px 0 0 rgba(255,255,255,.16); display:flex; align-items:center; justify-content:center; overflow:hidden;">' +
-        (w >= 8 ? '<span style="font-size:10px; font-weight:' + (bold ? 600 : 500) + '; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.6); white-space:nowrap;">' + label + '</span>' : '') +
+        '; box-shadow:inset -1px 0 0 rgba(0,0,0,.22); display:flex; align-items:center; justify-content:center; overflow:hidden;">' +
+        (w >= 10 ? '<span style="font-size:10px; font-weight:' + (bold ? 600 : 500) + '; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.65); white-space:nowrap;">' + label + '</span>' : '') +
         '</div>';
     }
     var kzRev = kzChanSum || revenue;
