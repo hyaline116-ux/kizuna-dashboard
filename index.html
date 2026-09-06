@@ -547,7 +547,7 @@ function kzRenderSummary() {
   document.getElementById('kz-kpi-net').textContent = kzMoney(net);
   document.getElementById('kz-kpi-net').style.color = net >= 0 ? 'var(--green)' : 'var(--red)';
   document.getElementById('kz-kpi-margin').textContent = margin.toFixed(1) + '%';
-  var kzCapexSrc = capex <= 0 ? '' : (net > 0 && capex <= net ? '自本期損益投入' : '逾損益，另動用資金水位');
+  var kzCapexSrc = capex <= 0 ? '' : (net > 0 && capex <= net ? '自本期損益投入' : '逾損益，另籌資金（股東資本／資金水位）');
   document.getElementById('kz-kpi-capex').innerHTML = kzMoney(capex) +
     (revenue ? '<span style="display:block; font-size:11.5px; color:var(--text-3); font-weight:400; margin-top:2px;">占實收 ' + (capex / revenue * 100).toFixed(1) + '%' + (kzCapexSrc ? '<br>' + kzCapexSrc : '') + '</span>' : '');
   document.getElementById('kz-rank-title').textContent = '費用項目排行（' + label + '累計）';
@@ -588,20 +588,22 @@ function kzRenderSummary() {
     }).join('');
     var kzPctRev = function(v) { return kzRev ? (v / kzRev * 100) : 0; };
     var kzDenom = kzExpBar || 1;
-    var kzCapexShown = Math.max(0, Math.min(capex, kzGain));
-    var kzLeftover = kzGain - kzCapexShown;
     var kzHatch = 'repeating-linear-gradient(45deg, var(--green), var(--green) 3px, rgba(0,0,0,.34) 3px, rgba(0,0,0,.34) 6px)';
+    // 只有「資本支出全數由本期損益支應」時才把它畫成損益的子段；否則資本支出屬另籌資金，不放進「實收去向」條
+    var kzCapexInGain = kzGain > 0 && capex > 0 && capex <= kzGain;
+    var kzReinvest = kzCapexInGain ? capex : 0;
+    var kzLeftover = Math.max(0, kzGain - kzReinvest);
     var expInner =
       kzSeg(vc / kzDenom * 100, 'var(--vc)', '變動 ' + kzPctRev(vc).toFixed(0) + '%', '變動成本 ' + kzMoney(vc) + '（占實收 ' + kzPctRev(vc).toFixed(1) + '%）') +
       kzSeg(fc / kzDenom * 100, 'var(--fc)', '固定 ' + kzPctRev(fc).toFixed(0) + '%', '固定成本 ' + kzMoney(fc) + '（占實收 ' + kzPctRev(fc).toFixed(1) + '%）');
     if (kzGain > 0) {
-      if (kzCapexShown > 0) {
-        expInner += kzSeg(kzCapexShown / kzDenom * 100, kzHatch, '資本', '資本支出 ' + kzMoney(kzCapexShown)
-          + (capex > kzCapexShown ? '（另有 ' + kzMoney(capex - kzCapexShown) + ' 由資金水位支應）' : '')
-          + '（占實收 ' + kzPctRev(kzCapexShown).toFixed(1) + '%）', true);
+      if (kzReinvest > 0) {
+        expInner += kzSeg(kzReinvest / kzDenom * 100, kzHatch, '資本',
+          '資本支出（自本期損益再投入）' + kzMoney(kzReinvest) + '（占實收 ' + kzPctRev(kzReinvest).toFixed(1) + '%）', true);
       }
-      expInner += kzSeg(kzLeftover / kzDenom * 100, 'var(--green)', '結餘 ' + kzPctRev(kzLeftover).toFixed(0) + '%',
-        '結餘（損益 − 本期資本支出）' + kzMoney(kzLeftover) + '（占實收 ' + kzPctRev(kzLeftover).toFixed(1) + '%）', true);
+      expInner += kzSeg(kzLeftover / kzDenom * 100, 'var(--green)',
+        (kzReinvest > 0 ? '結餘 ' : '損益 ') + kzPctRev(kzLeftover).toFixed(0) + '%',
+        (kzReinvest > 0 ? '結餘（損益 − 再投入資本）' : '損益 ') + kzMoney(kzLeftover) + '（占實收 ' + kzPctRev(kzLeftover).toFixed(1) + '%）', true);
     }
     var kzBracket = '';
     if (kzGain > 0) {
@@ -615,18 +617,14 @@ function kzRenderSummary() {
     }
     kzRangeSummaryEl.style.display = '';
     kzRangeSummaryEl.innerHTML =
-      '<p style="margin:0 0 8px; font-size:11px; color:var(--text-3); line-height:1.6;">本期損益概覽 · 實收 100% 的去向（綠色＝損益，斜紋＝已投入資本支出）</p>' +
+      '<p style="margin:0 0 8px; font-size:11px; color:var(--text-3); line-height:1.6;">本期損益概覽 · 實收 100% 的去向（綠色＝損益' + (kzReinvest > 0 ? '，斜紋＝損益中再投入的資本支出' : '') + '）</p>' +
       compRow('實收', kzRev, chanInner, kzShortMoney(kzRev)) +
       compRow('去向', kzExpBar, expInner, '') +
       kzBracket +
       '<div style="display:grid; grid-template-columns:40px 1fr auto; align-items:center; gap:8px; padding-top:4px; border-top:1px solid var(--line);">' +
       '<span style="font-size:11.5px; color:var(--text-2);">損益</span>' +
       '<span style="font-size:10.5px; color:var(--text-3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' +
-      (kzGain > 0
-        ? (capex <= kzGain
-            ? '資本支出 ' + kzShortMoney(kzCapexShown) + '　結餘 ' + kzShortMoney(kzLeftover)
-            : '資本支出 ' + kzShortMoney(capex) + '　·　動用資金水位 ' + kzShortMoney(capex - kzGain))
-        : '') + '</span>' +
+      (kzReinvest > 0 ? '資本再投入 ' + kzShortMoney(kzReinvest) + '　結餘 ' + kzShortMoney(kzLeftover) : '') + '</span>' +
       '<span style="font-size:12.5px; font-weight:600; white-space:nowrap; color:' + (net >= 0 ? 'var(--green)' : 'var(--red)') + ';">' +
       (net >= 0 ? '+' : '−') + kzShortMoney(Math.abs(net)) + ' <span style="font-weight:400;">' + (revenue ? '（' + margin.toFixed(1) + '％）' : '') + '</span></span></div>';
   } else {
