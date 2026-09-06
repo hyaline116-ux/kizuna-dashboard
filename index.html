@@ -797,7 +797,8 @@ function kzRenderKline() {
   kzRenderPayback(rows[n - 1].cum, anyProv);
 }
 
-// 回本進度：需回本 = 累計資本投入（開業建置＋營運期資本支出）＋ 需永久維持的資金水位；由開業以來累計損益回收
+// 回本進度：資金水位達 300萬後每季分配超額為股利；累計損益達 (資本投入 ＋ 300萬水位) 時，
+// 已配發股利 ≈ 股東資本額，即完成回本（之後出資%分配改依 B，見 公司帳簿!R2）
 function kzRenderPayback(cumNet, prov) {
   var el = document.getElementById('kz-payback');
   if (!el) return;
@@ -828,7 +829,7 @@ function kzRenderPayback(cumNet, prov) {
       ' ＋ 維持資金水位 ' + kzMoney(KZ_CASH_HEALTH_LINE) +
       '<br>已回收（開業以來累計損益·未稅）<b style="color:var(--text-2); font-weight:600;">' + kzMoney(cumNet) + '</b>' +
       (done ? '　·　<span style="color:var(--green);">已回本</span>' : '　·　尚需 ' + kzMoney(remain)) +
-      (prov ? '<br><span style="color:var(--text-3);">＊含即時估算，數字為暫定</span>' : '') +
+      '<br><span style="color:var(--text-3);">資金水位達 ' + kzShortMoney(KZ_CASH_HEALTH_LINE) + ' 後每季分配超額為股利；累計配發達股東資本額即完成回本' + (prov ? '　·　＊含即時估算' : '') + '</span>' +
     '</p>';
 }
 
