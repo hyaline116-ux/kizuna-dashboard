@@ -729,7 +729,7 @@ document.getElementById('kz-mode-range').addEventListener('click', function() { 
 document.getElementById('kz-mode-quarter').addEventListener('click', function() { kzSetMode('quarter'); });
 kzSetMode('quarter');
 
-var CASH = {"total_capital":14527841,"payable_budget":2649268,"cash_level":2484974,"total_spent":22885221,"book_balance":5134242,"pending_transfer":0,"cash_reserve":121304,"visa_latest_date":"2026-09-04","cash_asof_date":"2026-08-31"};
+var CASH = {"total_capital":14527841,"payable_budget":2649268,"cash_level":2484974,"total_spent":22885221,"book_balance":5134242,"pending_transfer":0,"cash_reserve":121304,"dividends_paid":0,"visa_latest_date":"2026-09-04","cash_asof_date":"2026-08-31"};   // dividends_paid：公司帳簿 Q5 起記錄的累計已配發股利，Q4(2026/10~12) 前為 0
 
 var CASH_LEVEL_SERIES = [{"ym":"26/09","level":2484974}];   // 月末資金水位；每次同步補當前值，逐季累積
 
@@ -797,8 +797,8 @@ function kzRenderKline() {
   kzRenderPayback(rows[n - 1].cum, anyProv);
 }
 
-// 回本進度：資金水位達 300萬後每季分配超額為股利；累計損益達 (資本投入 ＋ 300萬水位) 時，
-// 已配發股利 ≈ 股東資本額，即完成回本（之後出資%分配改依 B，見 公司帳簿!R2）
+// 回本進度：回本 = 累計已配發股利達股東資本額（CASH.dividends_paid，Q4 前為 0）。
+// 淡色 = 累計損益佔「回本門檻(資本投入＋300萬水位)」的比例，代表已賺到、待分配的進度。
 function kzRenderPayback(cumNet, prov) {
   var el = document.getElementById('kz-payback');
   if (!el) return;
@@ -810,26 +810,26 @@ function kzRenderPayback(cumNet, prov) {
   });
   var capexOp = capexAll - capexPre;
   if (capexAll <= 0) { el.innerHTML = ''; return; }
-  var target = capexAll + KZ_CASH_HEALTH_LINE;
-  var pct = cumNet / target * 100;
-  var remain = target - cumNet;
-  var done = cumNet >= target;
+  var paid = CASH.dividends_paid || 0;
+  var equity = CASH.total_capital || 0;
+  var threshold = capexAll + KZ_CASH_HEALTH_LINE;       // 累計損益達此值時，累計股利 ≈ 股東資本額
+  var paidPct = equity ? paid / equity * 100 : 0;        // 真實回本進度
+  var earnedPct = threshold ? Math.max(0, cumNet) / threshold * 100 : 0;  // 已賺到、待分配
+  var done = paid >= equity && equity > 0;
   el.innerHTML =
     '<div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:2px 12px;">' +
-      '<p class="lbl" style="margin:0;">回本進度</p>' +
+      '<p class="lbl" style="margin:0;">回本進度（已配發股利 ÷ 股東資本額）</p>' +
       '<p style="margin:0; font-size:12.5px; font-weight:700; color:' + (done ? 'var(--green)' : 'var(--text)') + ';">' +
-      Math.max(0, pct).toFixed(1) + '%' + (prov ? '＊' : '') + '</p>' +
+      paidPct.toFixed(1) + '%</p>' +
     '</div>' +
-    '<div style="height:16px; border-radius:5px; background:var(--card-2); overflow:hidden; margin:8px 0 7px;">' +
-      '<div style="height:100%; width:' + Math.max(0, Math.min(100, pct)).toFixed(2) + '%; background:var(--green);"></div>' +
+    '<div style="position:relative; height:16px; border-radius:5px; background:var(--card-2); overflow:hidden; margin:8px 0 7px;">' +
+      '<div style="position:absolute; inset:0 auto 0 0; width:' + Math.min(100, earnedPct).toFixed(2) + '%; background:color-mix(in srgb, var(--green) 30%, transparent);"></div>' +
+      '<div style="position:absolute; inset:0 auto 0 0; width:' + Math.min(100, paidPct).toFixed(2) + '%; background:var(--green);"></div>' +
     '</div>' +
     '<p style="margin:0; font-size:11px; color:var(--text-3); line-height:1.7;">' +
-      '需回本 <b style="color:var(--text-2); font-weight:600;">' + kzMoney(target) + '</b>　＝　' +
-      '資本投入 ' + kzMoney(capexAll) + '（開業建置 ' + kzShortMoney(capexPre) + ' ＋ 營運期資本支出 ' + kzShortMoney(capexOp) + '）' +
-      ' ＋ 維持資金水位 ' + kzMoney(KZ_CASH_HEALTH_LINE) +
-      '<br>已回收（開業以來累計損益·未稅）<b style="color:var(--text-2); font-weight:600;">' + kzMoney(cumNet) + '</b>' +
-      (done ? '　·　<span style="color:var(--green);">已回本</span>' : '　·　尚需 ' + kzMoney(remain)) +
-      '<br><span style="color:var(--text-3);">資金水位達 ' + kzShortMoney(KZ_CASH_HEALTH_LINE) + ' 後每季分配超額為股利；累計配發達股東資本額即完成回本' + (prov ? '　·　＊含即時估算' : '') + '</span>' +
+      '已配發股利 <b style="color:var(--text-2); font-weight:600;">' + kzMoney(paid) + '</b> ／ 股東資本額 ' + kzMoney(equity) +
+      '<br><span style="color:color-mix(in srgb, var(--green) 70%, var(--text-3));">▨</span> 累計損益（未稅）<b style="color:var(--text-2); font-weight:600;">' + kzMoney(cumNet) + '</b>，已達回本門檻 ' + kzMoney(threshold) + ' 的 ' + earnedPct.toFixed(1) + '%' + (prov ? '＊' : '') +
+      '<br><span style="color:var(--text-3);">門檻 ＝ 資本投入 ' + kzShortMoney(capexAll) + '（開業建置 ' + kzShortMoney(capexPre) + '＋營運期 ' + kzShortMoney(capexOp) + '）＋ 維持水位 ' + kzShortMoney(KZ_CASH_HEALTH_LINE) + '。資金水位達 ' + kzShortMoney(KZ_CASH_HEALTH_LINE) + ' 後每季分配超額' + (prov ? '　·　＊含即時估算' : '') + '</span>' +
     '</p>';
 }
 
