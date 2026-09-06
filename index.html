@@ -821,28 +821,24 @@ function kzRenderPayback(cumNet, prov) {
   var thrW = wan(capexAll) + wan(KZ_CASH_HEALTH_LINE) + wan(leak);   // 以四捨五入後的分項加總顯示，避免 ±1萬 落差
   var earnedPct = threshold ? Math.max(0, cumNet) / threshold * 100 : 0;
   var paidPct = equity ? paidShare / equity * 100 : 0;
-  function row(name, pct, color, valTxt, sub) {
-    return '<div style="display:grid; grid-template-columns:64px 1fr 44px; align-items:center; gap:10px;">' +
+  function row(name, pct, color, sub, tip) {
+    return '<div title="' + tip + '" style="display:grid; grid-template-columns:60px 1fr 46px; align-items:center; gap:10px; cursor:help;">' +
         '<span style="font-size:11.5px; color:var(--text-2);">' + name + '</span>' +
-        '<div style="height:14px; border-radius:4px; background:var(--card-2); overflow:hidden;">' +
+        '<div style="height:13px; border-radius:4px; background:var(--card-2); overflow:hidden;">' +
           '<div style="height:100%; width:' + Math.max(0, Math.min(100, pct)).toFixed(2) + '%; background:' + color + ';"></div>' +
         '</div>' +
-        '<span style="font-size:12px; font-weight:700; white-space:nowrap; text-align:right;">' + pct.toFixed(1) + '%</span>' +
+        '<span style="font-size:12px; font-weight:700; text-align:right;">' + pct.toFixed(1) + '%</span>' +
       '</div>' +
-      '<p style="margin:4px 0 12px; font-size:10.5px; color:var(--text-3); line-height:1.6;">' + valTxt +
-        (sub ? '<br><span style="color:var(--text-3);">' + sub + '</span>' : '') + '</p>';
+      '<p style="margin:3px 0 12px; font-size:10.5px; color:var(--text-3);">' + sub + '</p>';
   }
   el.innerHTML =
     '<p class="lbl" style="margin:0 0 11px;">回本追蹤</p>' +
     row('獲利累積', earnedPct, 'color-mix(in srgb, var(--green) 42%, var(--card-2))',
-      '開業以來累計損益（未稅）<b style="color:var(--text-2); font-weight:600;">' + kzShortMoney(cumNet) + (prov ? '＊' : '') + '</b> ／ 回本門檻 <b style="color:var(--text-2); font-weight:600;">' + thrW + '萬</b>',
-      '門檻 ＝ 資本投入 ' + kzShortMoney(capexAll) + '（開業建置 ' + kzShortMoney(capexPre) + ' ＋ 營運期 ' + kzShortMoney(capexOp) + '）＋ 維持資金水位 ' + kzShortMoney(KZ_CASH_HEALTH_LINE) + ' ＋ 分潤損耗 ' + kzShortMoney(leak) + '（每季分配有 7% 給夥伴/基金）') +
+      '累計損益 <b style="color:var(--text-2); font-weight:600;">' + kzShortMoney(cumNet) + (prov ? '＊' : '') + '</b> ／ 門檻 ' + thrW + '萬',
+      '回本門檻 ' + thrW + '萬 ＝ 資本投入 ' + kzShortMoney(capexAll) + '（開業建置 ' + kzShortMoney(capexPre) + '＋營運期 ' + kzShortMoney(capexOp) + '）＋ 維持資金水位 ' + kzShortMoney(KZ_CASH_HEALTH_LINE) + ' ＋ 分潤損耗 ' + kzShortMoney(leak) + '（每季分配 7% 給員工分紅+公司基金）' + (prov ? '。＊含即時估算' : '')) +
     row('股利回收', paidPct, 'var(--green)',
-      (paidTotal > 0
-        ? '股東實收股利 <b style="color:var(--text-2); font-weight:600;">' + kzShortMoney(paidShare) + '</b>（累計分配 ' + kzShortMoney(paidTotal) + ' 的 93%）／ 股東資本額 <b style="color:var(--text-2); font-weight:600;">' + kzShortMoney(equity) + '</b>'
-        : '尚未開始分配 ／ 股東資本額 <b style="color:var(--text-2); font-weight:600;">' + kzShortMoney(equity) + '</b>'),
-      '這才是完成回本的標準。資金水位達 ' + kzShortMoney(KZ_CASH_HEALTH_LINE) + ' 後每季分配超額，股東分得 93%（餘 5% 員工分紅、2% 公司基金）' + (paidTotal <= 0 ? '；預計 2026 Q4 首次分潤' : '')) +
-    (prov ? '<p style="margin:0; font-size:10px; color:var(--text-3);">＊含即時估算，數字為暫定</p>' : '');
+      '股東實收 <b style="color:var(--text-2); font-weight:600;">' + kzShortMoney(paidShare) + '</b> ／ 出資額 ' + kzShortMoney(equity) + (paidPct <= 0 ? ' · 預計 2026 Q4 首次分潤' : '（占分配 93%）'),
+      '完成回本的標準。資金水位達 ' + kzShortMoney(KZ_CASH_HEALTH_LINE) + ' 後每季分配超額，股東分得 93%（員工分紅 5%、公司基金 2%）');
 }
 
 var KZ_CASH_HEALTH_LINE = 3000000;
