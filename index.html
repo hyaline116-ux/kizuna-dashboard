@@ -556,10 +556,6 @@ function kzRenderSummary() {
   var fcvc = fc + vc;
   var fcPct = fcvc ? (fc / fcvc * 100) : 0;
   var vcPct = 100 - fcPct;
-  var rangeExpGroups = KZ_DONUT_GROUPS.map(function(g) {
-    var v = g.cats.reduce(function(s, c) { return s + (kzSum(c, months) || 0); }, 0);
-    return { label: g.label, color: g.color, value: v };
-  }).filter(function(g) { return g.value > 0; });
   var kzChanGroups = KZ_REVENUE_GROUPS.map(function(gp) {
     return { label: gp.label, color: gp.color, value: months.reduce(function(s, m) { var c = REVENUE_CHANNELS[m]; return s + (c ? (c[gp.label] || 0) : 0); }, 0) };
   }).filter(function(x) { return x.value > 0; });
@@ -589,26 +585,43 @@ function kzRenderSummary() {
       var pct = kzChanSum ? x.value / kzChanSum * 100 : 0;
       return kzSeg(pct, x.color, x.label.replace('收入', '').replace('月結', ''), x.label + ' ' + kzMoney(x.value) + '（' + pct.toFixed(1) + '%）');
     }).join('');
-    var expInner = rangeExpGroups.map(function(g) {
-      var barPct = kzExpBar ? g.value / kzExpBar * 100 : 0;
-      var revPct = kzRev ? g.value / kzRev * 100 : 0;
-      return kzSeg(barPct, g.color, g.label.replace('成本', '').replace('關聯', ''), g.label + ' ' + kzMoney(g.value) + '（占實收 ' + revPct.toFixed(1) + '%）');
-    }).join('');
+    var kzPctRev = function(v) { return kzRev ? (v / kzRev * 100) : 0; };
+    var kzDenom = kzExpBar || 1;
+    var kzCapexShown = Math.max(0, Math.min(capex, kzGain));
+    var kzLeftover = kzGain - kzCapexShown;
+    var kzHatch = 'repeating-linear-gradient(45deg, var(--green), var(--green) 3px, rgba(0,0,0,.34) 3px, rgba(0,0,0,.34) 6px)';
+    var expInner =
+      kzSeg(vc / kzDenom * 100, 'var(--vc)', '變動 ' + kzPctRev(vc).toFixed(0) + '%', '變動成本 ' + kzMoney(vc) + '（占實收 ' + kzPctRev(vc).toFixed(1) + '%）') +
+      kzSeg(fc / kzDenom * 100, 'var(--fc)', '固定 ' + kzPctRev(fc).toFixed(0) + '%', '固定成本 ' + kzMoney(fc) + '（占實收 ' + kzPctRev(fc).toFixed(1) + '%）');
     if (kzGain > 0) {
-      expInner += kzSeg(kzGain / kzExpBar * 100, 'var(--green)', '損益', '損益 ' + kzMoney(kzGain) + '（占實收 ' + (kzRev ? kzGain / kzRev * 100 : 0).toFixed(1) + '%）', true);
+      if (kzCapexShown > 0) {
+        expInner += kzSeg(kzCapexShown / kzDenom * 100, kzHatch, '資本', '資本支出 ' + kzMoney(kzCapexShown)
+          + (capex > kzCapexShown ? '（另有 ' + kzMoney(capex - kzCapexShown) + ' 由資金水位支應）' : '')
+          + '（占實收 ' + kzPctRev(kzCapexShown).toFixed(1) + '%）', true);
+      }
+      expInner += kzSeg(kzLeftover / kzDenom * 100, 'var(--green)', '結餘 ' + kzPctRev(kzLeftover).toFixed(0) + '%',
+        '結餘（損益 − 本期資本支出）' + kzMoney(kzLeftover) + '（占實收 ' + kzPctRev(kzLeftover).toFixed(1) + '%）', true);
     }
-    var kzFcPctRev = kzRev ? fc / kzRev * 100 : 0;
-    var kzVcPctRev = kzRev ? vc / kzRev * 100 : 0;
+    var kzBracket = '';
+    if (kzGain > 0) {
+      var kzBL = (vc + fc) / kzDenom * 100;
+      var kzBW = kzGain / kzDenom * 100;
+      kzBracket = '<div style="display:grid; grid-template-columns:40px 1fr auto; gap:8px; margin:-3px 0 7px;">' +
+        '<span></span><div style="position:relative; height:15px;">' +
+        '<div style="position:absolute; left:' + kzBL.toFixed(2) + '%; width:' + kzBW.toFixed(2) + '%; height:4px; border:1px solid var(--green); border-top:none; box-sizing:border-box;"></div>' +
+        '<div style="position:absolute; left:' + kzBL.toFixed(2) + '%; width:' + kzBW.toFixed(2) + '%; top:4px; text-align:center; font-size:9px; color:var(--green); white-space:nowrap;">損益 ' + margin.toFixed(1) + '%</div>' +
+        '</div><span></span></div>';
+    }
     kzRangeSummaryEl.style.display = '';
     kzRangeSummaryEl.innerHTML =
-      '<p style="margin:0 0 8px; font-size:11px; color:var(--text-3); line-height:1.6;">本期損益概覽 · 占實收：' +
-      '<span style="color:var(--fc);">固定 ' + kzFcPctRev.toFixed(0) + '%</span>　' +
-      '<span style="color:var(--vc);">變動 ' + kzVcPctRev.toFixed(0) + '%</span>　' +
-      '<span style="color:' + (net >= 0 ? 'var(--green)' : 'var(--red)') + ';">損益 ' + margin.toFixed(1) + '%</span></p>' +
+      '<p style="margin:0 0 8px; font-size:11px; color:var(--text-3); line-height:1.6;">本期損益概覽 · 實收 100% 的去向（綠色＝損益，斜紋＝其中已投入資本支出）</p>' +
       compRow('實收', kzRev, chanInner, kzShortMoney(kzRev)) +
-      compRow('支出', kzExpBar, expInner, kzShortMoney(fcvc)) +
+      compRow('去向', kzExpBar, expInner, '') +
+      kzBracket +
       '<div style="display:grid; grid-template-columns:40px 1fr auto; align-items:center; gap:8px; padding-top:4px; border-top:1px solid var(--line);">' +
-      '<span style="font-size:11.5px; color:var(--text-2);">損益</span><span></span>' +
+      '<span style="font-size:11.5px; color:var(--text-2);">損益</span>' +
+      '<span style="font-size:10.5px; color:var(--text-3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' +
+      (kzGain > 0 ? '資本支出 ' + kzShortMoney(kzCapexShown) + '　結餘 ' + kzShortMoney(kzLeftover) : '') + '</span>' +
       '<span style="font-size:12.5px; font-weight:600; white-space:nowrap; color:' + (net >= 0 ? 'var(--green)' : 'var(--red)') + ';">' +
       (net >= 0 ? '+' : '−') + kzShortMoney(Math.abs(net)) + ' <span style="font-weight:400;">' + (revenue ? '（' + margin.toFixed(1) + '％）' : '') + '</span></span></div>';
   } else {
