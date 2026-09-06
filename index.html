@@ -514,12 +514,12 @@ function kzRenderTrend(months) {
   var tEl = document.getElementById('kz-trend-table');
   if (tEl) {
     function tr(label, fn, cls) {
-      return '<tr><td style="' + (cls || '') + '">' + label + '</td>' + rows.map(function(r) {
-        return '<td style="text-align:right;' + (cls || '') + '">' + fn(r) + '</td>';
+      return '<tr><td style="padding:4px 6px;' + (cls || '') + '">' + label + '</td>' + rows.map(function(r) {
+        return '<td style="text-align:right; padding:4px 6px; font-variant-numeric:tabular-nums;' + (cls || '') + '">' + fn(r) + '</td>';
       }).join('') + '</tr>';
     }
-    tEl.innerHTML = '<table style="min-width:' + Math.max(300, n * 66 + 60) + 'px; font-size:12px;">'
-      + '<thead><tr><th></th>' + rows.map(function(r) { return '<th style="text-align:right;">' + r.m + (r.prov ? '＊' : '') + '</th>'; }).join('') + '</tr></thead><tbody>'
+    tEl.innerHTML = '<table style="min-width:' + Math.max(248, n * 58 + 56) + 'px; font-size:11px;">'
+      + '<thead><tr><th style="padding:4px 6px;"></th>' + rows.map(function(r) { return '<th style="text-align:right; padding:4px 6px;">' + r.m + (r.prov ? '＊' : '') + '</th>'; }).join('') + '</tr></thead><tbody>'
       + tr('實收', function(r) { return Math.round(r.rev).toLocaleString(); })
       + tr('實際支出', function(r) { return Math.round(r.exp).toLocaleString(); })
       + tr('損益（未稅）', function(r) { return '<span style="color:' + (r.net >= 0 ? 'var(--green)' : 'var(--red)') + ';">' + (r.net >= 0 ? '+' : '−') + Math.round(Math.abs(r.net)).toLocaleString() + '</span>'; }, 'font-weight:500;')
@@ -548,7 +548,7 @@ function kzRenderSummary() {
   document.getElementById('kz-kpi-net').style.color = net >= 0 ? 'var(--green)' : 'var(--red)';
   document.getElementById('kz-kpi-margin').textContent = margin.toFixed(1) + '%';
   document.getElementById('kz-kpi-capex').innerHTML = kzMoney(capex) +
-    (revenue ? ' <span style="font-size:12px; color:var(--text-3); font-weight:400;">占實收 ' + (capex / revenue * 100).toFixed(1) + '%</span>' : '');
+    (revenue ? '<span style="display:block; font-size:11.5px; color:var(--text-3); font-weight:400; margin-top:2px;">占實收 ' + (capex / revenue * 100).toFixed(1) + '%（不含於實際支出）</span>' : '');
   document.getElementById('kz-rank-title').textContent = '費用項目排行（' + label + '累計）';
 
   var fc = kzSum('固定成本FC', months) || 0;
@@ -576,20 +576,19 @@ function kzRenderSummary() {
         (w >= 8 ? '<span style="font-size:10px; font-weight:' + (bold ? 600 : 500) + '; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.6); white-space:nowrap;">' + label + '</span>' : '') +
         '</div>';
     }
-    function compRow(name, barValue, inner, numText, sub) {
+    var kzRev = kzChanSum || revenue;
+    function compRow(name, barValue, inner, numText) {
       var w = (barValue / kzCompMax * 100).toFixed(2);
-      return '<div style="display:grid; grid-template-columns:56px 1fr auto; align-items:center; gap:10px; margin-bottom:7px;">' +
+      return '<div style="display:grid; grid-template-columns:40px 1fr auto; align-items:center; gap:8px; margin-bottom:7px;">' +
         '<span style="font-size:11.5px; color:var(--text-2);">' + name + '</span>' +
         '<div style="height:22px; border-radius:4px; background:var(--card-2); overflow:hidden;">' +
         '<div style="height:100%; width:' + w + '%; display:flex; min-width:2px;">' + inner + '</div></div>' +
-        '<span style="font-size:12px; font-weight:500; white-space:nowrap;">' + numText +
-        (sub ? '<span style="color:var(--text-3); font-weight:400; margin-left:6px;">' + sub + '</span>' : '') + '</span></div>';
+        '<span style="font-size:12px; font-weight:600; white-space:nowrap;">' + numText + '</span></div>';
     }
     var chanInner = kzChanGroups.map(function(x) {
       var pct = kzChanSum ? x.value / kzChanSum * 100 : 0;
       return kzSeg(pct, x.color, x.label.replace('收入', '').replace('月結', ''), x.label + ' ' + kzMoney(x.value) + '（' + pct.toFixed(1) + '%）');
     }).join('');
-    var kzRev = kzChanSum || revenue;
     var expInner = rangeExpGroups.map(function(g) {
       var barPct = kzExpBar ? g.value / kzExpBar * 100 : 0;
       var revPct = kzRev ? g.value / kzRev * 100 : 0;
@@ -598,12 +597,17 @@ function kzRenderSummary() {
     if (kzGain > 0) {
       expInner += kzSeg(kzGain / kzExpBar * 100, 'var(--green)', '損益', '損益 ' + kzMoney(kzGain) + '（占實收 ' + (kzRev ? kzGain / kzRev * 100 : 0).toFixed(1) + '%）', true);
     }
+    var kzFcPctRev = kzRev ? fc / kzRev * 100 : 0;
+    var kzVcPctRev = kzRev ? vc / kzRev * 100 : 0;
     kzRangeSummaryEl.style.display = '';
     kzRangeSummaryEl.innerHTML =
-      '<p style="margin:0 0 8px; font-size:11px; color:var(--text-3);">本期損益概覽（支出各項與損益均以實收為基準，合計 100%）</p>' +
+      '<p style="margin:0 0 8px; font-size:11px; color:var(--text-3); line-height:1.6;">本期損益概覽 · 占實收：' +
+      '<span style="color:var(--fc);">固定 ' + kzFcPctRev.toFixed(0) + '%</span>　' +
+      '<span style="color:var(--vc);">變動 ' + kzVcPctRev.toFixed(0) + '%</span>　' +
+      '<span style="color:' + (net >= 0 ? 'var(--green)' : 'var(--red)') + ';">損益 ' + margin.toFixed(1) + '%</span></p>' +
       compRow('實收', kzRev, chanInner, kzShortMoney(kzRev)) +
-      compRow('支出', kzExpBar, expInner, kzShortMoney(fcvc), '固定 ' + (kzRev ? fc / kzRev * 100 : 0).toFixed(0) + '%／變動 ' + (kzRev ? vc / kzRev * 100 : 0).toFixed(0) + '%') +
-      '<div style="display:grid; grid-template-columns:56px 1fr auto; align-items:center; gap:10px; padding-top:4px; border-top:1px solid var(--line);">' +
+      compRow('支出', kzExpBar, expInner, kzShortMoney(fcvc)) +
+      '<div style="display:grid; grid-template-columns:40px 1fr auto; align-items:center; gap:8px; padding-top:4px; border-top:1px solid var(--line);">' +
       '<span style="font-size:11.5px; color:var(--text-2);">損益</span><span></span>' +
       '<span style="font-size:12.5px; font-weight:600; white-space:nowrap; color:' + (net >= 0 ? 'var(--green)' : 'var(--red)') + ';">' +
       (net >= 0 ? '+' : '−') + kzShortMoney(Math.abs(net)) + ' <span style="font-weight:400;">' + (revenue ? '（' + margin.toFixed(1) + '％）' : '') + '</span></span></div>';
