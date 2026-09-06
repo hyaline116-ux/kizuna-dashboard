@@ -588,27 +588,25 @@ function kzRenderSummary() {
     }).join('');
     var kzPctRev = function(v) { return kzRev ? (v / kzRev * 100) : 0; };
     var kzDenom = kzExpBar || 1;
-    var kzHatch = 'repeating-linear-gradient(45deg, var(--green), var(--green) 3px, rgba(0,0,0,.34) 3px, rgba(0,0,0,.34) 6px)';
     // 去向條 = 純營運：變動 + 固定 + 損益，恆等於實收
     var expInner =
       kzSeg(vc / kzDenom * 100, 'var(--vc)', '變動 ' + kzPctRev(vc).toFixed(0) + '%', '變動成本 ' + kzMoney(vc) + '（占實收 ' + kzPctRev(vc).toFixed(1) + '%）') +
       kzSeg(fc / kzDenom * 100, 'var(--fc)', '固定 ' + kzPctRev(fc).toFixed(0) + '%', '固定成本 ' + kzMoney(fc) + '（占實收 ' + kzPctRev(fc).toFixed(1) + '%）') +
       (kzGain > 0 ? kzSeg(kzGain / kzDenom * 100, 'var(--green)', '損益 ' + margin.toFixed(0) + '%',
         '損益 ' + kzMoney(kzGain) + '（占實收 ' + margin.toFixed(1) + '%）', true) : '');
-    // 資本支出 = 另一條（非營運費用），同實收比例尺；斜紋綠=自本期損益投入，灰=另籌資金
+    // 資本支出 = 另一條（非營運費用，不進損益），同實收比例尺，單色
     var capexRow = '';
     if (capex > 0) {
-      var kzCapGain = Math.min(capex, kzGain);
-      var kzCapOther = capex - kzCapGain;
-      var capInner =
-        (kzCapGain > 0 ? kzSeg(kzCapGain / capex * 100, kzHatch, '', '資本支出 · 自本期損益投入 ' + kzMoney(kzCapGain)) : '') +
-        (kzCapOther > 0 ? kzSeg(kzCapOther / capex * 100, 'var(--cap)', '', '資本支出 · 另籌資金（股東資本／資金水位）' + kzMoney(kzCapOther)) : '');
+      var capPctRev = kzPctRev(capex);
+      var capInner = kzSeg(100, 'var(--cap)', capPctRev >= 12 ? '資本支出 · 占實收 ' + capPctRev.toFixed(0) + '%' : '',
+        '資本支出 ' + kzMoney(capex) + '（占實收 ' + capPctRev.toFixed(1) + '%）'
+        + (kzGain > 0 ? '　·　其中約 ' + kzMoney(Math.min(capex, kzGain)) + ' 相當於本期損益，其餘另籌' : ''));
       capexRow = compRow('資本', capex, capInner, kzShortMoney(capex));
     }
     kzRangeSummaryEl.style.display = '';
     kzRangeSummaryEl.innerHTML =
       '<p style="margin:0 0 8px; font-size:11px; color:var(--text-3); line-height:1.6;">本期損益概覽 · 上條＝實收 100% 的去向（變動＋固定＝支出，綠＝損益）'
-      + (capex > 0 ? '；資本支出另一條（非營運費用｜斜紋＝自損益投入，灰＝另籌資金）' : '') + '</p>' +
+      + (capex > 0 ? '；資本條＝資本支出（非營運費用，與實收同比例尺）' : '') + '</p>' +
       compRow('實收', kzRev, chanInner, kzShortMoney(kzRev)) +
       compRow('去向', kzExpBar, expInner, '') +
       capexRow +
