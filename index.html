@@ -836,8 +836,8 @@ function kzRenderPayback(cumNet, prov) {
     '<p class="lbl" style="margin:0;">回本追蹤</p>' +
     seg('累計淨額 vs 累計資本支出', prov ? '＊含即時估算' : '', recoverPct, 'color-mix(in srgb, var(--green) 45%, var(--card-2))',
       '累計淨額 ' + wan(cumNet) + '萬',
-      '累計資本支出 ' + wan(capexAll) + '萬（開業建置 ' + wan(capexPre) + '萬＋營運期 ' + wan(capexOp) + '萬，隨投資增加）',
-      '資本支出獨立計算（不含營運虧損）。營運期資本支出為 5月起的新增投資項目') +
+      '累計資本支出 ' + wan(capexAll) + '萬（開業建置 ' + wan(capexPre) + '萬＋資本支出 ' + wan(capexOp) + '萬）',
+      '資本支出獨立計算（不含營運虧損）。開業建置 ＝ 4月全部資本支出；資本支出 ＝ 5月起新增投資項目') +
     seg('回本進度', '', paidPct, 'var(--green)',
       '股東實收股利 ' + kzShortMoney(paidShare),
       '出資額 ' + kzShortMoney(equity) + (paidShare <= 0 ? '，預計 2026 Q4 首次分潤' : ''),
