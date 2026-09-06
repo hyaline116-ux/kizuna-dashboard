@@ -2,19 +2,19 @@
 <title>絆Kizuna 營運財務總覽</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-  body { margin: 0; background: #151009; font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Microsoft JhengHei", sans-serif; }
+  body { margin: 0; background: #f3eee0; font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Microsoft JhengHei", sans-serif; }
   #kz-gate { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
-  #kz-gate .box { width: 100%; max-width: 320px; background: #1d160e; border: 1px solid rgba(232,210,175,.16); border-radius: 12px; padding: 1.75rem; text-align: center; }
-  #kz-gate p { color: #f4ead9; font-size: 15px; margin: 0 0 1rem; }
-  #kz-gate input { width: 100%; box-sizing: border-box; font-size: 15px; background: #271d13; border: 1px solid rgba(232,210,175,.16); color: #f4ead9; border-radius: 8px; padding: 10px 12px; text-align: center; }
-  #kz-gate input:focus { outline: 2px solid #c8973f; outline-offset: -1px; }
-  #kz-gate button { width: 100%; margin-top: 10px; font-size: 14px; font-weight: 500; background: #c8973f; color: #2c2008; border: none; border-radius: 8px; padding: 10px; cursor: pointer; }
-  #kz-gate #kz-err { color: #d98a7e; font-size: 12.5px; margin-top: 8px; min-height: 16px; }
+  #kz-gate .box { width: 100%; max-width: 320px; background: #fbf7ec; border: 1px solid rgba(42,32,16,.14); border-radius: 12px; padding: 1.75rem; text-align: center; }
+  #kz-gate p { color: #221a0c; font-size: 15px; margin: 0 0 1rem; }
+  #kz-gate input { width: 100%; box-sizing: border-box; font-size: 15px; background: #f3eee0; border: 1px solid rgba(42,32,16,.18); color: #221a0c; border-radius: 8px; padding: 10px 12px; text-align: center; }
+  #kz-gate input:focus { outline: 2px solid #a67b1c; outline-offset: -1px; }
+  #kz-gate button { width: 100%; margin-top: 10px; font-size: 14px; font-weight: 600; background: #a67b1c; color: #fbf7ec; border: none; border-radius: 8px; padding: 10px; cursor: pointer; }
+  #kz-gate #kz-err { color: #af4f3a; font-size: 12.5px; margin-top: 8px; min-height: 16px; }
 </style>
 
 <div id="kz-gate">
   <div class="box">
-    <p>絆 Kizuna 營運財務總覽<br><span style="color:rgba(244,234,217,.5); font-size:13px;">請輸入密碼</span></p>
+    <p>絆 Kizuna 營運財務總覽<br><span style="color:rgba(34,26,12,.5); font-size:13px;">請輸入密碼</span></p>
     <input id="kz-pw" type="password" placeholder="密碼" autocomplete="off" />
     <button id="kz-go">進入</button>
     <p id="kz-err"></p>
@@ -30,7 +30,7 @@
     --paper-50:#f7f1e3; --paper-100:#efe3c9;
     --line-light: rgba(38,27,13,.20);
     --text-light:#211609; --text-light-2:rgba(33,22,9,.78); --text-light-3:rgba(33,22,9,.62);
-    --gold:#c8973f; --gold-ink:#5c4116;
+    --gold:#c8973f; --gold-ink:#5c4116; --on-gold:#2c2008;
     --fc:#c8973f; --fc-2:#8a6a4a; --fc-3:#9c8452; --fc-4:#6b6258;
     --vc:#b6503f; --vc-2:#a3705f; --vc-3:#a97a86;
     --cap:#7d7466;
@@ -55,8 +55,19 @@
   }
   .kz[data-theme="dark"] { --bg: var(--ink-950); --card: var(--ink-900); --card-2: var(--ink-800);
     --line: var(--line-dark); --text: var(--text-dark); --text-2: var(--text-dark-2); --text-3: var(--text-dark-3); --kl-candle:#cdbfa8; color-scheme: dark; }
-  .kz[data-theme="light"] { --bg: var(--paper-50); --card: var(--paper-100); --card-2: #e7d9b8;
-    --line: var(--line-light); --text: var(--text-light); --text-2: var(--text-light-2); --text-3: var(--text-light-3); --kl-candle:#9a8358; color-scheme: light; }
+  .kz[data-theme="light"] {
+    /* 暖石紙 Warm Stone — 正式配色 */
+    --bg:#f3eee0; --card:#fbf7ec; --card-2:#e9dfc8;
+    --line: rgba(42,32,16,.14);
+    --text:#221a0c; --text-2: rgba(34,26,12,.74); --text-3: rgba(34,26,12,.54);
+    --on-gold:#fbf7ec;
+    --gold:#a67b1c; --fc:#a67b1c; --fc-3:#9a7b3c;
+    --vc:#af4f3a; --red:#af4f3a; --exp-1:#af4f3a;
+    --green:#5e7c3b;
+    --cap:#8a8172;
+    --kl-candle:#8a7a5a; --kl-accent:#2a796d;
+    color-scheme: light;
+  }
   .kz * { box-sizing: border-box; }
   .kz .serif { font-family: "Noto Serif TC", "Songti TC", "PMingLiU", serif; }
   .kz .grid2 { display: grid; grid-template-columns: 1.15fr 1fr; gap: 1.25rem; }
@@ -79,7 +90,7 @@
   .kz input.q:focus, .kz select.q:focus { outline: 2px solid var(--gold); outline-offset: -1px; }
 </style>
 
-<div class="kz">
+<div class="kz" data-theme="light">
   <h2 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;">
     絆Kizuna 鋤燒．燒肉 營運財務儀表板：月度損益明細、支出結構佔比與帳務逐筆明細查詢。
   </h2>
@@ -92,7 +103,7 @@
       <button type="button" class="kz-tab" id="kz-tab-upload" style="background:none; border:none; border-bottom:2px solid transparent; color:var(--text-3); font:inherit; font-size:12.5px; padding:7px 10px; cursor:pointer; margin-right:18px;">上傳資料</button>
       <div style="display:flex; border:1px solid var(--line); border-radius:8px; overflow:hidden;">
         <button type="button" id="kz-mode-single" style="background:var(--card-2); color:var(--text); border:none; font:inherit; font-size:12.5px; padding:7px 10px; cursor:pointer;">單月</button>
-        <button type="button" id="kz-mode-quarter" style="background:var(--gold); color:#2c2008; border:none; font:inherit; font-size:12.5px; font-weight:500; padding:7px 10px; cursor:pointer;">季度</button>
+        <button type="button" id="kz-mode-quarter" style="background:var(--gold); color:var(--on-gold); border:none; font:inherit; font-size:12.5px; font-weight:500; padding:7px 10px; cursor:pointer;">季度</button>
       </div>
       <div style="display:flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; margin-left:10px;">
         <button type="button" id="kz-mode-range" style="background:var(--card-2); color:var(--text); border:none; font:inherit; font-size:12.5px; padding:7px 10px; cursor:pointer;">自選範圍</button>
@@ -110,30 +121,30 @@
   </div>
 
   <div id="kz-view-dash">
-  <p class="lbl" style="margin:0 0 10px; font-size:13.5px; color:var(--text-2);">現金狀況</p>
-  <div class="tile" style="margin-bottom:12px;">
-    <div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:8px;">
-      <p class="lbl" style="margin:0;">資金水位</p>
+  <p class="lbl" style="display:flex; align-items:center; gap:8px; margin:0 0 12px; font-size:12.5px; color:var(--text-2); letter-spacing:.06em;">
+    <span style="width:3px; height:13px; border-radius:2px; background:var(--gold);"></span>現金狀況</p>
+
+  <div class="card" style="margin-bottom:12px;">
+    <p class="lbl" style="margin:0;">資金水位</p>
+    <p class="num" id="kz-cash-level" style="margin-top:3px;">—</p>
+
+    <div style="display:flex; justify-content:space-between; align-items:baseline; font-size:11.5px; color:var(--text-2); margin:15px 0 8px;">
+      <span id="kz-health-label">目標水位</span>
+      <span id="kz-health-pct" style="font-weight:600;">—</span>
     </div>
-    <p class="num" id="kz-cash-level" style="margin-top:4px;">—</p>
-    <div style="margin-top:14px;">
-      <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-2); margin-bottom:9px;">
-        <span id="kz-health-label">目標水位</span>
-        <span id="kz-health-pct" style="font-weight:500;">—</span>
+    <div style="position:relative; margin-bottom:9px;">
+      <div style="height:14px; border-radius:5px; background:var(--card-2); overflow:hidden;">
+        <div id="kz-health-fill" style="height:100%; width:0%; border-radius:5px; background:var(--kl-accent);"></div>
       </div>
-      <div style="position:relative; height:14px;">
-        <div style="position:absolute; top:6px; left:0; right:0; height:2px; border-radius:2px; background:var(--line);"></div>
-        <div id="kz-health-fill" style="position:absolute; top:6px; left:0; width:0%; height:2px; border-radius:2px; background:var(--kl-candle); opacity:.55;"></div>
-        <div style="position:absolute; top:0; right:0; width:2px; height:14px; border-radius:1px; background:var(--text-3);"></div>
-        <div id="kz-health-marker" style="position:absolute; top:2px; left:0; width:10px; height:10px; margin-left:-5px; border-radius:99px; background:var(--kl-accent); box-shadow:0 0 0 3px var(--card);"></div>
-      </div>
-      <p id="kz-health-diff" style="margin:9px 0 0; font-size:11px; color:var(--text-3);">—</p>
+      <div style="position:absolute; right:0; top:-2px; bottom:-2px; width:2px; background:var(--text-3); border-radius:1px;"></div>
     </div>
-    <div style="display:flex; gap:20px; flex-wrap:wrap; margin-top:10px; padding-top:10px; border-top:1px solid var(--line); font-size:12px; color:var(--text-2);">
-      <span>應付款預算 <b id="kz-cash-payable" style="color:var(--text); font-weight:500;">—</b></span>
-      <span>帳簿實際餘額 <b id="kz-cash-balance" style="color:var(--text); font-weight:500;">—</b></span>
-      <span>已約定轉帳 <b id="kz-cash-pending" style="color:var(--cap); font-weight:500;">—</b></span>
-      <span>川邑現金備用 <b id="kz-cash-reserve" style="color:var(--text); font-weight:500;">—</b></span>
+    <p id="kz-health-diff" style="margin:0; font-size:11px; color:var(--text-3);">—</p>
+
+    <hr style="border:0; border-top:1px solid var(--line); margin:15px 0;">
+    <div style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px 18px;">
+      <div><p style="margin:0 0 3px; font-size:10.5px; color:var(--text-3); letter-spacing:.04em;">應付款預算</p><p id="kz-cash-payable" style="margin:0; font-size:13.5px; font-weight:600;">—</p></div>
+      <div><p style="margin:0 0 3px; font-size:10.5px; color:var(--text-3); letter-spacing:.04em;">帳簿實際餘額</p><p id="kz-cash-balance" style="margin:0; font-size:13.5px; font-weight:600;">—</p></div>
+      <div><p style="margin:0 0 3px; font-size:10.5px; color:var(--text-3); letter-spacing:.04em;">川邑現金備用</p><p id="kz-cash-reserve" style="margin:0; font-size:13.5px; font-weight:600;">—</p></div>
     </div>
   </div>
 
@@ -277,7 +288,7 @@
         <input type="password" id="kz-gh-token" class="q" placeholder="GitHub Token（貼上後自動儲存）" style="flex:1; min-width:220px;" autocomplete="off" />
         <button type="button" id="kz-gh-token-clear" style="background:var(--card-2); color:var(--text-2); border:1px solid var(--line); border-radius:8px; font:inherit; font-size:12px; padding:8px 10px; cursor:pointer;">清除已存Token</button>
       </div>
-      <button type="button" id="kz-publish-btn" disabled style="background:var(--gold); color:#2c2008; border:none; border-radius:8px; font:inherit; font-size:13px; font-weight:500; padding:10px 16px; cursor:pointer; opacity:.5;">先上傳並預覽檔案</button>
+      <button type="button" id="kz-publish-btn" disabled style="background:var(--gold); color:var(--on-gold); border:none; border-radius:8px; font:inherit; font-size:13px; font-weight:500; padding:10px 16px; cursor:pointer; opacity:.5;">先上傳並預覽檔案</button>
       <p id="kz-publish-status" style="margin:.75rem 0 0; font-size:12.5px; color:var(--text-2);"></p>
     </div>
   </div>
@@ -411,7 +422,7 @@ function kzSetMode(mode) {
     var active = k === mode;
     var el = document.getElementById(buttons[k]);
     el.style.background = active ? 'var(--gold)' : 'var(--card-2)';
-    el.style.color = active ? '#2c2008' : 'var(--text)';
+    el.style.color = active ? 'var(--on-gold)' : 'var(--text)';
     el.style.fontWeight = active ? '500' : '400';
   });
   document.getElementById('kz-from').style.display = mode === 'quarter' ? 'none' : '';
@@ -845,7 +856,7 @@ function kzRenderPayback(cumNet, prov) {
           (note ? ' <span style="font-size:10px; color:var(--text-3); font-weight:400;">' + note + '</span>' : '') + '</span>' +
         '<span style="font-size:13px; font-weight:700; color:' + (pct >= 100 ? 'var(--green)' : 'var(--text)') + '; font-variant-numeric:tabular-nums;">' + pct.toFixed(1) + '%</span>' +
       '</div>' +
-      '<div style="height:13px; border-radius:4px; background:var(--card-2); overflow:hidden; margin:6px 0 5px;">' +
+      '<div style="height:14px; border-radius:5px; background:var(--card-2); overflow:hidden; margin:6px 0 5px;">' +
         '<div style="height:100%; width:' + Math.max(0, Math.min(100, pct)).toFixed(2) + '%; background:' + color + ';"></div>' +
       '</div>' +
       '<p' + (tip ? ' title="' + tip + '" style="cursor:help;' : ' style="') + ' margin:0; font-size:11px; color:var(--text-3);">' +
@@ -875,7 +886,6 @@ function kzRenderCashAndBudget() {
   document.getElementById('kz-cash-level').textContent = kzMoney(kzCashAdjusted);
   document.getElementById('kz-cash-payable').textContent = kzMoney(CASH.payable_budget);
   document.getElementById('kz-cash-balance').textContent = kzMoney(CASH.book_balance);
-  document.getElementById('kz-cash-pending').textContent = kzMoney(CASH.pending_transfer);
   document.getElementById('kz-cash-reserve').textContent = kzMoney(CASH.cash_reserve);
   document.getElementById('kz-revenue-asof-visa').textContent = kzShortDate(CASH.visa_latest_date);
   document.getElementById('kz-revenue-asof-cash').textContent = kzShortDate(CASH.cash_asof_date);
@@ -888,7 +898,6 @@ function kzRenderCashAndBudget() {
     (kzHealthy ? '✓ 已達標 ' : '') + Math.max(0, kzHealthPct).toFixed(0) + '%';
   document.getElementById('kz-health-pct').style.color = kzHealthy ? 'var(--kl-accent)' : 'var(--text-2)';
   document.getElementById('kz-health-fill').style.width = kzHealthShown + '%';
-  document.getElementById('kz-health-marker').style.left = kzHealthShown + '%';
   document.getElementById('kz-health-diff').textContent = kzHealthy
     ? '高於目標水位 ' + kzMoney(kzCashAdjusted - KZ_CASH_HEALTH_LINE)
     : '距目標水位尚差 ' + kzMoney(KZ_CASH_HEALTH_LINE - kzCashAdjusted);
