@@ -836,12 +836,11 @@ function kzRenderKline() {
     } else {
       g += '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(r.cum).toFixed(1) + '" r="' + (last ? 4 : 2.6) + '" fill="' + acc + '"><title>' + r.m + '　累計 ' + kzMoney(r.cum) + '</title></circle>';
     }
-    if (neg) {
-      g += '<text x="' + (x(i) + 9).toFixed(1) + '" y="' + (y(r.cum) - 5).toFixed(1) + '" font-size="9" font-weight="600" fill="var(--red)">⚠ 試營運虧損 ' + kzShortMoney(r.cum) + '</text>';
-    }
-    if (last) {
-      g += '<text x="' + (x(i) - 7).toFixed(1) + '" y="' + (y(r.cum) - 9).toFixed(1) + '" text-anchor="end" font-size="10.5" font-weight="600" fill="var(--text)">' + fmtM(r.cum) + '</text>';
-    }
+    // 每點上方標示累計值（±）
+    var lblTxt = (r.cum >= 0 ? '+' : '') + kzShortMoney(r.cum);
+    var anchor = last ? 'end' : (i === 0 ? 'start' : 'middle');
+    var lblX = last ? x(i) - 6 : (i === 0 ? x(i) - 4 : x(i));
+    g += '<text x="' + lblX.toFixed(1) + '" y="' + (y(r.cum) - 8).toFixed(1) + '" text-anchor="' + anchor + '" font-size="' + (last ? 10 : 9) + '" font-weight="' + (last ? 700 : 500) + '" fill="' + (neg ? 'var(--red)' : (last ? 'var(--text)' : 'var(--text-3)')) + '">' + lblTxt + '</text>';
     g += '<text x="' + x(i).toFixed(1) + '" y="' + (H - PB + 15) + '" text-anchor="middle" font-size="9" fill="var(--text-3)">' + r.m + '</text>';
   });
 
