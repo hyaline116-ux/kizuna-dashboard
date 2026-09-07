@@ -873,17 +873,19 @@ var CASH_LEVEL_SERIES = [{"ym":"26/09","level":2521529}];   // 月末資金水�
 function kzRenderKline() {
   var el = document.getElementById('kz-kline');
   if (!el) return;
+  var kzNowK = new Date();
+  var kzCurMK = kzNowK.getFullYear() === KZ_YEAR ? kzNowK.getMonth() + 1 : 0;
   var rows = KZ_MONTHS.map(function(m) {
     var lm = KZ_MONTH_TO_LEDGER[m] || m;
     var prov = BUDGET.some(function(b) { return b.item.indexOf(lm) >= 0 && b.item.indexOf('即時估算') >= 0; });
-    return { m: m, net: KZ_MATRIX_MAP['淨額(未稅)'] ? KZ_MATRIX_MAP['淨額(未稅)'][m] : null, prov: prov };
+    return { m: m, net: KZ_MATRIX_MAP['淨額(未稅)'] ? KZ_MATRIX_MAP['淨額(未稅)'][m] : null, prov: prov, partial: KZ_MONTH_NUM[m] === kzCurMK };
   }).filter(function(r) { return r.net !== null && r.net !== undefined; });
   if (!rows.length) return;
   var cum = 0;
   rows.forEach(function(r) { cum += r.net; r.cum = cum; });
   var anyProv = rows.some(function(r) { return r.prov; });
 
-  var W = 860, H = 216, PL = 46, PR = 14, PT = 18, PB = 26;
+  var W = 860, H = 232, PL = 46, PR = 14, PT = 24, PB = 26;
   var cums = rows.map(function(r) { return r.cum; });
   var hi = Math.max.apply(null, cums.concat([0])), lo = Math.min.apply(null, cums.concat([0]));
   var pad = (hi - lo) * 0.14 || 1;
@@ -945,17 +947,24 @@ function kzRenderKline() {
     } else {
       g += '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(r.cum).toFixed(1) + '" r="' + (last ? 4 : 2.6) + '" fill="' + acc + '"><title>' + r.m + '　累計 ' + kzMoney(r.cum) + '</title></circle>';
     }
-    // 每點上方標示累計值（±）
-    var lblTxt = (r.cum >= 0 ? '+' : '') + kzShortMoney(r.cum);
+    // 每點：上方＝累計損益，下方＝當月增減（相比上個階段漲跌）
+    var lblTxt = (r.cum >= 0 ? '+' : '−') + kzShortMoney(Math.abs(r.cum));
     var anchor = last ? 'end' : (i === 0 ? 'start' : 'middle');
     var lblX = last ? x(i) - 6 : (i === 0 ? x(i) - 4 : x(i));
-    g += '<text x="' + lblX.toFixed(1) + '" y="' + (y(r.cum) - 8).toFixed(1) + '" text-anchor="' + anchor + '" font-size="' + (last ? 10 : 9) + '" font-weight="' + (last ? 700 : 500) + '" fill="' + (neg ? 'var(--red)' : (last ? 'var(--text)' : 'var(--text-3)')) + '">' + lblTxt + '</text>';
+    g += '<text x="' + lblX.toFixed(1) + '" y="' + (y(r.cum) - 9).toFixed(1) + '" text-anchor="' + anchor + '" font-size="' + (last ? 10.5 : 9.5) + '" font-weight="' + (last ? 700 : 600) + '" fill="' + (neg ? 'var(--red)' : (last ? 'var(--text)' : 'var(--text-2)')) + '">' + lblTxt + '</text>';
+    if (i > 0) {
+      var dCol = r.partial ? 'var(--text-3)' : (r.net >= 0 ? 'var(--green)' : 'var(--red)');
+      var dTxt = r.partial
+        ? '(' + (r.net >= 0 ? '+' : '−') + kzShortMoney(Math.abs(r.net)) + ')'
+        : (r.net >= 0 ? '▲' : '▼') + kzShortMoney(Math.abs(r.net));
+      g += '<text x="' + x(i).toFixed(1) + '" y="' + (y(r.cum) + 15).toFixed(1) + '" text-anchor="middle" font-size="9" font-weight="600" fill="' + dCol + '">' + dTxt + '</text>';
+    }
     g += '<text x="' + x(i).toFixed(1) + '" y="' + (H - PB + 15) + '" text-anchor="middle" font-size="9" fill="var(--text-3)">' + r.m + '</text>';
   });
 
   el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%; min-width:520px; height:auto;">' + g + '</svg>';
   document.getElementById('kz-kline-note').textContent =
-    '累計損益 ' + kzMoney(rows[n - 1].cum) + (anyProv ? '　·　虛線／空心點 = 含即時估算（暫定）' : '');
+    '累計損益 ' + kzMoney(rows[n - 1].cum) + '　·　點下＝當月增減' + (anyProv ? '　·　虛線／空心 = 含即時估算' : '');
   kzRenderPayback(rows[n - 1].cum, anyProv);
 }
 
