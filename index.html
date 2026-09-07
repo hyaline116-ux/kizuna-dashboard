@@ -394,6 +394,25 @@ function kzShortMoney(v) {
   var sign = v < 0 ? '−' : '';
   return sign + Math.round(Math.abs(v) / 10000) + '萬';
 }
+// 平滑折線：Catmull-Rom → 三次貝茲，張力低＝柔和不過衝。P=[[x,y],…]
+function kzSplinePath(P, tension, reverse) {
+  if (reverse) P = P.slice().reverse();
+  if (P.length < 3) return 'M ' + P.map(function(p) { return p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join(' L ');
+  var T = tension == null ? 0.16 : tension;
+  var d = 'M ' + P[0][0].toFixed(1) + ' ' + P[0][1].toFixed(1);
+  for (var i = 0; i < P.length - 1; i++) {
+    var a = P[i - 1] || P[i], b = P[i], c = P[i + 1], e = P[i + 2] || c;
+    var c1y = b[1] + (c[1] - a[1]) * T, c2y = c[1] - (e[1] - b[1]) * T;
+    // 夾住控制點的 y，避免在轉折處過衝（不暗示未曾出現的數值）
+    var ylo = Math.min(b[1], c[1]), yhi = Math.max(b[1], c[1]);
+    c1y = Math.max(ylo, Math.min(yhi, c1y));
+    c2y = Math.max(ylo, Math.min(yhi, c2y));
+    d += ' C ' + (b[0] + (c[0] - a[0]) * T).toFixed(1) + ' ' + c1y.toFixed(1)
+      + ' ' + (c[0] - (e[0] - b[0]) * T).toFixed(1) + ' ' + c2y.toFixed(1)
+      + ' ' + c[0].toFixed(1) + ' ' + c[1].toFixed(1);
+  }
+  return d;
+}
 function kzSum(cat, months) {
   var row = KZ_MATRIX_MAP[cat];
   var total = 0, any = false;
@@ -513,57 +532,95 @@ function kzRenderTrend(months) {
   var all = [];
   rows.forEach(function(r) { all.push(r.rev, r.exp, r.net); });
   var hi = Math.max.apply(null, all.concat([0])), lo = Math.min.apply(null, all.concat([0]));
-  var padHi = (hi - lo) * 0.05, padLo = (hi - lo) * 0.08;
+  var padHi = (hi - lo) * 0.08, padLo = (hi - lo) * 0.12;
   var top = hi + padHi, bot = lo - padLo;
 
   // 直式拉高、橫向壓窄 → 斜率更明顯（月份少時起伏才看得出來）
-  var W = 600, H = 264, PL = 44, PR = 16, PT = 14, PB = 26;
+  var W = 600, H = 284, PL = 46, PR = 18, PT = 22, PB = 30;
   function y(v) { return PT + (H - PT - PB) * (1 - (v - bot) / (top - bot)); }
   function x(i) { return PL + (W - PL - PR) * (n > 1 ? i / (n - 1) : 0.5); }
   function fmtW(v) { return (v / 10000).toFixed(0) + '萬'; }
-  var g = '';
-  var span = top - bot, step = span <= 1500000 ? 500000 : 1000000;
-  for (var gv = Math.ceil(bot / step) * step; gv <= top; gv += step) {
-    var zero = Math.abs(gv) < 1;
-    g += '<line x1="' + PL + '" y1="' + y(gv).toFixed(1) + '" x2="' + (W - PR) + '" y2="' + y(gv).toFixed(1) + '" stroke="' + (zero ? 'var(--text-3)' : 'var(--line)') + '" stroke-width="' + (zero ? 1.1 : 1) + '"/>'
-       + '<text x="' + (PL - 5) + '" y="' + (y(gv) + 3).toFixed(1) + '" text-anchor="end" font-size="9" fill="var(--text-3)">' + fmtW(gv) + '</text>';
-  }
 
-  var series = [
-    { key: 'rev', color: 'var(--rev-1)', w: 1.6, label: '實收' },
-    { key: 'exp', color: 'var(--exp-4)', w: 1.6, label: '實際支出' },
-    { key: 'net', color: 'var(--green)', w: 2.4, label: '損益', accent: true }
-  ];
+  var revArr = rows.map(function(r) { return r.rev; });
+  var expArr = rows.map(function(r) { return r.exp; });
+  var netArr = rows.map(function(r) { return r.net; });
+  function pts2(arr) { return arr.map(function(v, i) { return [x(i), y(v)]; }); }
+  var revD = kzSplinePath(pts2(revArr)), expD = kzSplinePath(pts2(expArr)), netD = kzSplinePath(pts2(netArr));
+  var zeroY = y(0), x0 = x(0), xN = x(n - 1);
+
   var firstProv = -1;
   for (var fp = 0; fp < rows.length; fp++) { if (rows[fp].prov) { firstProv = fp; break; } }
+  var anyProv = firstProv !== -1;
+  var provX = (anyProv && firstProv > 0) ? x(firstProv) : (firstProv === 0 ? PL : (W - PR));
+
+  var g = '';
+  g += '<defs>'
+    + '<linearGradient id="kzTrBand" x1="0" y1="0" x2="0" y2="1">'
+    +   '<stop offset="0" stop-color="var(--rev-1)" stop-opacity="0.13"/>'
+    +   '<stop offset="1" stop-color="var(--rev-1)" stop-opacity="0.02"/></linearGradient>'
+    + '<linearGradient id="kzTrNet" x1="0" y1="0" x2="0" y2="1">'
+    +   '<stop offset="0" stop-color="var(--green)" stop-opacity="0.30"/>'
+    +   '<stop offset="0.9" stop-color="var(--green)" stop-opacity="0"/></linearGradient>'
+    + '<clipPath id="kzTrPos"><rect x="' + PL + '" y="' + (PT - 4).toFixed(1) + '" width="' + (W - PR - PL).toFixed(1) + '" height="' + Math.max(0, zeroY - PT + 4).toFixed(1) + '"/></clipPath>'
+    + '<clipPath id="kzTrNeg"><rect x="' + PL + '" y="' + zeroY.toFixed(1) + '" width="' + (W - PR - PL).toFixed(1) + '" height="' + Math.max(0, H - PB - zeroY).toFixed(1) + '"/></clipPath>'
+    + '<clipPath id="kzTrSolid"><rect x="0" y="0" width="' + provX.toFixed(1) + '" height="' + H + '"/></clipPath>'
+    + '<clipPath id="kzTrDash"><rect x="' + provX.toFixed(1) + '" y="0" width="' + Math.max(0, W - provX).toFixed(1) + '" height="' + H + '"/></clipPath>'
+    + '</defs>';
+
+  // 格線：非零虛線、零線實線
+  var span = top - bot, step = span <= 1500000 ? 500000 : 1000000;
+  for (var gv = Math.ceil(bot / step) * step; gv <= top + 1; gv += step) {
+    var zero = Math.abs(gv) < 1;
+    g += '<line x1="' + PL + '" y1="' + y(gv).toFixed(1) + '" x2="' + (W - PR) + '" y2="' + y(gv).toFixed(1) + '" stroke="' + (zero ? 'var(--text-3)' : 'var(--line)') + '" stroke-width="' + (zero ? 1.2 : 1) + '"' + (zero ? '' : ' stroke-dasharray="2 5"') + ' opacity="' + (zero ? 0.85 : 0.75) + '"/>'
+       + '<text x="' + (PL - 7) + '" y="' + (y(gv) + 3).toFixed(1) + '" text-anchor="end" font-size="9.5" fill="var(--text-3)">' + fmtW(gv) + '</text>';
+  }
+
+  // 利潤帶：實收與實際支出之間
+  g += '<path d="' + revD + ' L ' + kzSplinePath(pts2(expArr), null, true).slice(2) + ' Z" fill="url(#kzTrBand)"/>';
+
+  // 損益面積：正區綠漸層、負區紅
+  var netArea = netD + ' L ' + xN.toFixed(1) + ' ' + zeroY.toFixed(1) + ' L ' + x0.toFixed(1) + ' ' + zeroY.toFixed(1) + ' Z';
+  g += '<path d="' + netArea + '" fill="url(#kzTrNet)" clip-path="url(#kzTrPos)"/>';
+  g += '<path d="' + netArea + '" fill="var(--red)" fill-opacity="0.12" clip-path="url(#kzTrNeg)"/>';
+
+  var series = [
+    { d: revD, arr: revArr, color: 'var(--rev-1)', w: 1.8, label: '實收' },
+    { d: expD, arr: expArr, color: 'var(--exp-4)', w: 1.8, label: '實際支出' },
+    { d: netD, arr: netArr, color: 'var(--green)', w: 2.6, label: '損益', accent: true }
+  ];
   series.forEach(function(s) {
-    var pts = rows.map(function(r, i) { return x(i).toFixed(1) + ',' + y(r[s.key]).toFixed(1); });
-    if (firstProv > 0) {
-      g += '<polyline points="' + pts.slice(0, firstProv + 1).join(' ') + '" fill="none" stroke="' + s.color + '" stroke-width="' + s.w + '" stroke-linejoin="round"/>';
-      g += '<polyline points="' + pts.slice(firstProv).join(' ') + '" fill="none" stroke="' + s.color + '" stroke-width="' + s.w + '" stroke-linejoin="round" stroke-dasharray="5 3" opacity="0.9"/>';
+    if (s.accent) g += '<path d="' + s.d + '" fill="none" stroke="' + s.color + '" stroke-width="' + (s.w + 3.5).toFixed(1) + '" stroke-opacity="0.13" stroke-linecap="round" stroke-linejoin="round"/>';
+    if (anyProv && firstProv > 0) {
+      g += '<path d="' + s.d + '" fill="none" stroke="' + s.color + '" stroke-width="' + s.w + '" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#kzTrSolid)"/>';
+      g += '<path d="' + s.d + '" fill="none" stroke="' + s.color + '" stroke-width="' + s.w + '" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1 5" clip-path="url(#kzTrDash)"/>';
     } else {
-      g += '<polyline points="' + pts.join(' ') + '" fill="none" stroke="' + s.color + '" stroke-width="' + s.w + '" stroke-linejoin="round"' + (firstProv === 0 ? ' stroke-dasharray="5 3"' : '') + '/>';
+      g += '<path d="' + s.d + '" fill="none" stroke="' + s.color + '" stroke-width="' + s.w + '" stroke-linecap="round" stroke-linejoin="round"' + (firstProv === 0 ? ' stroke-dasharray="1 5"' : '') + '/>';
     }
+  });
+
+  series.forEach(function(s) {
     rows.forEach(function(r, i) {
-      var last = i === n - 1;
-      var rad = s.accent ? (r.prov ? 3 : 3.4) : (r.prov ? 2.4 : 2.6);
-      var fill = r.prov ? 'var(--card)' : s.color;
-      var stroke = r.prov ? s.color : 'none';
-      g += '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(r[s.key]).toFixed(1) + '" r="' + rad + '" fill="' + fill + '" stroke="' + stroke + '" stroke-width="1.4"><title>' + r.m + '　' + s.label + '　' + kzMoney(r[s.key]) + '</title></circle>';
+      var last = i === n - 1, cx = x(i), cy = y(s.arr[i]);
+      var rad = s.accent ? (last ? 4 : 3.2) : (last ? 3 : 2.3);
+      if (r.prov) {
+        g += '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + rad + '" fill="var(--card)" stroke="' + s.color + '" stroke-width="1.5"><title>' + r.m + '　' + s.label + '　' + kzMoney(s.arr[i]) + '</title></circle>';
+      } else {
+        if (last) g += '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + (rad + 2.6).toFixed(1) + '" fill="' + s.color + '" fill-opacity="0.15"/>';
+        g += '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + rad + '" fill="' + s.color + '"' + (last ? ' stroke="var(--card)" stroke-width="1.4"' : '') + '><title>' + r.m + '　' + s.label + '　' + kzMoney(s.arr[i]) + '</title></circle>';
+      }
       if (s.accent) {
-        var v = r.net, ny = v >= 0 ? y(v) - 8 : y(v) + 15;
-        g += '<text x="' + x(i).toFixed(1) + '" y="' + ny.toFixed(1) + '" text-anchor="middle" font-size="9" font-weight="500" fill="' + (v >= 0 ? 'var(--green)' : 'var(--red)') + '">' + (v >= 0 ? '+' : '−') + kzShortMoney(Math.abs(v)) + '</text>';
+        var v = r.net, ny = v >= 0 ? cy - 11 : cy + 17;
+        g += '<text x="' + cx.toFixed(1) + '" y="' + ny.toFixed(1) + '" text-anchor="middle" font-size="9.5" font-weight="600" fill="' + (v >= 0 ? 'var(--green)' : 'var(--red)') + '">' + (v >= 0 ? '+' : '−') + kzShortMoney(Math.abs(v)) + '</text>';
       }
     });
   });
   rows.forEach(function(r, i) {
-    g += '<text x="' + x(i).toFixed(1) + '" y="' + (H - PB + 15) + '" text-anchor="middle" font-size="9.5" fill="var(--text-3)">' + r.m + '</text>';
+    g += '<text x="' + x(i).toFixed(1) + '" y="' + (H - PB + 17) + '" text-anchor="middle" font-size="10" fill="var(--text-3)">' + r.m + '</text>';
   });
 
-  var anyProv = rows.some(function(r) { return r.prov; });
-  el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%; min-width:' + Math.max(340, n * 66) + 'px; height:auto;">' + g + '</svg>'
-    + '<div style="display:flex; gap:14px; flex-wrap:wrap; margin-top:8px; font-size:10.5px; color:var(--text-3);">'
-    + series.map(function(s) { return '<span><span style="display:inline-block; width:14px; height:0; border-top:' + (s.accent ? 2.4 : 1.6) + 'px solid ' + s.color + '; margin-right:5px; vertical-align:3px;"></span>' + s.label + '</span>'; }).join('')
+  el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%; min-width:' + Math.max(360, n * 74) + 'px; height:auto;">' + g + '</svg>'
+    + '<div style="display:flex; gap:16px; flex-wrap:wrap; margin-top:10px; font-size:10.5px; color:var(--text-3);">'
+    + series.map(function(s) { return '<span><span style="display:inline-block; width:16px; height:0; border-top:' + (s.accent ? 2.6 : 1.8) + 'px solid ' + s.color + '; margin-right:6px; vertical-align:3px;"></span>' + s.label + '</span>'; }).join('')
     + (anyProv ? '<span>虛線／空心 = 含估算</span>' : '') + '</div>';
 
   }
@@ -820,7 +877,7 @@ function kzRenderKline() {
   rows.forEach(function(r) { cum += r.net; r.cum = cum; });
   var anyProv = rows.some(function(r) { return r.prov; });
 
-  var W = 860, H = 200, PL = 46, PR = 14, PT = 16, PB = 24;
+  var W = 860, H = 216, PL = 46, PR = 14, PT = 18, PB = 26;
   var cums = rows.map(function(r) { return r.cum; });
   var hi = Math.max.apply(null, cums.concat([0])), lo = Math.min.apply(null, cums.concat([0]));
   var pad = (hi - lo) * 0.14 || 1;
@@ -829,36 +886,47 @@ function kzRenderKline() {
   function fmtM(v) { return (Math.abs(v) < 100000 ? '0' : (v / 1000000).toFixed(1)) + 'M'; }
   var n = rows.length;
   function x(i) { return PL + (W - PL - PR) * (n > 1 ? i / (n - 1) : 0.5); }
-  var g = '', ticks = 4, step = (top - bot) / ticks;
-  for (var t = 0; t <= ticks; t++) {
-    var gv = bot + step * t;
-    g += '<line x1="' + PL + '" y1="' + y(gv).toFixed(1) + '" x2="' + (W - PR) + '" y2="' + y(gv).toFixed(1) + '" stroke="var(--line)" stroke-width="1"/>'
-       + '<text x="' + (PL - 6) + '" y="' + (y(gv) + 3).toFixed(1) + '" text-anchor="end" font-size="9.5" fill="var(--text-3)">' + fmtM(gv) + '</text>';
-  }
-  if (0 > bot && 0 < top) {
-    g += '<line x1="' + PL + '" y1="' + y(0).toFixed(1) + '" x2="' + (W - PR) + '" y2="' + y(0).toFixed(1) + '" stroke="var(--text-3)" stroke-width="1"/>';
-  }
-  var pts = rows.map(function(r, i) { return x(i).toFixed(1) + ',' + y(r.cum).toFixed(1); });
-  g += '<defs><linearGradient id="kzCashGrad" x1="0" y1="0" x2="0" y2="1">'
-     + '<stop offset="0" stop-color="var(--kl-accent)" stop-opacity="0.22"/>'
-     + '<stop offset="1" stop-color="var(--kl-accent)" stop-opacity="0"/></linearGradient></defs>';
-  var baseY = Math.min(y(bot), y(0));
-  g += '<path d="M ' + PL + ',' + baseY.toFixed(1) + ' L ' + pts.join(' L ') + ' L ' + (W - PR) + ',' + baseY.toFixed(1) + ' Z" fill="url(#kzCashGrad)"/>';
-  // 低於零（虧損）區域警示：紅色底 + 紅色線段
-  g += '<clipPath id="kzNeg"><rect x="' + PL + '" y="' + y(0).toFixed(1) + '" width="' + (W - PR - PL).toFixed(1) + '" height="' + Math.max(0, H - PB - y(0)).toFixed(1) + '"/></clipPath>';
-  if (lo < 0) {
-    g += '<path d="M ' + PL + ',' + baseY.toFixed(1) + ' L ' + pts.join(' L ') + ' L ' + (W - PR) + ',' + baseY.toFixed(1) + ' Z" fill="var(--red)" fill-opacity="0.15" clip-path="url(#kzNeg)"/>';
-  }
   var firstProv = -1;
   for (var fp = 0; fp < rows.length; fp++) { if (rows[fp].prov) { firstProv = fp; break; } }
+  var provX = firstProv > 0 ? x(firstProv) : (firstProv === 0 ? PL : (W - PR));
+  var zeroY = y(0);
+  var lineD = kzSplinePath(rows.map(function(r, i) { return [x(i), y(r.cum)]; }));
+  var baseY = Math.min(y(bot), zeroY);
+  var areaD = 'M ' + PL + ' ' + baseY.toFixed(1) + ' L ' + lineD.slice(2) + ' L ' + (W - PR) + ' ' + baseY.toFixed(1) + ' Z';
+
+  var g = '';
+  g += '<defs><linearGradient id="kzCashGrad" x1="0" y1="0" x2="0" y2="1">'
+     + '<stop offset="0" stop-color="var(--kl-accent)" stop-opacity="0.28"/>'
+     + '<stop offset="0.9" stop-color="var(--kl-accent)" stop-opacity="0"/></linearGradient>'
+     + '<clipPath id="kzNeg"><rect x="' + PL + '" y="' + zeroY.toFixed(1) + '" width="' + (W - PR - PL).toFixed(1) + '" height="' + Math.max(0, H - PB - zeroY).toFixed(1) + '"/></clipPath>'
+     + '<clipPath id="kzKSolid"><rect x="0" y="0" width="' + provX.toFixed(1) + '" height="' + H + '"/></clipPath>'
+     + '<clipPath id="kzKDash"><rect x="' + provX.toFixed(1) + '" y="0" width="' + Math.max(0, W - provX).toFixed(1) + '" height="' + H + '"/></clipPath>'
+     + '</defs>';
+
+  var ticks = 4, step = (top - bot) / ticks;
+  for (var t = 0; t <= ticks; t++) {
+    var gv = bot + step * t, zeroG = Math.abs(gv) < Math.abs(step) * 0.001;
+    g += '<line x1="' + PL + '" y1="' + y(gv).toFixed(1) + '" x2="' + (W - PR) + '" y2="' + y(gv).toFixed(1) + '" stroke="var(--line)" stroke-width="1" stroke-dasharray="2 5" opacity="0.7"/>'
+       + '<text x="' + (PL - 6) + '" y="' + (y(gv) + 3).toFixed(1) + '" text-anchor="end" font-size="9.5" fill="var(--text-3)">' + fmtM(gv) + '</text>';
+  }
+
+  g += '<path d="' + areaD + '" fill="url(#kzCashGrad)"/>';
+  if (lo < 0) {
+    g += '<path d="' + areaD + '" fill="var(--red)" fill-opacity="0.13" clip-path="url(#kzNeg)"/>';
+  }
+  if (0 > bot && 0 < top) {
+    g += '<line x1="' + PL + '" y1="' + zeroY.toFixed(1) + '" x2="' + (W - PR) + '" y2="' + zeroY.toFixed(1) + '" stroke="var(--text-3)" stroke-width="1.1" opacity="0.85"/>';
+  }
+
+  g += '<path d="' + lineD + '" fill="none" stroke="var(--kl-accent)" stroke-width="6" stroke-opacity="0.12" stroke-linecap="round" stroke-linejoin="round"/>';
   if (firstProv > 0) {
-    g += '<polyline points="' + pts.slice(0, firstProv + 1).join(' ') + '" fill="none" stroke="var(--kl-accent)" stroke-width="2" stroke-linejoin="round"/>';
-    g += '<polyline points="' + pts.slice(firstProv).join(' ') + '" fill="none" stroke="var(--kl-accent)" stroke-width="2" stroke-linejoin="round" stroke-dasharray="5 3" opacity="0.85"/>';
+    g += '<path d="' + lineD + '" fill="none" stroke="var(--kl-accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#kzKSolid)"/>';
+    g += '<path d="' + lineD + '" fill="none" stroke="var(--kl-accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1 5" clip-path="url(#kzKDash)"/>';
   } else {
-    g += '<polyline points="' + pts.join(' ') + '" fill="none" stroke="var(--kl-accent)" stroke-width="2" stroke-linejoin="round"' + (firstProv === 0 ? ' stroke-dasharray="5 3"' : '') + '/>';
+    g += '<path d="' + lineD + '" fill="none" stroke="var(--kl-accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"' + (firstProv === 0 ? ' stroke-dasharray="1 5"' : '') + '/>';
   }
   if (lo < 0) {
-    g += '<polyline points="' + pts.join(' ') + '" fill="none" stroke="var(--red)" stroke-width="2.2" stroke-linejoin="round" clip-path="url(#kzNeg)"/>';
+    g += '<path d="' + lineD + '" fill="none" stroke="var(--red)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#kzNeg)"/>';
   }
   rows.forEach(function(r, i) {
     var last = i === n - 1;
