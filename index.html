@@ -154,7 +154,7 @@
       <p style="margin:0; font-size:11px; color:var(--text-3);" id="kz-kline-note">—</p>
     </div>
     <div id="kz-kline" class="scrollx"></div>
-    <p style="margin:7px 0 0; font-size:10.5px; color:var(--text-3);">此圖＝扣營業稅後（4–6 月免稅、7 月起實收÷21）。營所稅另計，見下方進度條。</p>
+    <p style="margin:7px 0 0; font-size:10.5px; color:var(--text-3); line-height:1.5;">此圖＝扣營業稅後（4–6 月核定免稅；7–8 月為暫估上限，申報中、實際可能大幅下修）。若 7–8 月申報結果亦免稅，累計損益回升約 28 萬。營所稅另計，見下方進度條。</p>
     <div id="kz-taxreserve" style="margin-top:14px; padding-top:12px; border-top:1px solid var(--line);"></div>
     <div id="kz-payback" style="margin-top:14px; padding-top:12px; border-top:1px solid var(--line);"></div>
   </div>
@@ -211,6 +211,7 @@
       </tbody>
     </table>
     </div>
+    <p style="margin:10px 0 0; font-size:10.5px; color:var(--text-3); line-height:1.5;">＊ 7–8 月營業稅申報中，此為「未扣抵進項稅額」的暫估上限；建置期進項稅額大，實際應納可能大幅下修，甚至留抵為 0。4–6 月經核定免稅。</p>
   </div>
 
   <hr class="rule" />
@@ -836,6 +837,12 @@ function kzRenderMatrix(months, label) {
     var pad = def.indent ? 'padding-left:1.6em;' : '';
     var tds = months.map(function(m) {
       var v = row[m];
+      if (def.cat === '營業稅') {
+        var cell = (v === null || v === undefined) ? '—'
+          : (v === 0 ? '<span style="color:var(--text-3);">免稅</span>'
+          : Math.round(v).toLocaleString() + '<span style="color:var(--text-3);">＊</span>');
+        return '<td style="text-align:right;">' + cell + '</td>';
+      }
       var col = (def.colorBySign && v !== null && v !== undefined) ? (v >= 0 ? 'color:var(--green);' : 'color:var(--red);') : '';
       return '<td style="text-align:right;' + col + '">' + kzFmt(v) + '</td>';
     }).join('');
@@ -907,7 +914,7 @@ function kzRenderKline() {
   var pad = (hi - lo) * 0.14 || 1;
   var top = hi + pad, bot = lo - pad;
   function y(v) { return PT + (H - PT - PB) * (1 - (v - bot) / (top - bot)); }
-  function fmtM(v) { return (Math.abs(v) < 100000 ? '0' : (v / 1000000).toFixed(1)) + 'M'; }
+  function fmtM(v) { return (Math.abs(v) < 5000 ? '0' : (v / 10000).toFixed(0)) + '萬'; }
   var n = rows.length;
   function x(i) { return PL + (W - PL - PR) * (n > 1 ? i / (n - 1) : 0.5); }
   var firstProv = -1;
@@ -927,9 +934,12 @@ function kzRenderKline() {
      + '<clipPath id="kzKDash"><rect x="' + provX.toFixed(1) + '" y="0" width="' + Math.max(0, W - provX).toFixed(1) + '" height="' + H + '"/></clipPath>'
      + '</defs>';
 
-  var ticks = 4, step = (top - bot) / ticks;
-  for (var t = 0; t <= ticks; t++) {
-    var gv = bot + step * t, zeroG = Math.abs(gv) < Math.abs(step) * 0.001;
+  var kzNiceSteps = [50000, 100000, 250000, 500000, 1000000, 2000000, 2500000, 5000000, 10000000];
+  var step = kzNiceSteps[kzNiceSteps.length - 1];
+  for (var ns = 0; ns < kzNiceSteps.length; ns++) { if ((top - bot) / kzNiceSteps[ns] <= 7) { step = kzNiceSteps[ns]; break; } }
+  var kzGStart = Math.ceil(bot / step) * step, kzGCount = Math.round((Math.floor(top / step) * step - kzGStart) / step);
+  for (var t = 0; t <= kzGCount; t++) {
+    var gv = kzGStart + step * t;
     g += '<line x1="' + PL + '" y1="' + y(gv).toFixed(1) + '" x2="' + (W - PR) + '" y2="' + y(gv).toFixed(1) + '" stroke="var(--line)" stroke-width="1" stroke-dasharray="2 5" opacity="0.7"/>'
        + '<text x="' + (PL - 6) + '" y="' + (y(gv) + 3).toFixed(1) + '" text-anchor="end" font-size="9.5" fill="var(--text-3)">' + fmtM(gv) + '</text>';
   }
