@@ -150,11 +150,12 @@
 
   <div class="card" style="margin-bottom:12px;">
     <div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:4px 12px; margin-bottom:2px;">
-      <p class="lbl" style="margin:0;">累計損益（扣營業稅）· 開業以來</p>
+      <p class="lbl" style="margin:0;">累計損益（稅後）· 開業以來</p>
       <p style="margin:0; font-size:11px; color:var(--text-3);" id="kz-kline-note">—</p>
     </div>
     <div id="kz-kline" class="scrollx"></div>
-    <p style="margin:7px 0 0; font-size:10.5px; color:var(--text-3);">4–6 月確定免稅；7–8 月營業稅採「未扣抵進項」的應納上限，報稅完成後實際金額會再低一些</p>
+    <p style="margin:7px 0 0; font-size:10.5px; color:var(--text-3);">已扣營業稅＋營所稅。營業稅：4–6 月免稅、7 月起實收÷21（未扣抵上限）。營所稅：每月（淨額−營業稅）×20% 估列，虧損月抵減；實際依查帳／擴大書審與進項扣抵，年度結算前校準</p>
+    <div id="kz-taxreserve" style="margin-top:14px; padding-top:12px; border-top:1px solid var(--line);"></div>
     <div id="kz-payback" style="margin-top:14px; padding-top:12px; border-top:1px solid var(--line);"></div>
   </div>
 
@@ -877,18 +878,29 @@ function kzRenderKline() {
   var kzNowK = new Date();
   var kzCurMK = kzNowK.getFullYear() === KZ_YEAR ? kzNowK.getMonth() + 1 : 0;
   var kzTaxRow = KZ_MATRIX_MAP['營業稅預留'];
+  var KZ_IT_RATE = 0.20;   // 營所稅估列率（查帳；擴大書審可調低）
   var rows = KZ_MONTHS.map(function(m) {
     var lm = KZ_MONTH_TO_LEDGER[m] || m;
     var prov = BUDGET.some(function(b) { return b.item.indexOf(lm) >= 0 && b.item.indexOf('即時估算') >= 0; });
+    var partial = KZ_MONTH_NUM[m] === kzCurMK;
     var pretax = KZ_MATRIX_MAP['淨額(未稅)'] ? KZ_MATRIX_MAP['淨額(未稅)'][m] : null;
-    var tv = kzTaxRow ? kzTaxRow[m] : null;      // 「免稅」/ null → 0；數字＝該期應納稅額（上限）
-    var tax = typeof tv === 'number' ? tv : 0;
-    return { m: m, net: (pretax === null || pretax === undefined) ? null : pretax - tax, tax: tax, prov: prov, partial: KZ_MONTH_NUM[m] === kzCurMK };
+    var tv = kzTaxRow ? kzTaxRow[m] : null;               // 「免稅」/ null → 0
+    var bt = typeof tv === 'number' ? tv : 0;             // 營業稅
+    var afterBt = (pretax === null || pretax === undefined) ? null : pretax - bt;
+    var it = (afterBt === null || partial) ? 0 : afterBt * KZ_IT_RATE;   // 營所稅（當月；虧損月為負；進行中月不計）
+    return { m: m, net: afterBt === null ? null : afterBt - it, bt: bt, it: it, prov: prov, partial: partial };
   }).filter(function(r) { return r.net !== null && r.net !== undefined; });
   if (!rows.length) return;
   var cum = 0;
   rows.forEach(function(r) { cum += r.net; r.cum = cum; });
   var anyProv = rows.some(function(r) { return r.prov; });
+  var kzComplete = rows.filter(function(r) { return !r.partial; });
+  var kzLastC = kzComplete[kzComplete.length - 1] || rows[rows.length - 1];
+  var kzITcum = Math.max(0, kzComplete.reduce(function(s, r) { return s + r.it; }, 0));   // 已認列營所稅（累計）
+  var kzL3 = kzComplete.slice(-3);
+  var kzAvgIT = kzL3.length ? kzL3.reduce(function(s, r) { return s + r.it; }, 0) / kzL3.length : 0;
+  var kzMLeft = Math.max(0, 12 - (kzLastC ? KZ_MONTH_NUM[kzLastC.m] : 12));
+  var kzITfull = Math.max(kzITcum, kzITcum + kzAvgIT * kzMLeft);   // 全年推估
 
   var W = 860, H = 232, PL = 46, PR = 14, PT = 24, PB = 26;
   var cums = rows.map(function(r) { return r.cum; });
@@ -969,8 +981,23 @@ function kzRenderKline() {
 
   el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%; min-width:520px; height:auto;">' + g + '</svg>';
   document.getElementById('kz-kline-note').textContent =
-    '累計損益 ' + kzMoney(rows[n - 1].cum) + '　·　點下＝當月增減' + (anyProv ? '　·　虛線／空心 = 含即時估算' : '');
-  kzRenderPayback(rows[n - 1].cum, anyProv);
+    '累計損益（至' + kzLastC.m + '）' + kzMoney(kzLastC.cum) + '　·　點下＝當月增減' + (anyProv ? '　·　虛線／空心 = 進行中' : '');
+
+  var kzTR = document.getElementById('kz-taxreserve');
+  if (kzTR) {
+    var trPct = kzITfull > 0 ? kzITcum / kzITfull * 100 : 0;
+    kzTR.innerHTML =
+      '<div style="display:flex; justify-content:space-between; align-items:baseline; gap:10px;">' +
+        '<span style="font-size:11.5px; color:var(--text-2);">營所稅預留（' + KZ_YEAR + ' 年度）<span style="font-size:10px; color:var(--text-3); font-weight:400;"> 2027/5 結算前備妥</span></span>' +
+        '<span style="font-size:13px; font-weight:700; font-variant-numeric:tabular-nums;">' + trPct.toFixed(0) + '%</span>' +
+      '</div>' +
+      '<div style="height:14px; border-radius:5px; background:var(--card-2); overflow:hidden; margin:6px 0 5px;">' +
+        '<div style="height:100%; width:' + Math.max(0, Math.min(100, trPct)).toFixed(1) + '%; background:var(--gold);"></div>' +
+      '</div>' +
+      '<p style="margin:0; font-size:11px; color:var(--text-3);"><span style="color:var(--text);">已認列 ' + kzMoney(kzITcum) + '</span>　／ 全年推估 ' + kzMoney(kzITfull) + '（9–12月以近3月均值推估）</p>';
+  }
+
+  kzRenderPayback(kzLastC.cum, anyProv);
 }
 
 // 回本前每季分配中，股東（出資股東 78% ＋ 運營團隊 15%）合計 93%；其餘 7% ＝ 員工分紅 5% ＋ 公司基金 2%
@@ -1010,7 +1037,7 @@ function kzRenderPayback(cumNet, prov) {
   }
   el.innerHTML =
     '<p class="lbl" style="margin:0;">回本追蹤</p>' +
-    seg('累計淨額 vs 累計資本支出', '扣營業稅' + (prov ? '・含即時估算' : ''), recoverPct, 'color-mix(in srgb, var(--green) 45%, var(--card-2))',
+    seg('累計淨額 vs 累計資本支出', '稅後' + (prov ? '・含即時估算' : ''), recoverPct, 'color-mix(in srgb, var(--green) 45%, var(--card-2))',
       '累計淨額 ' + wan(cumNet) + '萬',
       '累計資本支出 ' + (wan(capexPre) + wan(capexOp)) + '萬（開業建置 ' + wan(capexPre) + '萬＋資本支出 ' + wan(capexOp) + '萬）',
       '資本支出獨立計算（不含營運虧損）。開業建置 ＝ 4月全部資本支出 ＋ 5月開業收尾（尾款／追加，約 50萬）；資本支出 ＝ 6月起及5月營運後真正新增的投資項目') +
