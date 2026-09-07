@@ -150,10 +150,11 @@
 
   <div class="card" style="margin-bottom:12px;">
     <div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:4px 12px; margin-bottom:2px;">
-      <p class="lbl" style="margin:0;">累計損益（未稅）· 開業以來</p>
+      <p class="lbl" style="margin:0;">累計損益（扣營業稅）· 開業以來</p>
       <p style="margin:0; font-size:11px; color:var(--text-3);" id="kz-kline-note">—</p>
     </div>
     <div id="kz-kline" class="scrollx"></div>
+    <p style="margin:7px 0 0; font-size:10.5px; color:var(--text-3);">4–6 月確定免稅；7–8 月營業稅採「未扣抵進項」的應納上限，報稅完成後實際金額會再低一些</p>
     <div id="kz-payback" style="margin-top:14px; padding-top:12px; border-top:1px solid var(--line);"></div>
   </div>
 
@@ -875,10 +876,14 @@ function kzRenderKline() {
   if (!el) return;
   var kzNowK = new Date();
   var kzCurMK = kzNowK.getFullYear() === KZ_YEAR ? kzNowK.getMonth() + 1 : 0;
+  var kzTaxRow = KZ_MATRIX_MAP['營業稅預留'];
   var rows = KZ_MONTHS.map(function(m) {
     var lm = KZ_MONTH_TO_LEDGER[m] || m;
     var prov = BUDGET.some(function(b) { return b.item.indexOf(lm) >= 0 && b.item.indexOf('即時估算') >= 0; });
-    return { m: m, net: KZ_MATRIX_MAP['淨額(未稅)'] ? KZ_MATRIX_MAP['淨額(未稅)'][m] : null, prov: prov, partial: KZ_MONTH_NUM[m] === kzCurMK };
+    var pretax = KZ_MATRIX_MAP['淨額(未稅)'] ? KZ_MATRIX_MAP['淨額(未稅)'][m] : null;
+    var tv = kzTaxRow ? kzTaxRow[m] : null;      // 「免稅」/ null → 0；數字＝該期應納稅額（上限）
+    var tax = typeof tv === 'number' ? tv : 0;
+    return { m: m, net: (pretax === null || pretax === undefined) ? null : pretax - tax, tax: tax, prov: prov, partial: KZ_MONTH_NUM[m] === kzCurMK };
   }).filter(function(r) { return r.net !== null && r.net !== undefined; });
   if (!rows.length) return;
   var cum = 0;
@@ -1005,7 +1010,7 @@ function kzRenderPayback(cumNet, prov) {
   }
   el.innerHTML =
     '<p class="lbl" style="margin:0;">回本追蹤</p>' +
-    seg('累計淨額 vs 累計資本支出', prov ? '＊含即時估算' : '', recoverPct, 'color-mix(in srgb, var(--green) 45%, var(--card-2))',
+    seg('累計淨額 vs 累計資本支出', '扣營業稅' + (prov ? '・含即時估算' : ''), recoverPct, 'color-mix(in srgb, var(--green) 45%, var(--card-2))',
       '累計淨額 ' + wan(cumNet) + '萬',
       '累計資本支出 ' + (wan(capexPre) + wan(capexOp)) + '萬（開業建置 ' + wan(capexPre) + '萬＋資本支出 ' + wan(capexOp) + '萬）',
       '資本支出獨立計算（不含營運虧損）。開業建置 ＝ 4月全部資本支出 ＋ 5月開業收尾（尾款／追加，約 50萬）；資本支出 ＝ 6月起及5月營運後真正新增的投資項目') +
