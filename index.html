@@ -413,6 +413,10 @@ function kzSplinePath(P, tension, reverse) {
   }
   return d;
 }
+// 直線折線：重點是漲跌一眼看清，不做平滑
+function kzLinePath(P) {
+  return 'M ' + P.map(function(p) { return p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join(' L ');
+}
 function kzSum(cat, months) {
   var row = KZ_MATRIX_MAP[cat];
   var total = 0, any = false;
@@ -545,7 +549,7 @@ function kzRenderTrend(months) {
   var expArr = rows.map(function(r) { return r.exp; });
   var netArr = rows.map(function(r) { return r.net; });
   function pts2(arr) { return arr.map(function(v, i) { return [x(i), y(v)]; }); }
-  var revD = kzSplinePath(pts2(revArr)), expD = kzSplinePath(pts2(expArr)), netD = kzSplinePath(pts2(netArr));
+  var revD = kzLinePath(pts2(revArr)), expD = kzLinePath(pts2(expArr)), netD = kzLinePath(pts2(netArr));
   var zeroY = y(0), x0 = x(0), xN = x(n - 1);
 
   var firstProv = -1;
