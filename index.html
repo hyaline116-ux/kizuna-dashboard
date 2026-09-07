@@ -394,26 +394,7 @@ function kzShortMoney(v) {
   var sign = v < 0 ? '−' : '';
   return sign + Math.round(Math.abs(v) / 10000) + '萬';
 }
-// 平滑折線：Catmull-Rom → 三次貝茲，張力低＝柔和不過衝。P=[[x,y],…]
-function kzSplinePath(P, tension, reverse) {
-  if (reverse) P = P.slice().reverse();
-  if (P.length < 3) return 'M ' + P.map(function(p) { return p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join(' L ');
-  var T = tension == null ? 0.16 : tension;
-  var d = 'M ' + P[0][0].toFixed(1) + ' ' + P[0][1].toFixed(1);
-  for (var i = 0; i < P.length - 1; i++) {
-    var a = P[i - 1] || P[i], b = P[i], c = P[i + 1], e = P[i + 2] || c;
-    var c1y = b[1] + (c[1] - a[1]) * T, c2y = c[1] - (e[1] - b[1]) * T;
-    // 夾住控制點的 y，避免在轉折處過衝（不暗示未曾出現的數值）
-    var ylo = Math.min(b[1], c[1]), yhi = Math.max(b[1], c[1]);
-    c1y = Math.max(ylo, Math.min(yhi, c1y));
-    c2y = Math.max(ylo, Math.min(yhi, c2y));
-    d += ' C ' + (b[0] + (c[0] - a[0]) * T).toFixed(1) + ' ' + c1y.toFixed(1)
-      + ' ' + (c[0] - (e[0] - b[0]) * T).toFixed(1) + ' ' + c2y.toFixed(1)
-      + ' ' + c[0].toFixed(1) + ' ' + c[1].toFixed(1);
-  }
-  return d;
-}
-// 直線折線：重點是漲跌一眼看清，不做平滑
+// 折線路徑：直線連接，重點是漲跌一眼看清，不做平滑。P=[[x,y],…]
 function kzLinePath(P) {
   return 'M ' + P.map(function(p) { return p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join(' L ');
 }
@@ -906,7 +887,7 @@ function kzRenderKline() {
   for (var fp = 0; fp < rows.length; fp++) { if (rows[fp].prov) { firstProv = fp; break; } }
   var provX = firstProv > 0 ? x(firstProv) : (firstProv === 0 ? PL : (W - PR));
   var zeroY = y(0);
-  var lineD = kzSplinePath(rows.map(function(r, i) { return [x(i), y(r.cum)]; }));
+  var lineD = kzLinePath(rows.map(function(r, i) { return [x(i), y(r.cum)]; }));
   var baseY = Math.min(y(bot), zeroY);
   var areaD = 'M ' + PL + ' ' + baseY.toFixed(1) + ' L ' + lineD.slice(2) + ' L ' + (W - PR) + ' ' + baseY.toFixed(1) + ' Z';
 
@@ -934,7 +915,6 @@ function kzRenderKline() {
     g += '<line x1="' + PL + '" y1="' + zeroY.toFixed(1) + '" x2="' + (W - PR) + '" y2="' + zeroY.toFixed(1) + '" stroke="var(--text-3)" stroke-width="1.1" opacity="0.85"/>';
   }
 
-  g += '<path d="' + lineD + '" fill="none" stroke="var(--kl-accent)" stroke-width="6" stroke-opacity="0.12" stroke-linecap="round" stroke-linejoin="round"/>';
   if (firstProv > 0) {
     g += '<path d="' + lineD + '" fill="none" stroke="var(--kl-accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#kzKSolid)"/>';
     g += '<path d="' + lineD + '" fill="none" stroke="var(--kl-accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1 5" clip-path="url(#kzKDash)"/>';
