@@ -263,6 +263,23 @@
     </div>
   </div>
 
+  <hr class="rule" />
+
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:8px; margin-bottom:.5rem;">
+      <p class="lbl" style="margin:0;">資本支出明細（營運期，共 <span id="kz-capex-count">0</span> 筆）</p>
+      <p style="margin:0; font-size:12px; color:var(--text-2);">合計 <span id="kz-capex-total">—</span></p>
+    </div>
+    <p style="margin:0 0 1rem; font-size:12px; color:var(--text-3);">開業建置一次性投入見「回本追蹤」；此處為營運開始後新增的資本投資，隨所選範圍變動</p>
+    <div class="scrollx">
+    <table style="min-width:420px;">
+      <thead><tr><th>項目</th><th>日期</th><th style="text-align:right;">金額</th></tr></thead>
+      <tbody id="kz-capex-tbody"></tbody>
+      <tfoot id="kz-capex-tfoot"></tfoot>
+    </table>
+    </div>
+  </div>
+
   <p style="margin:1.5rem 0 0; font-size:11.5px; color:var(--text-3);">
     資料來源：絆Kizuna 運營財務_資金管理.xlsx／運營實況分頁（月度損益）＋逐筆帳務紀錄＋應付款項明細
   </p>
@@ -601,20 +618,22 @@ function kzRenderSummary() {
   document.getElementById('kz-kpi-net').style.color = net >= 0 ? 'var(--green)' : 'var(--red)';
   document.getElementById('kz-kpi-margin').textContent = margin.toFixed(1) + '%';
   var kzOpCapexRows = kzCapexRows.filter(function(r) { return !kzIsOpeningCapex(r); });
-  var kzCapexBrief = '';
-  if (kzOpCapexRows.length) {
-    var kzCapexGrp = {};
-    kzOpCapexRows.forEach(function(r) {
-      var k = String(r.desc).split(/[：:，,、（(]/)[0].trim();
-      if (k.length > 14) k = k.slice(0, 13) + '…';
-      kzCapexGrp[k] = (kzCapexGrp[k] || 0) + r.actual;
-    });
-    kzCapexBrief = Object.keys(kzCapexGrp).sort(function(a, b) { return kzCapexGrp[b] - kzCapexGrp[a]; }).slice(0, 3).join('、');
-  }
   document.getElementById('kz-kpi-capex').innerHTML = kzMoney(capex) +
     '<span style="display:block; font-size:11.5px; color:var(--text-3); font-weight:400; margin-top:2px;">' +
-    (kzOpCapexRows.length ? '營運期 ' + kzOpCapexRows.length + ' 筆 · 主要：' + kzCapexBrief : '營運期無資本支出') +
-    (capexPre > 0 ? '<br>另有開業投資 ' + kzMoney(capexPre) + '（一次性）' : '') + '</span>';
+    (kzOpCapexRows.length ? '營運期 ' + kzOpCapexRows.length + ' 筆' : '營運期無資本支出') + '</span>';
+
+  var kzCapexSorted = kzOpCapexRows.slice().sort(function(a, b) { return b.actual - a.actual; });
+  document.getElementById('kz-capex-count').textContent = kzOpCapexRows.length;
+  document.getElementById('kz-capex-total').textContent = kzMoney(capex);
+  document.getElementById('kz-capex-tbody').innerHTML = kzCapexSorted.length
+    ? kzCapexSorted.map(function(r) {
+        return '<tr><td>' + r.desc + '</td><td style="white-space:nowrap; color:var(--text-2);">' + r.date + '</td>' +
+          '<td style="text-align:right;">' + r.actual.toLocaleString() + '</td></tr>';
+      }).join('')
+    : '<tr><td colspan="3" style="color:var(--text-3);">此範圍無營運期資本支出</td></tr>';
+  document.getElementById('kz-capex-tfoot').innerHTML = kzCapexSorted.length
+    ? '<tr><td colspan="2">合計（' + kzCapexSorted.length + ' 筆）</td><td style="text-align:right;">' + capex.toLocaleString() + '</td></tr>'
+    : '';
   document.getElementById('kz-rank-title').textContent = '費用項目排行（' + label + '累計）';
 
   var fc = kzSum('固定成本FC', months) || 0;
