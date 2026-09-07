@@ -478,11 +478,14 @@ function kzCurrentMonths() {
 function kzRenderTrend(months) {
   var el = document.getElementById('kz-trend');
   if (!el) return;
+  var kzNow = new Date();
+  var kzCurM = kzNow.getFullYear() === KZ_YEAR ? kzNow.getMonth() + 1 : 0;
   var rows = months.map(function(m) {
     var lm = KZ_MONTH_TO_LEDGER[m] || m;
     var prov = BUDGET.some(function(b) { return b.item.indexOf(lm) >= 0 && b.item.indexOf('即時估算') >= 0; });
     return {
       m: m, prov: prov,
+      partial: KZ_MONTH_NUM[m] === kzCurM,
       rev: KZ_MATRIX_MAP['實收'] ? KZ_MATRIX_MAP['實收'][m] : null,
       exp: KZ_MATRIX_MAP['實際支出'] ? KZ_MATRIX_MAP['實際支出'][m] : null,
       net: KZ_MATRIX_MAP['淨額(未稅)'] ? KZ_MATRIX_MAP['淨額(未稅)'][m] : null
@@ -531,7 +534,7 @@ function kzRenderTrend(months) {
   var expArr = rows.map(function(r) { return r.exp; });
   var netArr = rows.map(function(r) { return r.net; });
   var zeroY = y(0), x0 = x(0), xN = x(n - 1);
-  var UPC = 'var(--green)', DNC = 'var(--red)';
+  var UPC = 'var(--green)', DNC = 'var(--red)', NUC = 'var(--text-3)';   // NUC＝進行中月份的中性色（不套漲跌紅綠，避免誤讀為虧損）
 
   var firstProv = -1;
   for (var fp = 0; fp < rows.length; fp++) { if (rows[fp].prov) { firstProv = fp; break; } }
@@ -575,32 +578,35 @@ function kzRenderTrend(months) {
     rows.forEach(function(r, i) {
       var cx = x(i), cy = y(s.arr[i]);
       g += '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="2.4" fill="' + (r.prov ? 'var(--card)' : s.c) + '"' + (r.prov ? ' stroke="' + s.c + '" stroke-width="1.3"' : '') + '><title>' + r.m + '　' + s.label + '　' + kzMoney(s.arr[i]) + '</title></circle>';
-      if (i > 0) {
+      if (i > 0 && !r.partial) {
         var rise = s.arr[i] >= s.arr[i - 1];
         g += kzTri(cx, cy + (s.above ? -9 : 9), rise, 3, rise ? UPC : DNC);
       }
     });
   });
 
-  // 損益：直線，逐段依漲跌上色（綠↑ 紅↓）
+  // 損益：直線，逐段依漲跌上色（綠↑ 紅↓）；進行中月份用中性色
   for (var si = 0; si < n - 1; si++) {
-    var rising = netArr[si + 1] >= netArr[si];
-    g += '<path d="M ' + x(si).toFixed(1) + ' ' + y(netArr[si]).toFixed(1) + ' L ' + x(si + 1).toFixed(1) + ' ' + y(netArr[si + 1]).toFixed(1) + '" fill="none" stroke="' + (rising ? UPC : DNC) + '" stroke-width="3" stroke-linecap="round"' + (rows[si + 1].prov ? ' stroke-dasharray="1 5"' : '') + '/>';
+    var toR = rows[si + 1];
+    var segCol = toR.partial ? NUC : (netArr[si + 1] >= netArr[si] ? UPC : DNC);
+    g += '<path d="M ' + x(si).toFixed(1) + ' ' + y(netArr[si]).toFixed(1) + ' L ' + x(si + 1).toFixed(1) + ' ' + y(netArr[si + 1]).toFixed(1) + '" fill="none" stroke="' + segCol + '" stroke-width="3" stroke-linecap="round"' + (toR.prov ? ' stroke-dasharray="1 5"' : '') + '/>';
   }
   rows.forEach(function(r, i) {
     var last = i === n - 1, cx = x(i), cy = y(r.net);
     var dir = i > 0 ? (r.net >= rows[i - 1].net) : (r.net >= 0);
-    var dc = dir ? UPC : DNC;
+    var dc = r.partial ? NUC : (dir ? UPC : DNC);
     if (r.prov) {
-      g += '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + (last ? 4 : 3.4) + '" fill="var(--card)" stroke="' + dc + '" stroke-width="1.8"><title>' + r.m + '　損益 ' + kzMoney(r.net) + '</title></circle>';
+      g += '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + (last ? 4 : 3.4) + '" fill="var(--card)" stroke="' + dc + '" stroke-width="1.8"><title>' + r.m + '　損益 ' + kzMoney(r.net) + (r.partial ? '（進行中）' : '') + '</title></circle>';
     } else {
       if (last) g += '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="7" fill="' + dc + '" fill-opacity="0.16"/>';
       g += '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + (last ? 4.2 : 3.4) + '" fill="' + dc + '"' + (last ? ' stroke="var(--card)" stroke-width="1.4"' : '') + '><title>' + r.m + '　損益 ' + kzMoney(r.net) + '</title></circle>';
     }
-    // 每點標「較前月增減」（首月標當月值）
+    // 標籤：進行中月份 → 灰色括號值（不比較、不套紅綠）；首月 → 當月值；其餘 → 較前月增減
     var above = r.net >= (i > 0 ? rows[i - 1].net : 0);
     var ly = above ? cy - 13 : cy + 20;
-    if (i === 0) {
+    if (r.partial) {
+      g += '<text x="' + cx.toFixed(1) + '" y="' + ly.toFixed(1) + '" text-anchor="middle" font-size="10" font-weight="600" fill="' + NUC + '">(' + (r.net >= 0 ? '+' : '−') + kzShortMoney(Math.abs(r.net)) + ')</text>';
+    } else if (i === 0) {
       g += '<text x="' + cx.toFixed(1) + '" y="' + ly.toFixed(1) + '" text-anchor="middle" font-size="10" font-weight="700" fill="' + (r.net >= 0 ? UPC : DNC) + '">' + (r.net >= 0 ? '+' : '−') + kzShortMoney(Math.abs(r.net)) + '</text>';
     } else {
       var delta = r.net - rows[i - 1].net;
@@ -618,7 +624,8 @@ function kzRenderTrend(months) {
     + '<span><span style="display:inline-block; width:16px; height:0; border-top:1.7px solid var(--exp-4); margin-right:5px; vertical-align:3px;"></span>實際支出</span>'
     + '<span><span style="display:inline-block; width:16px; height:0; border-top:3px solid var(--green); margin-right:5px; vertical-align:3px;"></span>損益</span>'
     + '<span><span style="color:var(--green);">▲</span>／<span style="color:var(--red);">▼</span> 較前月增／減</span>'
-    + (anyProv ? '<span>虛線／空心 = 含估算</span>' : '') + '</div>';
+    + (anyProv ? '<span>虛線／空心 = 含估算</span>' : '')
+    + (rows.some(function(r) { return r.partial; }) ? '<span style="color:var(--text-3);">灰色 = 當月進行中（未滿月，不比較）</span>' : '') + '</div>';
 
   }
 
@@ -665,7 +672,9 @@ function kzRenderSummary() {
   var capexPre = kzCapexRows.filter(kzIsOpeningCapex).reduce(function(s, r) { return s + r.actual; }, 0);
   var capex = kzCapexRows.reduce(function(s, r) { return s + r.actual; }, 0) - capexPre;
 
-  document.getElementById('kz-range-note').textContent = '顯示範圍：' + label + (months.indexOf('八月') !== -1 ? '（8月資料未滿月）' : '');
+  var kzNowS = new Date();
+  var kzCurName = kzNowS.getFullYear() === KZ_YEAR ? Object.keys(KZ_MONTH_NUM).filter(function(k) { return KZ_MONTH_NUM[k] === kzNowS.getMonth() + 1; })[0] : null;
+  document.getElementById('kz-range-note').textContent = '顯示範圍：' + label + (kzCurName && months.indexOf(kzCurName) !== -1 ? '（' + kzCurName + '資料未滿月）' : '');
   document.getElementById('kz-kpi-revenue').textContent = kzMoney(revenue);
   document.getElementById('kz-kpi-expense').textContent = kzMoney(expense);
   document.getElementById('kz-kpi-net').textContent = kzMoney(net);
