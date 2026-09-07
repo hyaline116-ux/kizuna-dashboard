@@ -536,89 +536,107 @@ function kzRenderTrend(months) {
   var all = [];
   rows.forEach(function(r) { all.push(r.rev, r.exp, r.net); });
   var hi = Math.max.apply(null, all.concat([0])), lo = Math.min.apply(null, all.concat([0]));
-  var padHi = (hi - lo) * 0.08, padLo = (hi - lo) * 0.12;
+  var padHi = (hi - lo) * 0.10, padLo = (hi - lo) * 0.12;
   var top = hi + padHi, bot = lo - padLo;
 
-  // 直式拉高、橫向壓窄 → 斜率更明顯（月份少時起伏才看得出來）
-  var W = 600, H = 284, PL = 46, PR = 18, PT = 22, PB = 30;
+  // 直式拉高、橫向壓窄 → 斜率更明顯（重點：一眼看出漲跌）
+  var W = 600, H = 288, PL = 46, PR = 20, PT = 30, PB = 30;
   function y(v) { return PT + (H - PT - PB) * (1 - (v - bot) / (top - bot)); }
   function x(i) { return PL + (W - PL - PR) * (n > 1 ? i / (n - 1) : 0.5); }
   function fmtW(v) { return (v / 10000).toFixed(0) + '萬'; }
+  function lineD(arr) { return kzLinePath(arr.map(function(v, i) { return [x(i), y(v)]; })); }
 
   var revArr = rows.map(function(r) { return r.rev; });
   var expArr = rows.map(function(r) { return r.exp; });
   var netArr = rows.map(function(r) { return r.net; });
-  function pts2(arr) { return arr.map(function(v, i) { return [x(i), y(v)]; }); }
-  var revD = kzLinePath(pts2(revArr)), expD = kzLinePath(pts2(expArr)), netD = kzLinePath(pts2(netArr));
   var zeroY = y(0), x0 = x(0), xN = x(n - 1);
+  var UPC = 'var(--green)', DNC = 'var(--red)';
 
   var firstProv = -1;
   for (var fp = 0; fp < rows.length; fp++) { if (rows[fp].prov) { firstProv = fp; break; } }
   var anyProv = firstProv !== -1;
   var provX = (anyProv && firstProv > 0) ? x(firstProv) : (firstProv === 0 ? PL : (W - PR));
 
+  function kzTri(cx, cy, up, s, color) {
+    return up
+      ? '<path d="M ' + cx.toFixed(1) + ' ' + (cy - s).toFixed(1) + ' L ' + (cx - s).toFixed(1) + ' ' + (cy + s * 0.8).toFixed(1) + ' L ' + (cx + s).toFixed(1) + ' ' + (cy + s * 0.8).toFixed(1) + ' Z" fill="' + color + '"/>'
+      : '<path d="M ' + cx.toFixed(1) + ' ' + (cy + s).toFixed(1) + ' L ' + (cx - s).toFixed(1) + ' ' + (cy - s * 0.8).toFixed(1) + ' L ' + (cx + s).toFixed(1) + ' ' + (cy - s * 0.8).toFixed(1) + ' Z" fill="' + color + '"/>';
+  }
+
   var g = '';
-  g += '<defs>'
-    + '<linearGradient id="kzTrNet" x1="0" y1="0" x2="0" y2="1">'
-    +   '<stop offset="0" stop-color="var(--green)" stop-opacity="0.30"/>'
-    +   '<stop offset="0.9" stop-color="var(--green)" stop-opacity="0"/></linearGradient>'
-    + '<clipPath id="kzTrPos"><rect x="' + PL + '" y="' + (PT - 4).toFixed(1) + '" width="' + (W - PR - PL).toFixed(1) + '" height="' + Math.max(0, zeroY - PT + 4).toFixed(1) + '"/></clipPath>'
-    + '<clipPath id="kzTrNeg"><rect x="' + PL + '" y="' + zeroY.toFixed(1) + '" width="' + (W - PR - PL).toFixed(1) + '" height="' + Math.max(0, H - PB - zeroY).toFixed(1) + '"/></clipPath>'
+  g += '<defs><linearGradient id="kzTrNet" x1="0" y1="0" x2="0" y2="1">'
+    +   '<stop offset="0" stop-color="var(--green)" stop-opacity="0.16"/>'
+    +   '<stop offset="0.92" stop-color="var(--green)" stop-opacity="0"/></linearGradient>'
     + '<clipPath id="kzTrSolid"><rect x="0" y="0" width="' + provX.toFixed(1) + '" height="' + H + '"/></clipPath>'
     + '<clipPath id="kzTrDash"><rect x="' + provX.toFixed(1) + '" y="0" width="' + Math.max(0, W - provX).toFixed(1) + '" height="' + H + '"/></clipPath>'
     + '</defs>';
 
-  // 格線：非零虛線、零線實線
+  // 格線：非零虛線、零線加重
   var span = top - bot, step = span <= 1500000 ? 500000 : 1000000;
   for (var gv = Math.ceil(bot / step) * step; gv <= top + 1; gv += step) {
     var zero = Math.abs(gv) < 1;
-    g += '<line x1="' + PL + '" y1="' + y(gv).toFixed(1) + '" x2="' + (W - PR) + '" y2="' + y(gv).toFixed(1) + '" stroke="' + (zero ? 'var(--text-3)' : 'var(--line)') + '" stroke-width="' + (zero ? 1.2 : 1) + '"' + (zero ? '' : ' stroke-dasharray="2 5"') + ' opacity="' + (zero ? 0.85 : 0.75) + '"/>'
+    g += '<line x1="' + PL + '" y1="' + y(gv).toFixed(1) + '" x2="' + (W - PR) + '" y2="' + y(gv).toFixed(1) + '" stroke="' + (zero ? 'var(--text-3)' : 'var(--line)') + '" stroke-width="' + (zero ? 1.2 : 1) + '"' + (zero ? '' : ' stroke-dasharray="2 5"') + ' opacity="' + (zero ? 0.85 : 0.7) + '"/>'
        + '<text x="' + (PL - 7) + '" y="' + (y(gv) + 3).toFixed(1) + '" text-anchor="end" font-size="9.5" fill="var(--text-3)">' + fmtW(gv) + '</text>';
   }
 
-  // 損益面積：正區綠漸層、負區紅
-  var netArea = netD + ' L ' + xN.toFixed(1) + ' ' + zeroY.toFixed(1) + ' L ' + x0.toFixed(1) + ' ' + zeroY.toFixed(1) + ' Z';
-  g += '<path d="' + netArea + '" fill="url(#kzTrNet)" clip-path="url(#kzTrPos)"/>';
-  g += '<path d="' + netArea + '" fill="var(--red)" fill-opacity="0.12" clip-path="url(#kzTrNeg)"/>';
+  // 損益淡底（讓地板不空）
+  g += '<path d="' + lineD(netArr) + ' L ' + xN.toFixed(1) + ' ' + zeroY.toFixed(1) + ' L ' + x0.toFixed(1) + ' ' + zeroY.toFixed(1) + ' Z" fill="url(#kzTrNet)"/>';
 
-  var series = [
-    { d: revD, arr: revArr, color: 'var(--rev-1)', w: 1.8, label: '實收' },
-    { d: expD, arr: expArr, color: 'var(--exp-4)', w: 1.8, label: '實際支出' },
-    { d: netD, arr: netArr, color: 'var(--green)', w: 2.6, label: '損益', accent: true }
-  ];
-  series.forEach(function(s) {
-    if (s.accent) g += '<path d="' + s.d + '" fill="none" stroke="' + s.color + '" stroke-width="' + (s.w + 3.5).toFixed(1) + '" stroke-opacity="0.13" stroke-linecap="round" stroke-linejoin="round"/>';
+  // 實收 / 實際支出：直線參考線 ＋ 每點漲跌小三角
+  [{ arr: revArr, c: 'var(--rev-1)', label: '實收', above: true }, { arr: expArr, c: 'var(--exp-4)', label: '實際支出', above: false }].forEach(function(s) {
+    var d = lineD(s.arr);
     if (anyProv && firstProv > 0) {
-      g += '<path d="' + s.d + '" fill="none" stroke="' + s.color + '" stroke-width="' + s.w + '" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#kzTrSolid)"/>';
-      g += '<path d="' + s.d + '" fill="none" stroke="' + s.color + '" stroke-width="' + s.w + '" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1 5" clip-path="url(#kzTrDash)"/>';
+      g += '<path d="' + d + '" fill="none" stroke="' + s.c + '" stroke-width="1.7" stroke-linejoin="round" clip-path="url(#kzTrSolid)"/>';
+      g += '<path d="' + d + '" fill="none" stroke="' + s.c + '" stroke-width="1.7" stroke-linejoin="round" stroke-dasharray="1 5" clip-path="url(#kzTrDash)"/>';
     } else {
-      g += '<path d="' + s.d + '" fill="none" stroke="' + s.color + '" stroke-width="' + s.w + '" stroke-linecap="round" stroke-linejoin="round"' + (firstProv === 0 ? ' stroke-dasharray="1 5"' : '') + '/>';
+      g += '<path d="' + d + '" fill="none" stroke="' + s.c + '" stroke-width="1.7" stroke-linejoin="round"' + (firstProv === 0 ? ' stroke-dasharray="1 5"' : '') + '/>';
     }
-  });
-
-  series.forEach(function(s) {
     rows.forEach(function(r, i) {
-      var last = i === n - 1, cx = x(i), cy = y(s.arr[i]);
-      var rad = s.accent ? (last ? 4 : 3.2) : (last ? 3 : 2.3);
-      if (r.prov) {
-        g += '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + rad + '" fill="var(--card)" stroke="' + s.color + '" stroke-width="1.5"><title>' + r.m + '　' + s.label + '　' + kzMoney(s.arr[i]) + '</title></circle>';
-      } else {
-        if (last) g += '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + (rad + 2.6).toFixed(1) + '" fill="' + s.color + '" fill-opacity="0.15"/>';
-        g += '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + rad + '" fill="' + s.color + '"' + (last ? ' stroke="var(--card)" stroke-width="1.4"' : '') + '><title>' + r.m + '　' + s.label + '　' + kzMoney(s.arr[i]) + '</title></circle>';
-      }
-      if (s.accent) {
-        var v = r.net, ny = v >= 0 ? cy - 11 : cy + 17;
-        g += '<text x="' + cx.toFixed(1) + '" y="' + ny.toFixed(1) + '" text-anchor="middle" font-size="9.5" font-weight="600" fill="' + (v >= 0 ? 'var(--green)' : 'var(--red)') + '">' + (v >= 0 ? '+' : '−') + kzShortMoney(Math.abs(v)) + '</text>';
+      var cx = x(i), cy = y(s.arr[i]);
+      g += '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="2.4" fill="' + (r.prov ? 'var(--card)' : s.c) + '"' + (r.prov ? ' stroke="' + s.c + '" stroke-width="1.3"' : '') + '><title>' + r.m + '　' + s.label + '　' + kzMoney(s.arr[i]) + '</title></circle>';
+      if (i > 0) {
+        var rise = s.arr[i] >= s.arr[i - 1];
+        g += kzTri(cx, cy + (s.above ? -9 : 9), rise, 3, rise ? UPC : DNC);
       }
     });
   });
+
+  // 損益：直線，逐段依漲跌上色（綠↑ 紅↓）
+  for (var si = 0; si < n - 1; si++) {
+    var rising = netArr[si + 1] >= netArr[si];
+    g += '<path d="M ' + x(si).toFixed(1) + ' ' + y(netArr[si]).toFixed(1) + ' L ' + x(si + 1).toFixed(1) + ' ' + y(netArr[si + 1]).toFixed(1) + '" fill="none" stroke="' + (rising ? UPC : DNC) + '" stroke-width="3" stroke-linecap="round"' + (rows[si + 1].prov ? ' stroke-dasharray="1 5"' : '') + '/>';
+  }
+  rows.forEach(function(r, i) {
+    var last = i === n - 1, cx = x(i), cy = y(r.net);
+    var dir = i > 0 ? (r.net >= rows[i - 1].net) : (r.net >= 0);
+    var dc = dir ? UPC : DNC;
+    if (r.prov) {
+      g += '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + (last ? 4 : 3.4) + '" fill="var(--card)" stroke="' + dc + '" stroke-width="1.8"><title>' + r.m + '　損益 ' + kzMoney(r.net) + '</title></circle>';
+    } else {
+      if (last) g += '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="7" fill="' + dc + '" fill-opacity="0.16"/>';
+      g += '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + (last ? 4.2 : 3.4) + '" fill="' + dc + '"' + (last ? ' stroke="var(--card)" stroke-width="1.4"' : '') + '><title>' + r.m + '　損益 ' + kzMoney(r.net) + '</title></circle>';
+    }
+    // 每點標「較前月增減」（首月標當月值）
+    var above = r.net >= (i > 0 ? rows[i - 1].net : 0);
+    var ly = above ? cy - 13 : cy + 20;
+    if (i === 0) {
+      g += '<text x="' + cx.toFixed(1) + '" y="' + ly.toFixed(1) + '" text-anchor="middle" font-size="10" font-weight="700" fill="' + (r.net >= 0 ? UPC : DNC) + '">' + (r.net >= 0 ? '+' : '−') + kzShortMoney(Math.abs(r.net)) + '</text>';
+    } else {
+      var delta = r.net - rows[i - 1].net;
+      g += '<text x="' + cx.toFixed(1) + '" y="' + ly.toFixed(1) + '" text-anchor="middle" font-size="10.5" font-weight="700" fill="' + (delta >= 0 ? UPC : DNC) + '">' + (delta >= 0 ? '▲' : '▼') + kzShortMoney(Math.abs(delta)) + '</text>';
+    }
+  });
+
   rows.forEach(function(r, i) {
     g += '<text x="' + x(i).toFixed(1) + '" y="' + (H - PB + 17) + '" text-anchor="middle" font-size="10" fill="var(--text-3)">' + r.m + '</text>';
   });
 
-  el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%; min-width:' + Math.max(360, n * 74) + 'px; height:auto;">' + g + '</svg>'
-    + '<div style="display:flex; gap:16px; flex-wrap:wrap; margin-top:10px; font-size:10.5px; color:var(--text-3);">'
-    + series.map(function(s) { return '<span><span style="display:inline-block; width:16px; height:0; border-top:' + (s.accent ? 2.6 : 1.8) + 'px solid ' + s.color + '; margin-right:6px; vertical-align:3px;"></span>' + s.label + '</span>'; }).join('')
+  el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%; min-width:' + Math.max(360, n * 78) + 'px; height:auto;">' + g + '</svg>'
+    + '<div style="display:flex; gap:13px; flex-wrap:wrap; margin-top:10px; font-size:10.5px; color:var(--text-3);">'
+    + '<span><span style="display:inline-block; width:16px; height:0; border-top:1.7px solid var(--rev-1); margin-right:5px; vertical-align:3px;"></span>實收</span>'
+    + '<span><span style="display:inline-block; width:16px; height:0; border-top:1.7px solid var(--exp-4); margin-right:5px; vertical-align:3px;"></span>實際支出</span>'
+    + '<span><span style="display:inline-block; width:16px; height:0; border-top:3px solid var(--green); margin-right:5px; vertical-align:3px;"></span>損益</span>'
+    + '<span><span style="color:var(--green);">▲</span>／<span style="color:var(--red);">▼</span> 較前月增／減</span>'
     + (anyProv ? '<span>虛線／空心 = 含估算</span>' : '') + '</div>';
 
   }
