@@ -600,10 +600,20 @@ function kzRenderSummary() {
   document.getElementById('kz-kpi-net').textContent = kzMoney(net);
   document.getElementById('kz-kpi-net').style.color = net >= 0 ? 'var(--green)' : 'var(--red)';
   document.getElementById('kz-kpi-margin').textContent = margin.toFixed(1) + '%';
-  var kzCapexSrc = capex <= 0 ? '' : (net > 0 && capex <= net ? '自本期損益投入' : '逾損益，另籌資金');
+  var kzOpCapexRows = kzCapexRows.filter(function(r) { return !kzIsOpeningCapex(r); });
+  var kzCapexBrief = '';
+  if (kzOpCapexRows.length) {
+    var kzCapexGrp = {};
+    kzOpCapexRows.forEach(function(r) {
+      var k = String(r.desc).split(/[：:，,、（(]/)[0].trim();
+      if (k.length > 14) k = k.slice(0, 13) + '…';
+      kzCapexGrp[k] = (kzCapexGrp[k] || 0) + r.actual;
+    });
+    kzCapexBrief = Object.keys(kzCapexGrp).sort(function(a, b) { return kzCapexGrp[b] - kzCapexGrp[a]; }).slice(0, 3).join('、');
+  }
   document.getElementById('kz-kpi-capex').innerHTML = kzMoney(capex) +
     '<span style="display:block; font-size:11.5px; color:var(--text-3); font-weight:400; margin-top:2px;">' +
-    (revenue ? '營運期 · 占實收 ' + (capex / revenue * 100).toFixed(1) + '%' + (kzCapexSrc ? '，' + kzCapexSrc : '') : '營運期資本支出') +
+    (kzOpCapexRows.length ? '營運期 ' + kzOpCapexRows.length + ' 筆 · 主要：' + kzCapexBrief : '營運期無資本支出') +
     (capexPre > 0 ? '<br>另有開業投資 ' + kzMoney(capexPre) + '（一次性）' : '') + '</span>';
   document.getElementById('kz-rank-title').textContent = '費用項目排行（' + label + '累計）';
 
