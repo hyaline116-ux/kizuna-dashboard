@@ -777,10 +777,10 @@ function kzRenderSummary() {
       '營運期資本支出 ' + kzMoney(capex) + (kzGain > 0 ? '　·　約 ' + kzMoney(Math.min(capex, kzGain)) + ' 可由本期損益支應' : '')) : '';
     kzRangeSummaryEl.style.display = '';
     kzRangeSummaryEl.innerHTML =
-      '<p style="margin:0 0 8px; font-size:11px; color:var(--text-3); line-height:1.6;">本期損益概覽 · 上條＝實際收入 100% 的分配（變動＋固定＝支出，綠＝損益）'
+      '<p style="margin:0 0 8px; font-size:11px; color:var(--text-3); line-height:1.6;">本期損益概覽 · 上條＝實際收入的來源，中條＝同一筆收入的去向（變動＋固定＝支出，綠＝留存損益），兩條同額'
       + (capex > 0 ? '；資本支出條與實際收入同比例尺（屬資本投入，不進損益）' : '') + '</p>' +
-      compRow('實際收入', kzRev, chanInner, kzShortMoney(kzRev)) +
-      compRow('支出去向', kzExpBar, expInner, kzShortMoney(kzExpBar)) +
+      compRow('收入來源', kzRev, chanInner, kzShortMoney(kzRev)) +
+      compRow('收入去向', kzExpBar, expInner, kzShortMoney(kzExpBar)) +
       capexRow +
       '<div style="display:grid; grid-template-columns:60px 1fr auto; align-items:center; gap:8px; padding-top:4px; border-top:1px solid var(--line);">' +
       '<span style="font-size:11px; color:var(--text-2);">損益</span><span></span>' +
