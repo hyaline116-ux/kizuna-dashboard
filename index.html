@@ -352,10 +352,23 @@ function kzRender() {
   document.getElementById('kz-tbody').innerHTML = html;
   document.getElementById('kz-count').textContent = rows.length;
   var total = rows.reduce(function(s, r) { return s + r.actual; }, 0);
+  // 逐筆合計含一次性「開業建置」與資本支出，與損益無關 → 拆解讓數字不被誤讀成當期費用
+  var kzLedOp = rows.reduce(function(s, r) { var k = kzCatKey(r); return s + (k === 'FC' || k === 'VC' ? r.actual : 0); }, 0);
+  var kzLedCapOpen = rows.reduce(function(s, r) { return s + (r.cat === '資本支出' && kzIsOpeningCapex(r) ? r.actual : 0); }, 0);
+  var kzLedCapOper = rows.reduce(function(s, r) { return s + (r.cat === '資本支出' && !kzIsOpeningCapex(r) ? r.actual : 0); }, 0);
+  var kzLedOther = Math.round(total - kzLedOp - kzLedCapOpen - kzLedCapOper);
+  var kzBreak = (kzLedCapOpen + kzLedCapOper + kzLedOther !== 0)
+    ? '<tr><td colspan="5" style="border-bottom:none; padding-top:2px; font-weight:400; font-size:11px; color:var(--text-3); white-space:normal;">'
+      + '其中　營運費用（進損益）' + Math.round(kzLedOp).toLocaleString()
+      + (kzLedCapOpen > 0 ? '　·　開業建置（一次性，不進損益）' + Math.round(kzLedCapOpen).toLocaleString() : '')
+      + (kzLedCapOper > 0 ? '　·　營運期資本支出 ' + Math.round(kzLedCapOper).toLocaleString() : '')
+      + (kzLedOther !== 0 ? '　·　其他（訂金退還等）' + kzLedOther.toLocaleString() : '')
+      + '</td></tr>'
+    : '';
   document.getElementById('kz-tfoot').innerHTML =
     '<tr><td colspan="3">合計（' + rows.length + ' 筆）</td>' +
     '<td style="text-align:right;">' + Math.round(total).toLocaleString() + '</td>' +
-    '<td></td></tr>';
+    '<td></td></tr>' + kzBreak;
 }
 document.getElementById('kz-search').addEventListener('input', kzRender);
 document.getElementById('kz-cat').addEventListener('change', kzRender);
@@ -763,10 +776,11 @@ function kzRenderSummary() {
     var kzPctRev = function(v) { return kzRev ? (v / kzRev * 100) : 0; };
     var kzDenom = kzExpBar || 1;
     // 去向條 = 純營運：變動 + 固定 + 損益，恆等於實收
+    // 去向三段全部有標籤，用 1 位小數讓三者精確加總為 100.0%（避免 51+37+13=101 的整數進位錯覺）
     var expInner =
-      kzSeg(vc / kzDenom * 100, 'var(--vc)', '變動 ' + kzPctRev(vc).toFixed(0) + '%', '變動成本 ' + kzMoney(vc) + '（占實收 ' + kzPctRev(vc).toFixed(1) + '%）') +
-      kzSeg(fc / kzDenom * 100, 'var(--fc)', '固定 ' + kzPctRev(fc).toFixed(0) + '%', '固定成本 ' + kzMoney(fc) + '（占實收 ' + kzPctRev(fc).toFixed(1) + '%）') +
-      (kzGain > 0 ? kzSeg(kzGain / kzDenom * 100, 'var(--green)', '損益 ' + margin.toFixed(0) + '%',
+      kzSeg(vc / kzDenom * 100, 'var(--vc)', '變動 ' + kzPctRev(vc).toFixed(1) + '%', '變動成本 ' + kzMoney(vc) + '（占實收 ' + kzPctRev(vc).toFixed(1) + '%）') +
+      kzSeg(fc / kzDenom * 100, 'var(--fc)', '固定 ' + kzPctRev(fc).toFixed(1) + '%', '固定成本 ' + kzMoney(fc) + '（占實收 ' + kzPctRev(fc).toFixed(1) + '%）') +
+      (kzGain > 0 ? kzSeg(kzGain / kzDenom * 100, 'var(--green)', '損益 ' + margin.toFixed(1) + '%',
         '損益 ' + kzMoney(kzGain) + '（占實收 ' + margin.toFixed(1) + '%）', true) : '');
     // 資本支出（營運期）另一條，同實收比例尺，單色。開業建置一次性投入見上方「回本追蹤」，此處不重複
     function kzCapexRow(name, val, color, tip) {
