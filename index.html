@@ -900,7 +900,9 @@ function kzRenderKline() {
   var anyProv = rows.some(function(r) { return r.prov; });
   var kzComplete = rows.filter(function(r) { return !r.partial; });
   var kzLastC = kzComplete[kzComplete.length - 1] || rows[rows.length - 1];
-  // 營所稅（年度累計預留）＝ MAX(0, 累計課稅所得) × 20%；課稅所得＝累計「淨額扣營業稅」
+  // 營所稅（年度累計預留）＝ MAX(0, 累計課稅所得) × 20%；課稅所得＝累計（未稅營業額 − 支出）
+  //   ＝ 累計（淨額未稅 − 銷項稅），此處「減銷項稅」是把含稅營業額換算為未稅，非把營業稅當費用扣。
+  //   支出未還原為未稅（進項稅額未拆出）→ 此線為保守下限；營業稅列若調降，基數自動回補。
   var kzBaseCum = kzComplete.reduce(function(s, r) { return s + r.net; }, 0);
   var kzITcum = Math.max(0, kzBaseCum) * KZ_IT_RATE;
   var kzIT3 = kzComplete.filter(function(r) { return r.net > 0; }).slice(-3);   // 近 3 個獲利月
@@ -1003,7 +1005,7 @@ function kzRenderKline() {
       '<div style="height:14px; border-radius:5px; background:var(--card-2); overflow:hidden; margin:6px 0 5px;">' +
         '<div style="height:100%; width:' + Math.max(0, Math.min(100, trPct)).toFixed(1) + '%; background:var(--gold);"></div>' +
       '</div>' +
-      '<p style="margin:0; font-size:11px; color:var(--text-3);"><span style="color:var(--text);">已提列 ' + kzMoney(kzITcum) + '</span>（＝累計損益扣營業稅 ×20%，已列入應付款預算）　／ 全年推估 ' + kzMoney(kzITfull) + '</p>';
+      '<p style="margin:0; font-size:11px; color:var(--text-3);"><span style="color:var(--text);">已提列 ' + kzMoney(kzITcum) + '</span>（課稅所得＝未稅營業額−營運支出，本年累計 ×20%；與營業稅為兩項獨立稅目，已列入應付款預算）　／ 全年推估 ' + kzMoney(kzITfull) + '</p>';
   }
 
   kzRenderPayback(kzLastC.cum, anyProv);
