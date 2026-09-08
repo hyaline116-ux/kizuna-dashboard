@@ -778,14 +778,12 @@ function kzRenderSummary() {
       return kzSeg(pct, x.color, x.label.replace('收入', '').replace('月結', '') + ' ' + pct.toFixed(0) + '%', x.label + ' ' + kzMoney(x.value) + '（占實收 ' + pct.toFixed(1) + '%）');
     }).join('');
     var kzPctRev = function(v) { return kzRev ? (v / kzRev * 100) : 0; };
-    var kzDenom = kzExpBar || 1;
-    // 去向條 = 純營運：變動 + 固定 + 損益，恆等於實收
-    // 去向三段全部有標籤，用 1 位小數讓三者精確加總為 100.0%（避免 51+37+13=101 的整數進位錯覺）
+    var kzFcvc = fcvc || 1;
+    // 去向條長度＝實際支出（變動＋固定），與收入條同比例尺 → 兩條右端差＝損益（不畫綠段，用長度差表示）
+    // 段內比例＝該成本 ÷ 實際支出（填滿此條）；標籤數字＝占實收 %（1 位小數，兩者相加＝支出占實收比）
     var expInner =
-      kzSeg(vc / kzDenom * 100, 'var(--vc)', '變動 ' + kzPctRev(vc).toFixed(1) + '%', '變動成本 ' + kzMoney(vc) + '（占實收 ' + kzPctRev(vc).toFixed(1) + '%）') +
-      kzSeg(fc / kzDenom * 100, 'var(--fc)', '固定 ' + kzPctRev(fc).toFixed(1) + '%', '固定成本 ' + kzMoney(fc) + '（占實收 ' + kzPctRev(fc).toFixed(1) + '%）') +
-      (kzGain > 0 ? kzSeg(kzGain / kzDenom * 100, 'var(--green)', '損益 ' + margin.toFixed(1) + '%',
-        '損益 ' + kzMoney(kzGain) + '（占實收 ' + margin.toFixed(1) + '%）', true) : '');
+      kzSeg(vc / kzFcvc * 100, 'var(--vc)', '變動 ' + kzPctRev(vc).toFixed(1) + '%', '變動成本 ' + kzMoney(vc) + '（占實收 ' + kzPctRev(vc).toFixed(1) + '%）') +
+      kzSeg(fc / kzFcvc * 100, 'var(--fc)', '固定 ' + kzPctRev(fc).toFixed(1) + '%', '固定成本 ' + kzMoney(fc) + '（占實收 ' + kzPctRev(fc).toFixed(1) + '%）');
     // 資本支出（營運期）另一條，同實收比例尺，單色。開業建置一次性投入見上方「回本追蹤」，此處不重複
     function kzCapexRow(name, val, color, tip) {
       var p = kzPctRev(val);
@@ -795,10 +793,10 @@ function kzRenderSummary() {
       '營運期資本支出 ' + kzMoney(capex) + (kzGain > 0 ? '　·　約 ' + kzMoney(Math.min(capex, kzGain)) + ' 可由本期損益支應' : '')) : '';
     kzRangeSummaryEl.style.display = '';
     kzRangeSummaryEl.innerHTML =
-      '<p style="margin:0 0 8px; font-size:11px; color:var(--text-3); line-height:1.6;">本期損益概覽 · 上條＝實際收入 100% 的分配（變動＋固定＝支出，綠＝損益）；右側數字：上條為實收、中條為實際支出'
-      + (capex > 0 ? '；資本支出條與實際收入同比例尺（屬資本投入，不進損益）' : '') + '</p>' +
+      '<p style="margin:0 0 8px; font-size:11px; color:var(--text-3); line-height:1.6;">本期損益概覽 · 三條同比例尺：上＝實際收入（來源）、中＝支出（變動＋固定），兩條右端長度差＝損益'
+      + (capex > 0 ? '；下＝營運期資本支出（屬資本投入，不進損益）' : '') + '</p>' +
       compRow('實際收入', kzRev, chanInner, kzShortMoney(kzRev)) +
-      compRow('支出去向', kzExpBar, expInner, kzShortMoney(fcvc)) +
+      compRow('支出去向', fcvc, expInner, kzShortMoney(fcvc)) +
       capexRow +
       '<div style="display:grid; grid-template-columns:60px 1fr auto; align-items:center; gap:8px; padding-top:4px; border-top:1px solid var(--line);">' +
       '<span style="font-size:11px; color:var(--text-2);">損益</span><span></span>' +
