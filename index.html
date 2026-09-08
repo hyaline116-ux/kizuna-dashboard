@@ -36,6 +36,7 @@
     --cap:#7d7466;
     --teal:#5c7a8a; --purple:#8a7aa8;
     --green:#7d9a4e; --red:#b6503f;
+    --up:#7cc24e; --dn:#e86b4c;
     --kl-candle:#cdbfa8; --kl-accent:#3fb8a6;
     --rev-1:#3f6f95; --rev-2:#5c93a0; --rev-3:#7a6fa0; --rev-4:#6fa3ad; --rev-5:#8aa8c4;
     --exp-1:#b6503f; --exp-2:#c98a3f; --exp-3:#8a4a3f; --exp-4:#8a6a4a; --exp-5:#a68b52; --exp-6:#a3705f; --exp-7:#6b6258;
@@ -64,6 +65,7 @@
     --gold:#a67b1c; --fc:#a67b1c; --fc-3:#9a7b3c;
     --vc:#af4f3a; --red:#af4f3a; --exp-1:#af4f3a;
     --green:#5e7c3b;
+    --up:#3a8a24; --dn:#cf3a1c;
     --cap:#8a8172;
     --kl-candle:#8a7a5a; --kl-accent:#2a796d;
     color-scheme: light;
@@ -537,7 +539,7 @@ function kzRenderTrend(months) {
   var expArr = rows.map(function(r) { return r.exp; });
   var netArr = rows.map(function(r) { return r.net; });
   var zeroY = y(0), x0 = x(0), xN = x(n - 1);
-  var UPC = 'var(--green)', DNC = 'var(--red)', NUC = 'var(--text-3)';   // NUC＝進行中月份的中性色（不套漲跌紅綠，避免誤讀為虧損）
+  var UPC = 'var(--up)', DNC = 'var(--dn)', NUC = 'var(--text-3)';   // 漲跌用高彩度 --up/--dn；NUC＝進行中月份的中性色（不套漲跌紅綠，避免誤讀為虧損）
 
   var firstProv = -1;
   for (var fp = 0; fp < rows.length; fp++) { if (rows[fp].prov) { firstProv = fp; break; } }
@@ -607,16 +609,19 @@ function kzRenderTrend(months) {
       g += '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + (last ? 4.2 : 3.4) + '" fill="' + dc + '"' + (last ? ' stroke="var(--card)" stroke-width="1.4"' : '') + '><title>' + r.m + '　損益 ' + kzMoney(r.net) + '</title></circle>';
     }
     // 標籤：一律顯示當月損益總額；首月無比較，其餘加 ▲▼ 標示較前月升降（顏色＝升降方向）；進行中月份灰色括號
+    // 端點錨定內縮，避免首月壓到 Y 軸級距、末月出血
     var above = r.net >= (i > 0 ? rows[i - 1].net : 0);
     var ly = above ? cy - 13 : cy + 20;
+    var lblAnc = i === 0 ? 'start' : (last ? 'end' : 'middle');
+    var lblX = i === 0 ? cx + 5 : (last ? cx - 5 : cx);
     var netTxt = (r.net >= 0 ? '+' : '−') + kzShortMoney(Math.abs(r.net));
     if (r.partial) {
-      g += '<text x="' + cx.toFixed(1) + '" y="' + ly.toFixed(1) + '" text-anchor="middle" font-size="10" font-weight="600" fill="' + NUC + '">(' + netTxt + ')</text>';
+      g += '<text x="' + lblX.toFixed(1) + '" y="' + ly.toFixed(1) + '" text-anchor="' + lblAnc + '" font-size="10" font-weight="600" fill="' + NUC + '">(' + netTxt + ')</text>';
     } else if (i === 0) {
-      g += '<text x="' + cx.toFixed(1) + '" y="' + ly.toFixed(1) + '" text-anchor="middle" font-size="10.5" font-weight="700" fill="' + (r.net >= 0 ? UPC : DNC) + '">' + netTxt + '</text>';
+      g += '<text x="' + lblX.toFixed(1) + '" y="' + ly.toFixed(1) + '" text-anchor="' + lblAnc + '" font-size="10.5" font-weight="700" fill="' + (r.net >= 0 ? UPC : DNC) + '">' + netTxt + '</text>';
     } else {
       var rose = r.net >= rows[i - 1].net;
-      g += '<text x="' + cx.toFixed(1) + '" y="' + ly.toFixed(1) + '" text-anchor="middle" font-size="10.5" font-weight="700" fill="' + (rose ? UPC : DNC) + '">' + netTxt + ' ' + (rose ? '▲' : '▼') + '</text>';
+      g += '<text x="' + lblX.toFixed(1) + '" y="' + ly.toFixed(1) + '" text-anchor="' + lblAnc + '" font-size="10.5" font-weight="700" fill="' + (rose ? UPC : DNC) + '">' + netTxt + ' ' + (rose ? '▲' : '▼') + '</text>';
     }
   });
 
@@ -629,7 +634,7 @@ function kzRenderTrend(months) {
     + '<span><span style="display:inline-block; width:16px; height:0; border-top:1.7px solid var(--rev-1); margin-right:5px; vertical-align:3px;"></span>實收</span>'
     + '<span><span style="display:inline-block; width:16px; height:0; border-top:1.7px solid var(--exp-4); margin-right:5px; vertical-align:3px;"></span>實際支出</span>'
     + '<span><span style="display:inline-block; width:16px; height:0; border-top:3px solid var(--green); margin-right:5px; vertical-align:3px;"></span>損益</span>'
-    + '<span>損益數字＝當月總額　<span style="color:var(--green);">▲</span>升／<span style="color:var(--red);">▼</span>降（較前月）</span>'
+    + '<span>損益數字＝當月總額　<span style="color:var(--up); font-weight:700;">▲</span>升／<span style="color:var(--dn); font-weight:700;">▼</span>降（較前月）</span>'
     + (anyProv ? '<span>虛線／空心 = 含估算</span>' : '')
     + (rows.some(function(r) { return r.partial; }) ? '<span style="color:var(--text-3);">灰色 = 當月進行中（未滿月，不比較）</span>' : '') + '</div>';
 
@@ -985,7 +990,7 @@ function kzRenderKline() {
     var lblX = last ? x(i) - 6 : (i === 0 ? x(i) - 4 : x(i));
     g += '<text x="' + lblX.toFixed(1) + '" y="' + (y(r.cum) - 9).toFixed(1) + '" text-anchor="' + anchor + '" font-size="' + (last ? 10.5 : 9.5) + '" font-weight="' + (last ? 700 : 600) + '" fill="' + (neg ? 'var(--red)' : (last ? 'var(--text)' : 'var(--text-2)')) + '">' + lblTxt + '</text>';
     if (i > 0) {
-      var dCol = r.partial ? 'var(--text-3)' : (r.net >= 0 ? 'var(--green)' : 'var(--red)');
+      var dCol = r.partial ? 'var(--text-3)' : (r.net >= 0 ? 'var(--up)' : 'var(--dn)');
       var dTxt = r.partial
         ? '(' + (r.net >= 0 ? '+' : '−') + kzShortMoney(Math.abs(r.net)) + ')'
         : (r.net >= 0 ? '▲' : '▼') + kzShortMoney(Math.abs(r.net));
