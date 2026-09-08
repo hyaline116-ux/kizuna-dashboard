@@ -683,7 +683,11 @@ function kzRenderTrend(months) {
       + tr('實收', function(r) { return Math.round(r.rev).toLocaleString(); })
       + tr('實際支出', function(r) { return Math.round(r.exp).toLocaleString(); })
       + tr('損益（未稅）', function(r) { return '<span style="color:' + (r.net >= 0 ? 'var(--green)' : 'var(--red)') + ';">' + (r.net >= 0 ? '+' : '−') + Math.round(Math.abs(r.net)).toLocaleString() + '</span>'; }, 'font-weight:500;')
-      + tr('利潤率', function(r) { return (r.rev && Math.abs(r.net / r.rev) <= 1) ? (r.net / r.rev * 100).toFixed(1) + '%' : '—'; }, 'color:var(--text-2);')
+      + tr('利潤率', function(r) {
+          if (!(r.rev && Math.abs(r.net / r.rev) <= 1)) return '<span style="color:var(--text-3);">—</span>';
+          var pm = r.net / r.rev * 100;
+          return '<span style="color:' + (pm >= 0 ? 'var(--green)' : 'var(--red)') + ';">' + pm.toFixed(1) + '%</span>';
+        })
       + '</tbody></table>'
       + (anyProv ? '<p style="margin:6px 0 0; font-size:10.5px; color:var(--text-3);">＊含即時估算，數字為暫定</p>' : '');
   }
