@@ -558,6 +558,7 @@ function kzRenderTrend(months) {
     +   '<stop offset="0.92" stop-color="var(--green)" stop-opacity="0"/></linearGradient>'
     + '<clipPath id="kzTrSolid"><rect x="0" y="0" width="' + provX.toFixed(1) + '" height="' + H + '"/></clipPath>'
     + '<clipPath id="kzTrDash"><rect x="' + provX.toFixed(1) + '" y="0" width="' + Math.max(0, W - provX).toFixed(1) + '" height="' + H + '"/></clipPath>'
+    + '<clipPath id="kzTrNeg"><rect x="' + PL + '" y="' + zeroY.toFixed(1) + '" width="' + (W - PR - PL).toFixed(1) + '" height="' + Math.max(0, H - PB - zeroY).toFixed(1) + '"/></clipPath>'
     + '</defs>';
 
   // 格線：非零虛線、零線加重
@@ -568,8 +569,10 @@ function kzRenderTrend(months) {
        + '<text x="' + (PL - 7) + '" y="' + (y(gv) + 3).toFixed(1) + '" text-anchor="end" font-size="9.5" fill="var(--text-3)">' + fmtW(gv) + '</text>';
   }
 
-  // 損益淡底（讓地板不空）
-  g += '<path d="' + lineD(netArr) + ' L ' + xN.toFixed(1) + ' ' + zeroY.toFixed(1) + ' L ' + x0.toFixed(1) + ' ' + zeroY.toFixed(1) + ' Z" fill="url(#kzTrNet)"/>';
+  // 損益淡底（讓地板不空）；虧損區（零線以下）紅色淡底，比照累計損益圖
+  var kzNetArea = lineD(netArr) + ' L ' + xN.toFixed(1) + ' ' + zeroY.toFixed(1) + ' L ' + x0.toFixed(1) + ' ' + zeroY.toFixed(1) + ' Z';
+  g += '<path d="' + kzNetArea + '" fill="url(#kzTrNet)"/>';
+  if (lo < 0) g += '<path d="' + kzNetArea + '" fill="var(--dn)" fill-opacity="0.12" clip-path="url(#kzTrNeg)"/>';
 
   // 實收 / 實際支出：直線參考線 ＋ 每點漲跌小三角
   [{ arr: revArr, c: 'var(--rev-1)', label: '實收', above: true }, { arr: expArr, c: 'var(--exp-4)', label: '實際支出', above: false }].forEach(function(s) {
@@ -592,37 +595,37 @@ function kzRenderTrend(months) {
     });
   });
 
-  // 損益：直線，逐段依漲跌上色（綠↑ 紅↓）；進行中月份用中性色
-  for (var si = 0; si < n - 1; si++) {
-    var toR = rows[si + 1];
-    var segCol = toR.partial ? NUC : (netArr[si + 1] >= netArr[si] ? UPC : DNC);
-    g += '<path d="M ' + x(si).toFixed(1) + ' ' + y(netArr[si]).toFixed(1) + ' L ' + x(si + 1).toFixed(1) + ' ' + y(netArr[si + 1]).toFixed(1) + '" fill="none" stroke="' + segCol + '" stroke-width="3" stroke-linecap="round"' + (toR.prov ? ' stroke-dasharray="1 5"' : '') + '/>';
+  // 損益：直線，比照累計損益圖 —— 顏色依「正／負」(獲利綠、虧損紅)，非依漲跌方向；零線以下用 clipPath 疊紅
+  var kzNetD = lineD(netArr);
+  if (anyProv && firstProv > 0) {
+    g += '<path d="' + kzNetD + '" fill="none" stroke="var(--up)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#kzTrSolid)"/>';
+    g += '<path d="' + kzNetD + '" fill="none" stroke="var(--up)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1 5" clip-path="url(#kzTrDash)"/>';
+  } else {
+    g += '<path d="' + kzNetD + '" fill="none" stroke="var(--up)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"' + (firstProv === 0 ? ' stroke-dasharray="1 5"' : '') + '/>';
+  }
+  if (lo < 0) {
+    g += '<path d="' + kzNetD + '" fill="none" stroke="var(--dn)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#kzTrNeg)"/>';
   }
   rows.forEach(function(r, i) {
     var last = i === n - 1, cx = x(i), cy = y(r.net);
-    var dir = i > 0 ? (r.net >= rows[i - 1].net) : (r.net >= 0);
-    var dc = r.partial ? NUC : (dir ? UPC : DNC);
+    var dc = r.partial ? NUC : (r.net >= 0 ? UPC : DNC);   // 顏色＝獲利/虧損，非漲跌方向
     if (r.prov) {
       g += '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + (last ? 4 : 3.4) + '" fill="var(--card)" stroke="' + dc + '" stroke-width="1.8"><title>' + r.m + '　損益 ' + kzMoney(r.net) + (r.partial ? '（進行中）' : '') + '</title></circle>';
     } else {
       if (last) g += '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="7" fill="' + dc + '" fill-opacity="0.16"/>';
       g += '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + (last ? 4.2 : 3.4) + '" fill="' + dc + '"' + (last ? ' stroke="var(--card)" stroke-width="1.4"' : '') + '><title>' + r.m + '　損益 ' + kzMoney(r.net) + '</title></circle>';
     }
-    // 標籤：一律顯示當月損益總額；首月無比較，其餘加 ▲▼ 標示較前月升降（顏色＝升降方向）；進行中月份灰色括號
+    // 標籤：一律顯示當月損益總額（顏色＝獲利綠／虧損紅）；首月無比較，其餘加 ▲▼ 標示較前月升降
     // 端點錨定內縮，避免首月壓到 Y 軸級距、末月出血
     var above = r.net >= (i > 0 ? rows[i - 1].net : 0);
     var ly = above ? cy - 13 : cy + 20;
     var lblAnc = i === 0 ? 'start' : (last ? 'end' : 'middle');
     var lblX = i === 0 ? cx + 5 : (last ? cx - 5 : cx);
     var netTxt = (r.net >= 0 ? '+' : '−') + kzShortMoney(Math.abs(r.net));
-    if (r.partial) {
-      g += '<text x="' + lblX.toFixed(1) + '" y="' + ly.toFixed(1) + '" text-anchor="' + lblAnc + '" font-size="10" font-weight="600" fill="' + NUC + '">(' + netTxt + ')</text>';
-    } else if (i === 0) {
-      g += '<text x="' + lblX.toFixed(1) + '" y="' + ly.toFixed(1) + '" text-anchor="' + lblAnc + '" font-size="10.5" font-weight="700" fill="' + (r.net >= 0 ? UPC : DNC) + '">' + netTxt + '</text>';
-    } else {
-      var rose = r.net >= rows[i - 1].net;
-      g += '<text x="' + lblX.toFixed(1) + '" y="' + ly.toFixed(1) + '" text-anchor="' + lblAnc + '" font-size="10.5" font-weight="700" fill="' + (rose ? UPC : DNC) + '">' + netTxt + ' ' + (rose ? '▲' : '▼') + '</text>';
-    }
+    var lblCol = r.partial ? NUC : (r.net >= 0 ? UPC : DNC);
+    var arrow = (r.partial || i === 0) ? '' : (r.net >= rows[i - 1].net ? ' ▲' : ' ▼');
+    var lblTxt = r.partial ? '(' + netTxt + ')' : netTxt + arrow;
+    g += '<text x="' + lblX.toFixed(1) + '" y="' + ly.toFixed(1) + '" text-anchor="' + lblAnc + '" font-size="' + (r.partial ? 10 : 10.5) + '" font-weight="' + (r.partial ? 600 : 700) + '" fill="' + lblCol + '">' + lblTxt + '</text>';
   });
 
   rows.forEach(function(r, i) {
@@ -633,8 +636,8 @@ function kzRenderTrend(months) {
     + '<div style="display:flex; gap:13px; flex-wrap:wrap; margin-top:10px; font-size:10.5px; color:var(--text-3);">'
     + '<span><span style="display:inline-block; width:16px; height:0; border-top:1.7px solid var(--rev-1); margin-right:5px; vertical-align:3px;"></span>實收</span>'
     + '<span><span style="display:inline-block; width:16px; height:0; border-top:1.7px solid var(--exp-4); margin-right:5px; vertical-align:3px;"></span>實際支出</span>'
-    + '<span><span style="display:inline-block; width:16px; height:0; border-top:3px solid var(--green); margin-right:5px; vertical-align:3px;"></span>損益</span>'
-    + '<span>損益數字＝當月總額　<span style="color:var(--up); font-weight:700;">▲</span>升／<span style="color:var(--dn); font-weight:700;">▼</span>降（較前月）</span>'
+    + '<span><span style="display:inline-block; width:16px; height:0; border-top:3px solid var(--up); margin-right:5px; vertical-align:3px;"></span>損益（<span style="color:var(--up);">綠獲利</span>／<span style="color:var(--dn);">紅虧損</span>）</span>'
+    + '<span>損益數字＝當月總額　▲／▼＝較前月升／降</span>'
     + (anyProv ? '<span>虛線／空心 = 含估算</span>' : '')
     + (rows.some(function(r) { return r.partial; }) ? '<span style="color:var(--text-3);">灰色 = 當月進行中（未滿月，不比較）</span>' : '') + '</div>';
 
