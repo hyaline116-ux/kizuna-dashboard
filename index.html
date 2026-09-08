@@ -622,10 +622,14 @@ function kzRenderTrend(months) {
     var lblAnc = i === 0 ? 'start' : (last ? 'end' : 'middle');
     var lblX = i === 0 ? cx + 5 : (last ? cx - 5 : cx);
     var netTxt = (r.net >= 0 ? '+' : '−') + kzShortMoney(Math.abs(r.net));
-    var lblCol = r.partial ? NUC : (r.net >= 0 ? UPC : DNC);
-    var arrow = (r.partial || i === 0) ? '' : (r.net >= rows[i - 1].net ? ' ▲' : ' ▼');
-    var lblTxt = r.partial ? '(' + netTxt + ')' : netTxt + arrow;
-    g += '<text x="' + lblX.toFixed(1) + '" y="' + ly.toFixed(1) + '" text-anchor="' + lblAnc + '" font-size="' + (r.partial ? 10 : 10.5) + '" font-weight="' + (r.partial ? 600 : 700) + '" fill="' + lblCol + '">' + lblTxt + '</text>';
+    var lblCol = r.partial ? NUC : (r.net >= 0 ? UPC : DNC);   // 數字＝獲利綠／虧損紅
+    var arrowTsp = '';
+    if (!r.partial && i > 0) {
+      var rose = r.net >= rows[i - 1].net;
+      arrowTsp = '<tspan fill="' + (rose ? UPC : DNC) + '"> ' + (rose ? '▲' : '▼') + '</tspan>';   // 箭頭＝較前月升綠／降紅
+    }
+    var lblBody = r.partial ? '(' + netTxt + ')' : netTxt;
+    g += '<text x="' + lblX.toFixed(1) + '" y="' + ly.toFixed(1) + '" text-anchor="' + lblAnc + '" font-size="' + (r.partial ? 10 : 10.5) + '" font-weight="' + (r.partial ? 600 : 700) + '" fill="' + lblCol + '">' + lblBody + arrowTsp + '</text>';
   });
 
   rows.forEach(function(r, i) {
@@ -637,7 +641,7 @@ function kzRenderTrend(months) {
     + '<span><span style="display:inline-block; width:16px; height:0; border-top:1.7px solid var(--rev-1); margin-right:5px; vertical-align:3px;"></span>實收</span>'
     + '<span><span style="display:inline-block; width:16px; height:0; border-top:1.7px solid var(--exp-4); margin-right:5px; vertical-align:3px;"></span>實際支出</span>'
     + '<span><span style="display:inline-block; width:16px; height:0; border-top:3px solid var(--up); margin-right:5px; vertical-align:3px;"></span>損益（<span style="color:var(--up);">綠獲利</span>／<span style="color:var(--dn);">紅虧損</span>）</span>'
-    + '<span>損益數字＝當月總額　▲／▼＝較前月升／降</span>'
+    + '<span>損益數字＝當月總額　<span style="color:var(--up); font-weight:700;">▲</span>升／<span style="color:var(--dn); font-weight:700;">▼</span>降（較前月）</span>'
     + (anyProv ? '<span>虛線／空心 = 含估算</span>' : '')
     + (rows.some(function(r) { return r.partial; }) ? '<span style="color:var(--text-3);">灰色 = 當月進行中（未滿月，不比較）</span>' : '') + '</div>';
 
