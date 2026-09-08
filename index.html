@@ -164,7 +164,7 @@
   <hr class="rule" style="margin:1.4rem 0;" />
   <div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:6px 12px; margin-bottom:10px;">
     <p class="lbl" style="margin:0; font-size:13.5px; color:var(--text-2);">營運績效（損益）</p>
-    <p style="margin:0; font-size:11px; color:var(--text-3); white-space:nowrap;">Visa 入帳至 <b style="color:var(--text-2); font-weight:500;" id="kz-revenue-asof-visa">—</b> ｜ 現金 入帳至 <b style="color:var(--text-2); font-weight:500;" id="kz-revenue-asof-cash">—</b></p>
+    <p id="kz-revenue-asof" style="margin:0; font-size:11px; color:var(--text-3); white-space:nowrap;">Visa 入帳至 <b style="color:var(--text-2); font-weight:500;" id="kz-revenue-asof-visa">—</b> ｜ 現金 入帳至 <b style="color:var(--text-2); font-weight:500;" id="kz-revenue-asof-cash">—</b></p>
   </div>
   <div class="kpis">
     <div class="tile">
@@ -685,7 +685,11 @@ function kzRenderSummary() {
 
   var kzNowS = new Date();
   var kzCurName = kzNowS.getFullYear() === KZ_YEAR ? Object.keys(KZ_MONTH_NUM).filter(function(k) { return KZ_MONTH_NUM[k] === kzNowS.getMonth() + 1; })[0] : null;
-  document.getElementById('kz-range-note').textContent = '顯示範圍：' + label + (kzCurName && months.indexOf(kzCurName) !== -1 ? '（' + kzCurName + '資料未滿月）' : '');
+  var kzRangeInProgress = kzCurName && months.indexOf(kzCurName) !== -1;
+  document.getElementById('kz-range-note').textContent = '顯示範圍：' + label + (kzRangeInProgress ? '（' + kzCurName + '資料未滿月）' : '');
+  // 入帳進度只在範圍含「進行中月份」時才有意義
+  var kzAsofEl = document.getElementById('kz-revenue-asof');
+  if (kzAsofEl) kzAsofEl.hidden = !kzRangeInProgress;
   document.getElementById('kz-kpi-revenue').textContent = kzMoney(revenue);
   document.getElementById('kz-kpi-expense').textContent = kzMoney(expense);
   document.getElementById('kz-kpi-net').textContent = kzMoney(net);
