@@ -917,7 +917,7 @@ document.getElementById('kz-mode-range').addEventListener('click', function() { 
 document.getElementById('kz-mode-quarter').addEventListener('click', function() { kzSetMode('quarter'); });
 kzSetMode('quarter');
 
-var CASH = {"total_capital":14527841,"payable_budget":1497929,"cash_level":2400784,"total_spent":24720316,"book_balance":3898713,"pending_transfer":0,"cash_reserve":94276,"dividends_paid":0,"visa_latest_date":"2026-09-09","cash_asof_date":"2026-09-07"};   // dividends_paid：公司帳簿 Q5 起記錄的累計已配發股利，Q4(2026/10~12) 前為 0
+var CASH = {"total_capital":14500000,"payable_budget":1497929,"cash_level":2400784,"total_spent":24720316,"book_balance":3898713,"pending_transfer":0,"cash_reserve":94276,"dividends_paid":0,"visa_latest_date":"2026-09-09","cash_asof_date":"2026-09-07"};   // total_capital＝股東入資合計（不含利息 27,841，故非 G1）；dividends_paid：公司帳簿 Q5 起記錄的累計已配發股利，Q4(2026/10~12) 前為 0
 
 var CASH_LEVEL_SERIES = [{"ym":"26/09","level":2400784}];   // 月末資金水位；每次同步補當前值，逐季累積
 
