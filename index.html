@@ -933,7 +933,7 @@ var KZ_REVENUE_GROUPS = [
   { label: '股東月結', color: 'var(--rev-4)' },
   { label: '員購月結', color: 'var(--rev-5)' }
 ];
-var BUDGET = [{"item":"9月食材現金支出 預撥款 管理員：保鈞","budget":25123,"progress":"食材支出預撥"},{"item":"9月雜項現金支出 預撥款 管理員：庭維","budget":16954,"progress":"雜項支出預撥"},{"item":"固定成本：年度營業所得稅 累計預留","budget":456008,"progress":"累計預留"},{"item":"固定成本：7月憑證統整費","budget":5000,"progress":"預估"},{"item":"固定成本：7月電費預估","budget":90000,"progress":"預估"},{"item":"固定成本：7月水費預估","budget":3000,"progress":"預估"},{"item":"固定成本：7月記帳費預估","budget":2500,"progress":"預估"},{"item":"固定成本：7月環境消毒費預估","budget":3000,"progress":"預估"},{"item":"包廂投影幕,2F監視器 增設預算","budget":30000,"progress":"預估"},{"item":"裝潢工程：廚房熱器對流孔拆除封板 工程預算","budget":8000,"progress":"預估"},{"item":"固定成本：8月勞保費預估","budget":58000,"progress":"預估"},{"item":"固定成本：8月勞退費預估","budget":27000,"progress":"預估"},{"item":"固定成本：8月健保費預估","budget":38000,"progress":"預估"},{"item":"固定成本：8月憑證統整費","budget":5000,"progress":"預估"},{"item":"固定成本：8月電費預估","budget":90000,"progress":"預估"},{"item":"固定成本：8月水費預估","budget":3000,"progress":"預估"},{"item":"固定成本：8月記帳費預估","budget":2500,"progress":"預估"},{"item":"固定成本：8月環境消毒費預估","budget":3000,"progress":"預估"},{"item":"固定成本：8月電信費預估","budget":2000,"progress":"預估"},{"item":"固定成本：8月室內花藝","budget":6000,"progress":"預估"},{"item":"固定成本：9月人事 即時估算","budget":362089,"progress":"預估"},{"item":"變動成本：9月食材 即時估算","budget":396263,"progress":"預估35%"},{"item":"內/外 餐具款式新增尾款","budget":60000,"progress":"預估"}];
+var BUDGET = [{"item":"9月食材現金支出 預撥款 管理員：保鈞","budget":25123,"progress":"食材支出預撥"},{"item":"9月雜項現金支出 預撥款 管理員：庭維","budget":16954,"progress":"雜項支出預撥"},{"item":"固定成本：年度營業所得稅 累計預留","budget":456008,"progress":"累計預留"},{"item":"固定成本：7月憑證統整費","budget":5000,"progress":"預估"},{"item":"固定成本：7月電費預估","budget":90000,"progress":"預估"},{"item":"固定成本：7月水費預估","budget":3000,"progress":"預估"},{"item":"固定成本：7月環境消毒費預估","budget":3000,"progress":"預估"},{"item":"包廂投影幕,2F監視器 增設預算","budget":30000,"progress":"預估"},{"item":"裝潢工程：廚房熱器對流孔拆除封板 工程預算","budget":8000,"progress":"預估"},{"item":"固定成本：8月勞保費預估","budget":58000,"progress":"預估"},{"item":"固定成本：8月勞退費預估","budget":27000,"progress":"預估"},{"item":"固定成本：8月健保費預估","budget":38000,"progress":"預估"},{"item":"固定成本：8月憑證統整費","budget":5000,"progress":"預估"},{"item":"固定成本：8月電費預估","budget":90000,"progress":"預估"},{"item":"固定成本：8月水費預估","budget":3000,"progress":"預估"},{"item":"固定成本：8月環境消毒費預估","budget":3000,"progress":"預估"},{"item":"固定成本：8月電信費預估","budget":2000,"progress":"預估"},{"item":"固定成本：9月人事 即時估算","budget":362089,"progress":"預估"},{"item":"變動成本：9月食材 即時估算","budget":396263,"progress":"預估35%"},{"item":"內/外 餐具款式新增尾款","budget":60000,"progress":"預估"}];
 kzPopulateRangeSelects();
 document.getElementById('kz-from').addEventListener('change', kzRenderSummary);
 document.getElementById('kz-to').addEventListener('change', kzRenderSummary);
@@ -943,9 +943,9 @@ document.getElementById('kz-mode-range').addEventListener('click', function() { 
 document.getElementById('kz-mode-quarter').addEventListener('click', function() { kzSetMode('quarter'); });
 kzSetMode('quarter');
 
-var CASH = {"total_capital":14500000,"payable_budget":1692437,"cash_level":2586498,"total_spent":24844040,"book_balance":4278935,"pending_transfer":0,"cash_reserve":49040,"dividends_paid":0,"visa_latest_date":"2026-09-16","cash_asof_date":"2026-09-14"};   // total_capital＝股東入資合計（不含利息 27,841，故非 G1）；dividends_paid：公司帳簿 Q5 起記錄的累計已配發股利，Q4(2026/10~12) 前為 0
+var CASH = {"total_capital":14500000,"payable_budget":1681437,"cash_level":2597498,"total_spent":24844040,"book_balance":4278935,"pending_transfer":0,"cash_reserve":49040,"dividends_paid":0,"visa_latest_date":"2026-09-16","cash_asof_date":"2026-09-14"};   // total_capital＝股東入資合計（不含利息 27,841，故非 G1）；dividends_paid：公司帳簿 Q5 起記錄的累計已配發股利，Q4(2026/10~12) 前為 0
 
-var CASH_LEVEL_SERIES = [{"ym":"26/09","level":2586498}];   // 月末資金水位；每次同步補當前值，逐季累積
+var CASH_LEVEL_SERIES = [{"ym":"26/09","level":2597498}];   // 月末資金水位；每次同步補當前值，逐季累積
 
 function kzRenderKline() {
   var el = document.getElementById('kz-kline');
