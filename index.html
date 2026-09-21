@@ -495,6 +495,14 @@ function kzCurrentMonths() {
   if (fromI > toI) { var t = fromI; fromI = toI; toI = t; }
   return KZ_MONTHS.slice(fromI, toI + 1);
 }
+// 進行中月份的營收涵蓋日＝Visa／現金入帳日較早者（較晚者僅單一管道，不算完整）
+function kzTrendAsOf() {
+  if (typeof CASH === 'undefined' || !CASH) return '';   // 初次渲染時 CASH 尚未定義
+  var ds = [CASH.visa_latest_date, CASH.cash_asof_date].filter(Boolean).sort();
+  if (!ds.length) return '';
+  var p = ds[0].split('-');
+  return p.length === 3 ? (+p[1]) + '/' + (+p[2]) : '';
+}
 function kzRenderTrend(months) {
   var el = document.getElementById('kz-trend');
   if (!el) return;
@@ -576,6 +584,15 @@ function kzRenderTrend(months) {
     + '<clipPath id="kzTrNeg"><rect x="' + PL + '" y="' + zeroY.toFixed(1) + '" width="' + (W - PR - PL).toFixed(1) + '" height="' + Math.max(0, H - PB - zeroY).toFixed(1) + '"/></clipPath>'
     + '</defs>';
 
+  // 進行中月份：淡底色帶＋左緣虛線，讓「未滿月」一眼可辨
+  var partIdx = -1;
+  for (var pi = 0; pi < rows.length; pi++) { if (rows[pi].partial) { partIdx = pi; break; } }
+  if (partIdx >= 0) {
+    var bandL = partIdx > 0 ? (x(partIdx - 1) + x(partIdx)) / 2 : PL;
+    g += '<rect x="' + bandL.toFixed(1) + '" y="' + PT + '" width="' + (W - PR - bandL).toFixed(1) + '" height="' + Math.max(0, H - PB - PT).toFixed(1) + '" fill="var(--text-3)" opacity="0.055"/>'
+       + '<line x1="' + bandL.toFixed(1) + '" y1="' + PT + '" x2="' + bandL.toFixed(1) + '" y2="' + (H - PB) + '" stroke="var(--text-3)" stroke-width="1" stroke-dasharray="3 4" opacity="0.5"/>';
+  }
+
   // 格線：非零虛線、零線加重
   var span = top - bot, step = span <= 1500000 ? 500000 : 1000000;
   for (var gv = Math.ceil(bot / step) * step; gv <= top + 1; gv += step) {
@@ -594,9 +611,9 @@ function kzRenderTrend(months) {
     var d = lineD(s.arr);
     if (anyProv && firstProv > 0) {
       g += '<path d="' + d + '" fill="none" stroke="' + s.c + '" stroke-width="1.7" stroke-linejoin="round" clip-path="url(#kzTrSolid)"/>';
-      g += '<path d="' + d + '" fill="none" stroke="' + s.c + '" stroke-width="1.7" stroke-linejoin="round" stroke-dasharray="1 5" clip-path="url(#kzTrDash)"/>';
+      g += '<path d="' + d + '" fill="none" stroke="' + s.c + '" stroke-width="1.7" stroke-linejoin="round" stroke-dasharray="3 4" clip-path="url(#kzTrDash)"/>';
     } else {
-      g += '<path d="' + d + '" fill="none" stroke="' + s.c + '" stroke-width="1.7" stroke-linejoin="round"' + (firstProv === 0 ? ' stroke-dasharray="1 5"' : '') + '/>';
+      g += '<path d="' + d + '" fill="none" stroke="' + s.c + '" stroke-width="1.7" stroke-linejoin="round"' + (firstProv === 0 ? ' stroke-dasharray="3 4"' : '') + '/>';
     }
     rows.forEach(function(r, i) {
       var cx = x(i), cy = y(s.arr[i]);
@@ -614,9 +631,9 @@ function kzRenderTrend(months) {
   var kzNetD = lineD(netArr);
   if (anyProv && firstProv > 0) {
     g += '<path d="' + kzNetD + '" fill="none" stroke="var(--up)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#kzTrSolid)"/>';
-    g += '<path d="' + kzNetD + '" fill="none" stroke="var(--up)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1 5" clip-path="url(#kzTrDash)"/>';
+    g += '<path d="' + kzNetD + '" fill="none" stroke="var(--up)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 4" clip-path="url(#kzTrDash)"/>';
   } else {
-    g += '<path d="' + kzNetD + '" fill="none" stroke="var(--up)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"' + (firstProv === 0 ? ' stroke-dasharray="1 5"' : '') + '/>';
+    g += '<path d="' + kzNetD + '" fill="none" stroke="var(--up)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"' + (firstProv === 0 ? ' stroke-dasharray="3 4"' : '') + '/>';
   }
   if (lo < 0) {
     g += '<path d="' + kzNetD + '" fill="none" stroke="var(--dn)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#kzTrNeg)"/>';
@@ -647,8 +664,15 @@ function kzRenderTrend(months) {
     g += '<text x="' + lblX.toFixed(1) + '" y="' + ly.toFixed(1) + '" text-anchor="' + lblAnc + '" font-size="' + (r.partial ? 10 : 10.5) + '" font-weight="' + (r.partial ? 600 : 700) + '" fill="' + lblCol + '">' + lblBody + arrowTsp + '</text>';
   });
 
+  var kzAsOf = kzTrendAsOf();
   rows.forEach(function(r, i) {
-    g += '<text x="' + x(i).toFixed(1) + '" y="' + (H - PB + 17) + '" text-anchor="middle" font-size="10" fill="var(--text-3)">' + r.m + '</text>';
+    g += '<text x="' + x(i).toFixed(1) + '" y="' + (H - PB + 17) + '" text-anchor="middle" font-size="10" fill="var(--text-3)"'
+       + (r.partial ? ' font-weight="600"' : '') + '>' + r.m + '</text>';
+    if (r.partial) {
+      var pLast = i === rows.length - 1;   // 末月改右錨，避免文字出血被裁切
+      g += '<text x="' + (pLast ? (W - PR) : x(i)).toFixed(1) + '" y="' + (H - PB + 29) + '" text-anchor="' + (pLast ? 'end' : 'middle') + '" font-size="9" fill="var(--text-3)">進行中'
+        + (kzAsOf ? '·至 ' + kzAsOf : '') + '</text>';
+    }
   });
 
   el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%; min-width:' + Math.max(360, n * 78) + 'px; height:auto;">' + g + '</svg>'
@@ -658,7 +682,7 @@ function kzRenderTrend(months) {
     + '<span><span style="display:inline-block; width:16px; height:0; border-top:3px solid var(--up); margin-right:5px; vertical-align:3px;"></span>損益（<span style="color:var(--up);">綠獲利</span>／<span style="color:var(--dn);">紅虧損</span>）</span>'
     + '<span>損益數字＝當月總額　<span style="color:var(--up); font-weight:700;">▲</span>升／<span style="color:var(--dn); font-weight:700;">▼</span>降（較前月）</span>'
     + (anyProv ? '<span>虛線／空心 = 含估算</span>' : '')
-    + (rows.some(function(r) { return r.partial; }) ? '<span style="color:var(--text-3);">灰色 = 當月進行中（未滿月，不比較）</span>' : '') + '</div>';
+    + (rows.some(function(r) { return r.partial; }) ? '<span style="color:var(--text-3);">淡底區＝當月進行中：營收只計至入帳日、固定成本多為估算，<b>不可與完整月直接比較</b></span>' : '') + '</div>';
 
   }
 
@@ -1025,9 +1049,9 @@ function kzRenderKline() {
 
   if (firstProv > 0) {
     g += '<path d="' + lineD + '" fill="none" stroke="var(--kl-accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#kzKSolid)"/>';
-    g += '<path d="' + lineD + '" fill="none" stroke="var(--kl-accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1 5" clip-path="url(#kzKDash)"/>';
+    g += '<path d="' + lineD + '" fill="none" stroke="var(--kl-accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 4" clip-path="url(#kzKDash)"/>';
   } else {
-    g += '<path d="' + lineD + '" fill="none" stroke="var(--kl-accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"' + (firstProv === 0 ? ' stroke-dasharray="1 5"' : '') + '/>';
+    g += '<path d="' + lineD + '" fill="none" stroke="var(--kl-accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"' + (firstProv === 0 ? ' stroke-dasharray="3 4"' : '') + '/>';
   }
   if (lo < 0) {
     g += '<path d="' + lineD + '" fill="none" stroke="var(--red)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#kzNeg)"/>';
