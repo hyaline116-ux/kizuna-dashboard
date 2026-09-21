@@ -885,6 +885,7 @@ var KZ_ROW_DEFS = [
   { cat: '耗材庫存', indent: true },
   { cat: '營業稅', indent: true }
 ];
+var KZ_PENDING_CATS = ['人事成本','勞保','勞退','健保','房租','電費','水費','會計記帳費','憑證統整費','電信費','廚餘清運','垃圾清運','環境消毒','中興保全','室內花藝','食材成本','耗材成本','雜項支出'];
 function kzFmt(v) {
   if (v === null || v === undefined) return '—';
   if (typeof v === 'string') return v;
@@ -913,6 +914,10 @@ function kzRenderMatrix(months, label) {
           : Math.round(v).toLocaleString() + '<span style="color:var(--text-3);">＊</span>');
         return '<td style="text-align:right;">' + cell + '</td>';
       }
+      if ((v === null || v === undefined) && KZ_MONTH_NUM[m] === kzCurMM && KZ_PENDING_CATS.indexOf(def.cat) !== -1) {
+        // 進行中月份、成本科目尚未估列：標「待估列」，避免被看成資料缺漏
+        return '<td style="text-align:right;"><span style="font-size:10.5px; color:var(--text-3); border-bottom:1px dotted var(--text-3); cursor:help;" title="' + m + '「' + def.cat + '」尚未入帳或估列，月結後補">待估列</span></td>';
+      }
       var col = (def.colorBySign && v !== null && v !== undefined) ? (v >= 0 ? 'color:var(--green);' : 'color:var(--red);') : '';
       return '<td style="text-align:right;' + col + '">' + kzFmt(v) + '</td>';
     }).join('');
@@ -937,6 +942,7 @@ function kzRenderMatrix(months, label) {
     var kzZTxt = (kzZn.length > 1 && kzZn[kzZn.length - 1] - kzZn[0] === kzZn.length - 1) ? kzZn[0] + '–' + kzZn[kzZn.length - 1] : kzZn.join('、');
     notes.push(kzZTxt + ' 月營業稅應納額為 0（進項稅額扣抵後無應納）。');
   }
+  if (months.some(function(m) { return KZ_MONTH_NUM[m] === kzCurMM; })) notes.push('「待估列」＝進行中月份該科目尚未入帳或估列（多為勞健保、水電等月結後才出帳），月結後補齊；該月損益因此偏樂觀。');
   if (kzDeduct > 0) notes.push('本期員工／股東月結中以薪資直接抵扣 ' + kzMoney(kzDeduct) + '（未收現金、未開發票），不列實收；人事成本亦以實際轉帳金額計。');
   var noteEl = document.getElementById('kz-matrix-note');
   noteEl.innerHTML = notes.join('<br>');
