@@ -378,6 +378,7 @@ document.getElementById('kz-total').textContent = LEDGER.length;
 <script>
 var MATRIX = [{"cat":"實收","四月":1852779,"五月":3065347,"六月":2796255,"七月":2765379,"八月":3062310,"九月":1347187},{"cat":"淨額(未稅)","四月":-495477,"五月":806213,"六月":594882,"七月":618976,"八月":632620,"九月":212903},{"cat":"實際支出","四月":2348256,"五月":2259134,"六月":2201373,"七月":2146403,"八月":2429690,"九月":1134284},{"cat":"固定成本FC","四月":841766,"五月":1043565,"六月":973299,"七月":1003814,"八月":1036775,"九月":541135},{"cat":"人事成本","四月":611910,"五月":708448,"六月":661188,"七月":678354,"八月":704082,"九月":459130},{"cat":"勞保","四月":0,"五月":69258,"六月":54146,"七月":57251,"八月":58000,"九月":null},{"cat":"勞退","四月":0,"五月":31121,"六月":25064,"七月":26692,"八月":27000,"九月":null},{"cat":"健保","四月":24976,"五月":32520,"六月":28748,"七月":37100,"八月":38000,"九月":null},{"cat":"房租","四月":80000,"五月":80000,"六月":80000,"七月":80000,"八月":80000,"九月":80000},{"cat":"電費","四月":97266,"五月":91502,"六月":91501,"七月":91315,"八月":91315,"九月":null},{"cat":"水費","四月":3684,"五月":2615,"六月":2614,"七月":3000,"八月":3000,"九月":null},{"cat":"會計記帳費","四月":0,"五月":2208,"六月":2207,"七月":2200,"八月":2215,"九月":null},{"cat":"憑證統整費","四月":5000,"五月":5000,"六月":5015,"七月":5000,"八月":5000,"九月":null},{"cat":"電信費","四月":0,"五月":0,"六月":1295,"七月":1343,"八月":1320,"九月":null},{"cat":"廚餘清運","四月":1515,"五月":3015,"六月":3000,"七月":3000,"八月":3000,"九月":null},{"cat":"垃圾清運","四月":6630,"五月":8863,"六月":11506,"七月":10539,"八月":12823,"九月":null},{"cat":"環境消毒","四月":3000,"五月":3000,"六月":3000,"七月":3000,"八月":3000,"九月":null},{"cat":"中興保全","四月":7785,"五月":0,"六月":0,"七月":2005,"八月":2005,"九月":2005},{"cat":"室內花藝","四月":0,"五月":6015,"六月":4015,"七月":3015,"八月":6015,"九月":null},{"cat":"變動成本VC","四月":1506490,"五月":1215569,"六月":1228074,"七月":1142589,"八月":1392915,"九月":593149},{"cat":"食材成本","四月":1167436,"五月":1081281,"六月":1134688,"七月":1020256,"八月":1216563,"九月":539960},{"cat":"耗材成本","四月":79871,"五月":53562,"六月":45005,"七月":57108,"八月":55780,"九月":13420},{"cat":"雜項支出","四月":259183,"五月":80726,"六月":48381,"七月":65225,"八月":120572,"九月":39769},{"cat":"食材庫存","四月":0,"五月":229022,"六月":303054,"七月":181621,"八月":137653,"九月":null},{"cat":"耗材庫存","四月":0,"五月":0,"六月":32271,"七月":24980,"八月":35863,"九月":null},{"cat":"營業稅","四月":0,"五月":0,"六月":0,"七月":0,"八月":0,"九月":64152}];
 var KZ_SALARY_DEDUCT = {"四月":20771,"五月":27710,"六月":24181,"七月":15513,"八月":24924,"九月":0};   // 員工／股東月結以薪資抵扣（不列實收）＝公司帳簿 K..O 加總 − J；僅供明細表腳註
+var KZ_MTD = {"month":"九月","day":17,"cur":1280247,"prev":{"m":"八月","v":1669017},"prev2":{"m":"七月","v":1446890},"vsPrev":-23.3,"vsPrev2":-11.5};   // 進行中月份同期比較：各管道皆涵蓋的最小日，營收按入帳區間分攤到日
 var KZ_VAT_EXEMPT = ['四月','五月','六月','七月','八月'];   // 會計確認免稅的月份 → 明細表顯示「免稅」；營業稅為 0 但尚未確認的月份顯示 0，確認後才加進來
 var KZ_MONTHS = ['四月','五月','六月','七月','八月','九月'];
 var KZ_MONTH_TO_LEDGER = { '四月':'4月','五月':'5月','六月':'6月','七月':'7月','八月':'8月','九月':'9月' };
@@ -664,6 +665,14 @@ function kzRenderTrend(months) {
     g += '<text x="' + lblX.toFixed(1) + '" y="' + ly.toFixed(1) + '" text-anchor="' + lblAnc + '" font-size="' + (r.partial ? 10 : 10.5) + '" font-weight="' + (r.partial ? 600 : 700) + '" fill="' + lblCol + '">' + lblBody + arrowTsp + '</text>';
   });
 
+  // 進行中月份：上月同期實收參考點（灰空心），讓「未滿月」有可比基準
+  var kzMtd = (typeof KZ_MTD !== 'undefined' && KZ_MTD && partIdx >= 0 && rows[partIdx].m === KZ_MTD.month) ? KZ_MTD : null;
+  if (kzMtd && kzMtd.prev && kzMtd.prev.v) {
+    var mx = x(partIdx), my = y(kzMtd.prev.v);
+    g += '<line x1="' + (mx - 9).toFixed(1) + '" y1="' + my.toFixed(1) + '" x2="' + (mx + 9).toFixed(1) + '" y2="' + my.toFixed(1) + '" stroke="var(--text-3)" stroke-width="1.4" stroke-dasharray="3 3" opacity="0.8"><title>' + kzMtd.prev.m + ' 同期（1–' + kzMtd.day + '日）實收 ' + kzMoney(kzMtd.prev.v) + '</title></line>'
+       + '<text x="' + (mx - 12).toFixed(1) + '" y="' + (my + 3.5).toFixed(1) + '" text-anchor="end" font-size="9" fill="var(--text-3)">' + kzMtd.prev.m + '同期</text>';
+  }
+
   var kzAsOf = kzTrendAsOf();
   rows.forEach(function(r, i) {
     g += '<text x="' + x(i).toFixed(1) + '" y="' + (H - PB + 17) + '" text-anchor="middle" font-size="10" fill="var(--text-3)"'
@@ -675,7 +684,20 @@ function kzRenderTrend(months) {
     }
   });
 
+  var mtdHtml = '';
+  if (kzMtd && kzMtd.prev && kzMtd.prev.v) {
+    function kzPct(p) {
+      var up = p >= 0;
+      return '<span style="color:' + (up ? 'var(--up)' : 'var(--dn)') + '; font-weight:700;">' + (up ? '+' : '') + p.toFixed(1) + '%</span>';
+    }
+    mtdHtml = '<div style="margin-top:10px; padding:8px 10px; background:var(--card-2); border-radius:6px; font-size:11px; color:var(--text-2); line-height:1.6;">'
+      + '<b>同期比較</b>（' + kzMtd.month + ' 1–' + kzMtd.day + '日，各收款管道皆已入帳的範圍）：實收 <b style="color:var(--text);">' + kzShortMoney(kzMtd.cur) + '</b>'
+      + '　vs ' + kzMtd.prev.m + '同期 ' + kzShortMoney(kzMtd.prev.v) + ' ' + kzPct(kzMtd.vsPrev)
+      + (kzMtd.prev2 && kzMtd.prev2.v ? '　vs ' + kzMtd.prev2.m + '同期 ' + kzShortMoney(kzMtd.prev2.v) + ' ' + kzPct(kzMtd.vsPrev2) : '')
+      + '</div>';
+  }
   el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%; min-width:' + Math.max(360, n * 78) + 'px; height:auto;">' + g + '</svg>'
+    + mtdHtml
     + '<div style="display:flex; gap:13px; flex-wrap:wrap; margin-top:10px; font-size:10.5px; color:var(--text-3);">'
     + '<span><span style="display:inline-block; width:16px; height:0; border-top:1.7px solid var(--rev-1); margin-right:5px; vertical-align:3px;"></span>實收</span>'
     + '<span><span style="display:inline-block; width:16px; height:0; border-top:1.7px solid var(--exp-4); margin-right:5px; vertical-align:3px;"></span>實際支出</span>'
