@@ -669,8 +669,8 @@ function kzRenderTrend(months) {
   var kzMtd = (typeof KZ_MTD !== 'undefined' && KZ_MTD && partIdx >= 0 && rows[partIdx].m === KZ_MTD.month) ? KZ_MTD : null;
   if (kzMtd && kzMtd.prev && kzMtd.prev.v) {
     var mx = x(partIdx), my = y(kzMtd.prev.v);
-    g += '<line x1="' + (mx - 9).toFixed(1) + '" y1="' + my.toFixed(1) + '" x2="' + (mx + 9).toFixed(1) + '" y2="' + my.toFixed(1) + '" stroke="var(--text-3)" stroke-width="1.4" stroke-dasharray="3 3" opacity="0.8"><title>' + kzMtd.prev.m + ' 同期（1–' + kzMtd.day + '日）實收 ' + kzMoney(kzMtd.prev.v) + '</title></line>'
-       + '<text x="' + (mx - 12).toFixed(1) + '" y="' + (my + 3.5).toFixed(1) + '" text-anchor="end" font-size="9" fill="var(--text-3)">' + kzMtd.prev.m + '同期</text>';
+    g += '<line x1="' + (mx - 16).toFixed(1) + '" y1="' + my.toFixed(1) + '" x2="' + (mx + 16).toFixed(1) + '" y2="' + my.toFixed(1) + '" stroke="var(--text-3)" stroke-width="1.4" stroke-dasharray="3 3" opacity="0.8"><title>' + kzMtd.prev.m + ' 同期（1–' + kzMtd.day + '日）實收 ' + kzMoney(kzMtd.prev.v) + '</title></line>'
+       + '<text x="' + Math.min(mx, W - PR).toFixed(1) + '" y="' + (my - 5).toFixed(1) + '" text-anchor="' + (partIdx === rows.length - 1 ? 'end' : 'middle') + '" font-size="9" fill="var(--text-3)">' + kzMtd.prev.m + '同期</text>';
   }
 
   var kzAsOf = kzTrendAsOf();
