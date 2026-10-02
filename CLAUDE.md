@@ -37,7 +37,13 @@
 2. 用 Google Drive 連接器抓試算表（匯出成 xlsx），再 `python3 fetch.py drive <結果檔>`。fileId、匯出格式與細節見 `.kz_sync/README.md`。連接器不可用時，請使用者下載後改用 `python3 fetch.py file`。
 3. `cd .kz_sync && ./sync.sh` 看差異與稽核。
 4. 有需要使用者判斷的地方（檢查沒過、未記錄支出不為 0、營收漏加、分類或應付款有疑問）→ 先停下來說明並詢問，不上線。
-5. 沒問題 → `./sync.sh apply` → 瀏覽器跑全部篩選範圍測試 → commit、push → curl 確認線上是新數字 → 更新 memory。
+5. 沒問題 → `./sync.sh apply`（寫入明文 `.kz_sync/app.html` → 驗證 → 加密成 `index.html`）→ `preview_start kz-local` 開 `http://localhost:8811/app.html` 跑全部篩選範圍測試 → commit、push `index.html` → curl 確認線上頁與本機 `index.html` 完全相同、且不含明文 → 更新 memory。
 6. 回報：改了什麼（之前 → 現在）、還有哪些事等使用者處理。
 
 只在使用者下指令時同步，不做定時或全自動同步。不修改試算表內容；要改時告訴使用者哪一格、改成什麼。
+
+## 資料保護（這個 repo 是公開的）
+
+- `index.html` 是整頁加密後的檔案，只能由 `.kz_sync/encrypt.py` 產生；不可手動編輯，也不可把任何明文財務資料 commit 進這個 repo。
+- 儀表板的畫面與程式要改，一律改 `.kz_sync/app.html`（明文原始檔，只在本機，`.kz_sync/` 內有自己的 git），再跑 `python3 encrypt.py`。
+- 解鎖密碼存在使用者電腦上的密碼檔，不讀取、不顯示、不寫進對話或任何會上傳的檔案。
